@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user && password_verify($password, $user['password'])) {
             session_regenerate_id(true);
             $_SESSION['user_id'] = $user['id'];
-            header('Location: dashboard.php');
+            header('Location: dashboard');
             exit;
         } else {
             $errors[] = 'Invalid username or password.';
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="password" class="form-control" id="password" name="password" required>
         </div>
         <button type="submit" class="btn btn-primary">Login</button>
-        <a href="register.php" class="btn btn-link">Register</a>
+        <a href="register" class="btn btn-link">Register</a>
     </form>
 </div>
 </body>

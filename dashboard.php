@@ -56,7 +56,7 @@ try {
 
     <div class="row g-4 mb-5">
         <div class="col-md-3 col-sm-6">
-            <a href="customers.php" class="text-decoration-none">
+            <a href="customers" class="text-decoration-none">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body text-center">
                         <h5 class="card-title">Customers</h5>
@@ -66,7 +66,7 @@ try {
         </div>
         <?php if ($role === 'admin'): ?>
             <div class="col-md-3 col-sm-6">
-                <a href="products.php" class="text-decoration-none">
+                <a href="products" class="text-decoration-none">
                     <div class="card h-100 shadow-sm">
                         <div class="card-body text-center">
                             <h5 class="card-title">Products</h5>
@@ -76,7 +76,7 @@ try {
             </div>
         <?php endif; ?>
         <div class="col-md-3 col-sm-6">
-            <a href="quotations.php" class="text-decoration-none">
+            <a href="quotations" class="text-decoration-none">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body text-center">
                         <h5 class="card-title">Quotations</h5>
@@ -85,7 +85,7 @@ try {
             </a>
         </div>
         <div class="col-md-3 col-sm-6">
-            <a href="settings.php" class="text-decoration-none">
+            <a href="settings" class="text-decoration-none">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body text-center">
                         <h5 class="card-title">Settings</h5>

@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'password'   => $hash,
             'email'      => $email,
         ]);
-        header('Location: login.php?registered=1');
+        header('Location: login?registered=1');
         exit;
     }
 }
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
         <button type="submit" class="btn btn-primary">Register</button>
-        <a href="login.php" class="btn btn-link">Login</a>
+        <a href="login" class="btn btn-link">Login</a>
     </form>
 </div>
 </body>

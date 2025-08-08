@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Redirect unauthenticated users to login page
 if (empty($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -28,21 +28,21 @@ $role = $stmt->fetchColumn() ?: 'user';
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="dashboard.php">TeklifPro</a>
+        <a class="navbar-brand" href="dashboard">TeklifPro</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item"><a class="nav-link" href="customers.php">Customers</a></li>
+                <li class="nav-item"><a class="nav-link" href="customers">Customers</a></li>
                 <?php if ($role === 'admin'): ?>
-                    <li class="nav-item"><a class="nav-link" href="products.php">Products</a></li>
+                    <li class="nav-item"><a class="nav-link" href="products">Products</a></li>
                 <?php endif; ?>
-                <li class="nav-item"><a class="nav-link" href="quotations.php">Quotations</a></li>
-                <li class="nav-item"><a class="nav-link" href="settings.php">Settings</a></li>
+                <li class="nav-item"><a class="nav-link" href="quotations">Quotations</a></li>
+                <li class="nav-item"><a class="nav-link" href="settings">Settings</a></li>
             </ul>
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="logout.php">Logout</a></li>
+                <li class="nav-item"><a class="nav-link" href="logout">Logout</a></li>
             </ul>
         </div>
     </div>
