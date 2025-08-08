@@ -18,8 +18,8 @@ try {
 try {
     $recentStmt = $pdo->query(
         'SELECT g.offer_date, CONCAT(c.first_name, " ", c.last_name) AS customer '
-        . 'FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id '
-        . 'ORDER BY g.offer_date DESC LIMIT 5'
+            . 'FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id '
+            . 'ORDER BY g.offer_date DESC LIMIT 5'
     );
     $recentActivity = $recentStmt->fetchAll();
 } catch (Exception $e) {
@@ -31,7 +31,8 @@ try {
         <div class="col-md-4">
             <div class="card text-bg-primary h-100">
                 <div class="card-body text-center">
-                    <h5 class="card-title">Total Customers</h5>
+                    <i class="bi bi-people-fill fs-1" aria-hidden="true"></i>
+                    <h5 class="card-title mt-2">Total Customers</h5>
                     <p class="card-text fs-2"><?= (int)$totalCustomers ?></p>
                 </div>
             </div>
@@ -39,7 +40,8 @@ try {
         <div class="col-md-4">
             <div class="card text-bg-success h-100">
                 <div class="card-body text-center">
-                    <h5 class="card-title">Active Quotations</h5>
+                    <i class="bi bi-file-earmark-text fs-1" aria-hidden="true"></i>
+                    <h5 class="card-title mt-2">Active Quotations</h5>
                     <p class="card-text fs-2"><?= (int)$activeQuotations ?></p>
                 </div>
             </div>
@@ -47,7 +49,8 @@ try {
         <div class="col-md-4">
             <div class="card text-bg-secondary h-100">
                 <div class="card-body text-center">
-                    <h5 class="card-title">Recent Activity</h5>
+                    <i class="bi bi-clock-history fs-1" aria-hidden="true"></i>
+                    <h5 class="card-title mt-2">Recent Activity</h5>
                     <p class="card-text fs-6">Last <?= count($recentActivity) ?> records</p>
                 </div>
             </div>
@@ -59,6 +62,7 @@ try {
             <a href="customers" class="text-decoration-none">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body text-center">
+                        <i class="bi bi-people fs-1 mb-2" aria-hidden="true"></i>
                         <h5 class="card-title">Customers</h5>
                     </div>
                 </div>
@@ -69,6 +73,7 @@ try {
                 <a href="products" class="text-decoration-none">
                     <div class="card h-100 shadow-sm">
                         <div class="card-body text-center">
+                            <i class="bi bi-box-seam fs-1 mb-2" aria-hidden="true"></i>
                             <h5 class="card-title">Products</h5>
                         </div>
                     </div>
@@ -79,6 +84,7 @@ try {
             <a href="quotations" class="text-decoration-none">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body text-center">
+                        <i class="bi bi-file-earmark-text fs-1 mb-2" aria-hidden="true"></i>
                         <h5 class="card-title">Quotations</h5>
                     </div>
                 </div>
@@ -88,6 +94,7 @@ try {
             <a href="settings" class="text-decoration-none">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body text-center">
+                        <i class="bi bi-gear fs-1 mb-2" aria-hidden="true"></i>
                         <h5 class="card-title">Settings</h5>
                     </div>
                 </div>
@@ -114,4 +121,5 @@ try {
     </div>
 </div>
 </body>
+
 </html>

@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$errors) {
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $sql = 'INSERT INTO users (first_name, last_name, username, password, email, status) '
-             . 'VALUES (:first_name, :last_name, :username, :password, :email, "active")';
+            . 'VALUES (:first_name, :last_name, :username, :password, :email, "active")';
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             'first_name' => $first_name,
@@ -50,54 +50,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <title>Register</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 </head>
+
 <body>
-<div class="container mt-5" style="max-width: 600px;">
-    <h2>Register</h2>
-    <?php if ($errors): ?>
-        <div class="alert alert-danger">
-            <?php foreach ($errors as $error): ?>
-                <div><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-    <form method="post" novalidate>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label for="first_name" class="form-label">First Name</label>
-                <input type="text" class="form-control" id="first_name" name="first_name" required>
+    <div class="container mt-5" style="max-width: 600px;">
+        <h2>Register</h2>
+        <?php if ($errors): ?>
+            <div class="alert alert-danger">
+                <?php foreach ($errors as $error): ?>
+                    <div><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
+                <?php endforeach; ?>
             </div>
-            <div class="col-md-6 mb-3">
-                <label for="last_name" class="form-label">Last Name</label>
-                <input type="text" class="form-control" id="last_name" name="last_name" required>
+        <?php endif; ?>
+        <form method="post" novalidate>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="first_name" class="form-label"><i class="bi bi-person me-1" aria-hidden="true"></i>First Name</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="last_name" class="form-label"><i class="bi bi-person me-1" aria-hidden="true"></i>Last Name</label>
+                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                </div>
             </div>
-        </div>
-        <div class="mb-3">
-            <label for="username" class="form-label">Username</label>
-            <input type="text" class="form-control" id="username" name="username" required>
-        </div>
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input type="email" class="form-control" id="email" name="email" required>
-        </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" name="password" required>
+            <div class="mb-3">
+                <label for="username" class="form-label"><i class="bi bi-person-badge me-1" aria-hidden="true"></i>Username</label>
+                <input type="text" class="form-control" id="username" name="username" required>
             </div>
-            <div class="col-md-6 mb-3">
-                <label for="confirm_password" class="form-label">Confirm Password</label>
-                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+            <div class="mb-3">
+                <label for="email" class="form-label"><i class="bi bi-envelope me-1" aria-hidden="true"></i>Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
             </div>
-        </div>
-        <button type="submit" class="btn btn-primary">Register</button>
-        <a href="login" class="btn btn-link">Login</a>
-    </form>
-</div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="password" class="form-label"><i class="bi bi-lock me-1" aria-hidden="true"></i>Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="confirm_password" class="form-label"><i class="bi bi-lock-fill me-1" aria-hidden="true"></i>Confirm Password</label>
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Register</button>
+            <a href="login" class="btn btn-link"><i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Login</a>
+        </form>
+    </div>
 </body>
+
 </html>
