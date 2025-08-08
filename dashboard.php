@@ -1,5 +1,15 @@
 <?php
 require __DIR__ . '/header.php';
+// Fetch logged-in user's name
+try {
+    $stmt = $pdo->prepare('SELECT first_name FROM users WHERE id = :id');
+    $stmt->execute(['id' => $_SESSION['user_id']]);
+    $userName = $stmt->fetchColumn() ?: 'User';
+} catch (Exception $e) {
+    $userName = 'User';
+}
+
+$currentDate = date('l, F j, Y');
 
 // Fetch summary metrics
 try {
@@ -25,90 +35,101 @@ try {
 } catch (Exception $e) {
     $recentActivity = [];
 }
+
+// Quotation status data for chart
+try {
+    $statusStmt = $pdo->query('SELECT status, COUNT(*) AS count FROM generaloffers GROUP BY status');
+    $statusCounts = $statusStmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    $quotationStatuses = [
+        'Active' => (int)($statusCounts['active'] ?? $statusCounts['Active'] ?? $activeQuotations),
+        'Pending' => (int)($statusCounts['pending'] ?? $statusCounts['Pending'] ?? 0),
+        'Closed' => (int)($statusCounts['closed'] ?? $statusCounts['Closed'] ?? 0),
+    ];
+} catch (Exception $e) {
+    $quotationStatuses = [
+        'Active' => (int)$activeQuotations,
+        'Pending' => 0,
+        'Closed' => 0,
+    ];
+}
+
 ?>
-<div class="container mt-4">
+<div class="container py-4">
+    <!-- Welcome Card -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h4 class="card-title mb-1">Welcome, <?= htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?>!</h4>
+            <p class="card-text text-muted mb-0"><?= $currentDate; ?></p>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-3 mb-4 text-center">
+        <div class="col-6 col-md-3">
+            <a href="quotations/create" class="btn btn-primary w-100 h-100 d-flex flex-column justify-content-center align-items-center py-3">
+                <i class="bi bi-plus-circle fs-2 mb-1" aria-hidden="true"></i>
+                <span>Create Quotation</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="customers/add" class="btn btn-outline-primary w-100 h-100 d-flex flex-column justify-content-center align-items-center py-3">
+                <i class="bi bi-person-plus fs-2 mb-1" aria-hidden="true"></i>
+                <span>Add Customer</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="products" class="btn btn-outline-primary w-100 h-100 d-flex flex-column justify-content-center align-items-center py-3">
+                <i class="bi bi-box-seam fs-2 mb-1" aria-hidden="true"></i>
+                <span>View Products</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="settings" class="btn btn-outline-primary w-100 h-100 d-flex flex-column justify-content-center align-items-center py-3">
+                <i class="bi bi-gear fs-2 mb-1" aria-hidden="true"></i>
+                <span>Settings</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
     <div class="row g-4 mb-4">
         <div class="col-md-4">
-            <div class="card text-bg-primary h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-people-fill fs-1" aria-hidden="true"></i>
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="bi bi-people-fill text-primary fs-1" aria-hidden="true"></i>
                     <h5 class="card-title mt-2">Total Customers</h5>
-                    <p class="card-text fs-2"><?= (int)$totalCustomers ?></p>
+                    <p class="display-6 mb-0"><?= (int)$totalCustomers ?></p>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-bg-success h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-file-earmark-text fs-1" aria-hidden="true"></i>
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="bi bi-file-earmark-text text-success fs-1" aria-hidden="true"></i>
                     <h5 class="card-title mt-2">Active Quotations</h5>
-                    <p class="card-text fs-2"><?= (int)$activeQuotations ?></p>
+                    <p class="display-6 mb-0"><?= (int)$activeQuotations ?></p>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-bg-secondary h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-clock-history fs-1" aria-hidden="true"></i>
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="bi bi-clock-history text-secondary fs-1" aria-hidden="true"></i>
                     <h5 class="card-title mt-2">Recent Activity</h5>
-                    <p class="card-text fs-6">Last <?= count($recentActivity) ?> records</p>
+                    <p class="fs-5 mb-0">Last <?= count($recentActivity) ?> records</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4 mb-5">
-        <div class="col-md-3 col-sm-6">
-            <a href="customers" class="text-decoration-none">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="bi bi-people fs-1 mb-2" aria-hidden="true"></i>
-                        <h5 class="card-title">Customers</h5>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <?php if ($role === 'admin'): ?>
-            <div class="col-md-3 col-sm-6">
-                <a href="products" class="text-decoration-none">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="bi bi-box-seam fs-1 mb-2" aria-hidden="true"></i>
-                            <h5 class="card-title">Products</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        <?php endif; ?>
-        <div class="col-md-3 col-sm-6">
-            <a href="quotations" class="text-decoration-none">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="bi bi-file-earmark-text fs-1 mb-2" aria-hidden="true"></i>
-                        <h5 class="card-title">Quotations</h5>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <a href="settings" class="text-decoration-none">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="bi bi-gear fs-1 mb-2" aria-hidden="true"></i>
-                        <h5 class="card-title">Settings</h5>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
-
-    <div class="row">
+    <!-- Recent Activity and Chart -->
+    <div class="row g-4">
         <div class="col-lg-8">
-            <h4>Recent Activity</h4>
+            <h4 class="mb-3">Recent Activity</h4>
             <ul class="list-group">
                 <?php if ($recentActivity): ?>
                     <?php foreach ($recentActivity as $activity): ?>
-                        <li class="list-group-item d-flex justify-content-between">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span><?= htmlspecialchars($activity['customer'] ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?></span>
                             <span class="text-muted small"><?= htmlspecialchars($activity['offer_date'] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
                         </li>
@@ -118,8 +139,37 @@ try {
                 <?php endif; ?>
             </ul>
         </div>
+        <div class="col-lg-4">
+            <h4 class="mb-3">Quotation Status</h4>
+            <div class="card shadow-sm p-3">
+                <canvas id="quotationChart" style="min-height:300px"></canvas>
+            </div>
+        </div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    const qCtx = document.getElementById('quotationChart');
+    new Chart(qCtx, {
+        type: 'doughnut',
+        data: {
+            labels: <?= json_encode(array_keys($quotationStatuses)) ?>,
+            datasets: [{
+                data: <?= json_encode(array_values($quotationStatuses)) ?>,
+                backgroundColor: ['#0d6efd', '#ffc107', '#198754'],
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+</script>
 </body>
 
 </html>
