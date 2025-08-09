@@ -40,10 +40,17 @@ $role = $stmt->fetchColumn() ?: 'user';
                     <li class="nav-item"><a class="nav-link" href="customer"><i class="bi bi-people-fill me-1" aria-hidden="true"></i>Customers</a></li>
                     <li class="nav-item"><a class="nav-link" href="products"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>Products</a></li>
                     <li class="nav-item"><a class="nav-link" href="quotations"><i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Quotations</a></li>
-                    <li class="nav-item"><a class="nav-link" href="settings"><i class="bi bi-gear me-1" aria-hidden="true"></i>Settings</a></li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="logout"><i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Logout</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <?php echo htmlspecialchars($_SESSION['user'] ?? 'User'); ?>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="settings">Settings</a></li>
+                            <li><a class="dropdown-item" href="logout">Logout</a></li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
         </div>
