@@ -380,10 +380,20 @@ $products = $stmt->fetchAll();
                             <label class="form-label">Fiyat *</label>
                             <input type="number" step="10" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
                           </div>
+                          <?php
+                          $allowedVat = [1, 8, 18, 20];
+                          $currentVat = is_null($p['vat_rate']) ? null : (int)round((float)$p['vat_rate']); // "20.00" -> 20
+                          ?>
                           <div class="col-md-6">
                             <label class="form-label">KDV Oranı</label>
-                            <input type="number" step="1" name="vat_rate" class="form-control" value="<?= e($p['vat_rate']) ?>">
+                            <select name="vat_rate" class="form-select">
+                              <option value="">Seçiniz</option>
+                              <?php foreach ($allowedVat as $vr): ?>
+                                <option value="<?= $vr ?>" <?= ($currentVat === (int)$vr) ? 'selected' : '' ?>>%<?= $vr ?></option>
+                              <?php endforeach; ?>
+                            </select>
                           </div>
+
                           <div class="col-md-6">
                             <label class="form-label">Resim (JPEG/PNG, 2MB)</label>
                             <input type="file" name="image" class="form-control">
@@ -453,7 +463,13 @@ $products = $stmt->fetchAll();
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">KDV Oranı</label>
-                  <input type="number" step="0.01" name="vat_rate" class="form-control">
+                  <select name="vat_rate" class="form-select">
+                    <option value="">Seçiniz</option>
+                    <?php foreach ([1, 8, 18, 20] as $vr): ?>
+                      <option value="<?= $vr ?>" <?= (isset($_POST['vat_rate']) && $_POST['vat_rate'] === (string)$vr) ? 'selected' : '' ?>>%<?= $vr ?></option>
+                    <?php endforeach; ?>
+                  </select>
+
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Resim (JPEG/PNG, 2MB)</label>
