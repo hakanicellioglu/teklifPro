@@ -20,8 +20,9 @@ $error = null;
 $success = null;
 $unitOptions = ['adet', 'kilogram', 'litre', 'metre', 'metrekare', 'paket'];
 
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
-  $action = $_POST['action'] ?? '';
   if ($action === 'delete') {
     $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
@@ -36,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     } else {
       $error = 'Geçersiz ürün ID.';
     }
-  } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
+  } elseif ($action === 'edit') {
     $id = (int)($_POST['id'] ?? 0);
     $product_code = trim($_POST['product_code'] ?? '');
     $name = trim($_POST['name'] ?? '');
@@ -172,76 +173,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     } else {
       $error = implode(' ', $errors);
     }
-  }
-} elseif ($action === 'edit') {
-  $id = (int)($_POST['id'] ?? 0);
-  $product_code = trim($_POST['product_code'] ?? '');
-  $name = trim($_POST['name'] ?? '');
-  $category = trim($_POST['category'] ?? '');
-  $unit = trim($_POST['unit'] ?? '');
-  $color = trim($_POST['color'] ?? '');
-  $description = trim($_POST['description'] ?? '');
-  $unit_price = trim($_POST['unit_price'] ?? '');
-  $vat_rate = trim($_POST['vat_rate'] ?? '');
-
-  if ($name === '') {
-    $errors[] = 'Ürün adı zorunludur.';
-  }
-  if ($unit_price === '' || !is_numeric($unit_price)) {
-    $errors[] = 'Birim fiyatı geçerli bir sayı olmalıdır.';
-  }
-  if ($vat_rate !== '' && !is_numeric($vat_rate)) {
-    $errors[] = 'KDV oranı geçerli bir sayı olmalıdır.';
-  }
-
-  $stmt = $pdo->prepare('SELECT image_data, image_mime FROM products WHERE id = :id');
-  $stmt->execute(['id' => $id]);
-  $current = $stmt->fetch(PDO::FETCH_ASSOC);
-  if (!$current) {
-    $errors[] = 'Ürün bulunamadı.';
-  }
-
-  $imageData = $current['image_data'] ?? null;
-  $imageMime = $current['image_mime'] ?? null;
-
-  if (!empty($_FILES['image']['tmp_name'])) {
-    if ($_FILES['image']['size'] > 2 * 1024 * 1024) {
-      $errors[] = 'Resim 2MB\'yi aşamaz.';
-    } else {
-      $finfo = new finfo(FILEINFO_MIME_TYPE);
-      $mime = $finfo->file($_FILES['image']['tmp_name']);
-      if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
-        $errors[] = 'Yalnızca JPEG veya PNG dosyaları kabul edilir.';
-      } else {
-        $imageData = file_get_contents($_FILES['image']['tmp_name']);
-        $imageMime = $mime;
-      }
-    }
-  }
-
-  if (!$errors) {
-    try {
-      $stmt = $pdo->prepare('UPDATE products SET product_code=:product_code, name=:name, category=:category, unit=:unit, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, image_data=:image_data, image_mime=:image_mime WHERE id=:id');
-      $stmt->execute([
-        ':product_code' => $product_code ?: null,
-        ':name' => $name,
-        ':category' => $category ?: null,
-        ':unit' => $unit ?: null,
-        ':color' => $color ?: null,
-        ':description' => $description ?: null,
-        ':unit_price' => $unit_price,
-        ':vat_rate' => $vat_rate !== '' ? $vat_rate : null,
-        ':image_data' => $imageData,
-        ':image_mime' => $imageMime,
-        ':id' => $id,
-      ]);
-      header('Location: products?success=' . urlencode('Ürün güncellendi.'));
-      exit;
-    } catch (Exception $e) {
-      $error = 'Ürün güncellenemedi.';
-    }
-  } else {
-    $error = implode(' ', $errors);
   }
 }
 
