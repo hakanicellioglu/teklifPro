@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
         try {
             $stmt = $pdo->prepare('DELETE FROM customers WHERE id = :id');
             $stmt->execute(['id' => $deleteId]);
-            header('Location: customers?success=' . urlencode('Customer deleted successfully.'));
+            header('Location: customer?success=' . urlencode('Customer deleted successfully.'));
             exit;
         } catch (Exception $e) {
             $error = 'Failed to delete customer.';
@@ -136,7 +136,7 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
                         <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                             <?php $query = http_build_query(['page' => $i, 'search' => $search]); ?>
                             <li class="page-item<?= $i === $page ? ' active' : ''; ?>">
-                                <a class="page-link" href="customers?<?= htmlspecialchars($query, ENT_QUOTES, 'UTF-8'); ?>"><?= $i; ?></a>
+                                <a class="page-link" href="customer?<?= htmlspecialchars($query, ENT_QUOTES, 'UTF-8'); ?>"><?= $i; ?></a>
                             </li>
                         <?php endfor; ?>
                     </ul>

@@ -37,7 +37,7 @@ $role = $stmt->fetchColumn() ?: 'user';
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="customers"><i class="bi bi-people-fill me-1" aria-hidden="true"></i>Customers</a></li>
+                    <li class="nav-item"><a class="nav-link" href="customer"><i class="bi bi-people-fill me-1" aria-hidden="true"></i>Customers</a></li>
                     <?php if ($role === 'admin'): ?>
                         <li class="nav-item"><a class="nav-link" href="products"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>Products</a></li>
                     <?php endif; ?>
