@@ -20,9 +20,6 @@ $error = null;
 $success = null;
 $unitOptions = ['adet', 'kilogram', 'litre', 'metre', 'metrekare', 'paket'];
 
-// Determine the requested action once so it is available outside of POST checks
-$action = $_POST['action'] ?? '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
   $action = $_POST['action'] ?? '';
   if ($action === 'delete') {
@@ -404,7 +401,12 @@ $products = $stmt->fetchAll();
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Birim</label>
-                  <input type="text" name="unit" class="form-control">
+                  <select name="unit" class="form-select">
+                    <option value=""></option>
+                    <?php foreach ($unitOptions as $u): ?>
+                      <option value="<?= e($u) ?>"><?= e($u) ?></option>
+                    <?php endforeach; ?>
+                  </select>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Renk</label>
