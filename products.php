@@ -397,7 +397,7 @@ $products = $stmt->fetchAll();
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">Ürün Kodu</label>
-                  <input type="text" name="product_code" class="form-control">
+                  <input type="text" name="product_code" class="form-control" value="<?= e($p['product_code']) ?>" placeholder="Boş bırakılırsa otomatik oluşturulur">
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Adı *</label>
