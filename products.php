@@ -19,6 +19,7 @@ $errors = [];
 $error = null;
 $success = null;
 $unitOptions = ['adet', 'kilogram', 'litre', 'metre', 'metrekare', 'paket'];
+$vatAllowed = [1, 8, 18, 20];
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
@@ -50,6 +51,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
     $vat_rate = trim($_POST['vat_rate'] ?? '');
+    if ($vat_rate === '') {
+      $vat_rate = null;
+    } elseif (!in_array((int)$vat_rate, $vatAllowed, true)) {
+      $errors[] = 'KDV oranı sadece %1, %8, %18 veya %20 olabilir.';
+    } else {
+      $vat_rate = (int)$vat_rate;
+    }
 
     if ($name === '') {
       $errors[] = 'Ürün adı zorunludur.';
@@ -122,6 +130,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
     $vat_rate = trim($_POST['vat_rate'] ?? '');
+    if ($vat_rate === '') {
+      $vat_rate = null;
+    } elseif (!in_array((int)$vat_rate, $vatAllowed, true)) {
+      $errors[] = 'KDV oranı sadece %1, %8, %18 veya %20 olabilir.';
+    } else {
+      $vat_rate = (int)$vat_rate;
+    }
 
     if ($name === '') {
       $errors[] = 'Ürün adı zorunludur.';
@@ -191,6 +206,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
   $description = trim($_POST['description'] ?? '');
   $unit_price = trim($_POST['unit_price'] ?? '');
   $vat_rate = trim($_POST['vat_rate'] ?? '');
+  if ($vat_rate === '') {
+    $vat_rate = null;
+  } elseif (!in_array((int)$vat_rate, $vatAllowed, true)) {
+    $errors[] = 'KDV oranı sadece %1, %8, %18 veya %20 olabilir.';
+  } else {
+    $vat_rate = (int)$vat_rate;
+  }
 
   if ($name === '') {
     $errors[] = 'Ürün adı zorunludur.';
@@ -303,7 +325,10 @@ $products = $stmt->fetchAll();
               <?php if ($p['color'] || $p['unit']): ?>
                 <p class="card-text mb-1"><?= e($p['color']) ?> <?= e($p['unit']) ?></p>
               <?php endif; ?>
-              <p class="card-text fw-semibold"><?= e(formatPrice((float)$p['unit_price'])) ?></p>
+              <p class="card-text fw-semibold">
+                <?= e(formatPrice((float)$p['unit_price'])) ?>
+                <?= $p['unit'] ? ' / ' . e($p['unit']) : '' ?>
+              </p>
             </div>
             <?php if ($role === 'admin'): ?>
               <div class="card-footer d-flex gap-2">
@@ -397,7 +422,9 @@ $products = $stmt->fetchAll();
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">Ürün Kodu</label>
-                  <input type="text" name="product_code" class="form-control" value="<?= e($p['product_code']) ?>" placeholder="Boş bırakılırsa otomatik oluşturulur">
+                  <input type="text" name="product_code" class="form-control"
+                    value="<?= e($_POST['product_code'] ?? '') ?>"
+                    placeholder="Boş bırakılırsa otomatik oluşturulur">
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Adı *</label>
