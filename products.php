@@ -18,6 +18,7 @@ function formatPrice(float $price): string
 $errors = [];
 $error = null;
 $success = null;
+$unitOptions = ['adet', 'kilogram', 'litre', 'metre', 'metrekare', 'paket'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
   $action = $_POST['action'] ?? '';
@@ -41,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $name = trim($_POST['name'] ?? '');
     $category = trim($_POST['category'] ?? '');
     $unit = trim($_POST['unit'] ?? '');
+    if ($unit !== '' && !in_array($unit, $unitOptions, true)) {
+      $errors[] = 'Geçersiz birim.';
+    }
     $color = trim($_POST['color'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
@@ -110,6 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $name = trim($_POST['name'] ?? '');
     $category = trim($_POST['category'] ?? '');
     $unit = trim($_POST['unit'] ?? '');
+    if ($unit !== '' && !in_array($unit, $unitOptions, true)) {
+      $errors[] = 'Geçersiz birim.';
+    }
     $color = trim($_POST['color'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
@@ -325,7 +332,12 @@ $products = $stmt->fetchAll();
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Birim</label>
-                            <input type="text" name="unit" class="form-control" value="<?= e($p['unit']) ?>">
+                            <select name="unit" class="form-select">
+                              <option value=""></option>
+                              <?php foreach ($unitOptions as $u): ?>
+                                <option value="<?= e($u) ?>" <?= ($p['unit'] === $u) ? 'selected' : '' ?>><?= e($u) ?></option>
+                              <?php endforeach; ?>
+                            </select>
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Renk</label>
@@ -389,7 +401,12 @@ $products = $stmt->fetchAll();
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Birim</label>
-                  <input type="text" name="unit" class="form-control">
+                  <select name="unit" class="form-select">
+                    <option value=""></option>
+                    <?php foreach ($unitOptions as $u): ?>
+                      <option value="<?= e($u) ?>"><?= e($u) ?></option>
+                    <?php endforeach; ?>
+                  </select>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Renk</label>
