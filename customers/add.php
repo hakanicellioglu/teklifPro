@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class='invalid-feedback'>Please enter the address.</div>
                 </div>
                 <button type='submit' class='btn btn-primary'>Add Customer</button>
-                <a href='../customers' class='btn btn-secondary ms-2'>Back</a>
+                <a href='../customer' class='btn btn-secondary ms-2'>Back</a>
             </form>
         </div>
     </div>

@@ -4,7 +4,7 @@ require __DIR__ . '/../header.php';
 // Retrieve and validate customer ID
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
-    header('Location: ../customers?error=' . urlencode('Invalid customer ID.'));
+    header('Location: ../customer?error=' . urlencode('Invalid customer ID.'));
     exit;
 }
 
@@ -14,7 +14,7 @@ $stmt->execute(['id' => $id]);
 $customer = $stmt->fetch();
 
 if (!$customer) {
-    header('Location: ../customers?error=' . urlencode('Customer not found.'));
+    header('Location: ../customer?error=' . urlencode('Customer not found.'));
     exit;
 }
 
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <textarea class="form-control" id="address" name="address" rows="3" required><?= htmlspecialchars($customer['address'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                 </div>
                 <div class="d-flex justify-content-end">
-                    <a href="../customers" class="btn btn-secondary me-2">Cancel</a>
+                    <a href="../customer" class="btn btn-secondary me-2">Cancel</a>
                     <button type="submit" class="btn btn-primary">Update</button>
                 </div>
             </form>
