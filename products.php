@@ -1,9 +1,9 @@
 <?php
 require __DIR__ . '/header.php';
 
-function e(string $v): string
+function e(?string $v): string
 {
-  return htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+  return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
 }
 
 function formatPrice(float $price): string
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     } else {
       $error = 'Geçersiz ürün ID.';
     }
-  } elseif ($action === 'edit') {
+  } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
     $id = (int)($_POST['id'] ?? 0);
     $product_code = trim($_POST['product_code'] ?? '');
     $name = trim($_POST['name'] ?? '');
@@ -345,11 +345,11 @@ $products = $stmt->fetchAll();
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Fiyat *</label>
-                            <input type="number" step="0.01" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
+                            <input type="number" step="10" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">KDV Oranı</label>
-                            <input type="number" step="0.01" name="vat_rate" class="form-control" value="<?= e($p['vat_rate']) ?>">
+                            <input type="number" step="1" name="vat_rate" class="form-control" value="<?= e($p['vat_rate']) ?>">
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Resim (JPEG/PNG, 2MB)</label>
