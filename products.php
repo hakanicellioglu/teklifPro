@@ -149,11 +149,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
       }
     }
 
+    if ($product_code === '') {
+      $stmt = $pdo->query("SELECT MAX(CAST(SUBSTRING(product_code, 5) AS UNSIGNED)) FROM products WHERE product_code LIKE 'PRD-%'");
+      $maxCode = $stmt->fetchColumn();
+      $nextCode = $maxCode ? ((int)$maxCode + 1) : 1;
+      $product_code = sprintf('PRD-%02d', $nextCode);
+    }
+
     if (!$errors) {
       try {
         $stmt = $pdo->prepare('INSERT INTO products (product_code, name, category, unit, color, description, unit_price, vat_rate, image_data, image_mime) VALUES (:product_code, :name, :category, :unit, :color, :description, :unit_price, :vat_rate, :image_data, :image_mime)');
         $stmt->execute([
-          ':product_code' => $product_code ?: null,
+          ':product_code' => $product_code,
           ':name' => $name,
           ':category' => $category ?: null,
           ':unit' => $unit ?: null,
