@@ -19,6 +19,7 @@ $errors = [];
 $error = null;
 $success = null;
 $unitOptions = ['adet', 'kilogram', 'litre', 'metre', 'metrekare', 'paket'];
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
   $action = $_POST['action'] ?? '';
