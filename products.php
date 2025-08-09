@@ -1,9 +1,9 @@
 <?php
 require __DIR__ . '/header.php';
 
-function e(string $v): string
+function e(?string $v): string
 {
-  return htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+  return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
 }
 
 function formatPrice(float $price): string
@@ -18,6 +18,10 @@ function formatPrice(float $price): string
 $errors = [];
 $error = null;
 $success = null;
+$unitOptions = ['adet', 'kilogram', 'litre', 'metre', 'metrekare', 'paket'];
+
+// Determine the requested action once so it is available outside of POST checks
+$action = $_POST['action'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
   $action = $_POST['action'] ?? '';
@@ -35,12 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     } else {
       $error = 'Geçersiz ürün ID.';
     }
-  } elseif ($action === 'edit') {
+  } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'edit') {
     $id = (int)($_POST['id'] ?? 0);
     $product_code = trim($_POST['product_code'] ?? '');
     $name = trim($_POST['name'] ?? '');
     $category = trim($_POST['category'] ?? '');
     $unit = trim($_POST['unit'] ?? '');
+    if ($unit !== '' && !in_array($unit, $unitOptions, true)) {
+      $errors[] = 'Geçersiz birim.';
+    }
     $color = trim($_POST['color'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
@@ -110,6 +117,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $name = trim($_POST['name'] ?? '');
     $category = trim($_POST['category'] ?? '');
     $unit = trim($_POST['unit'] ?? '');
+    if ($unit !== '' && !in_array($unit, $unitOptions, true)) {
+      $errors[] = 'Geçersiz birim.';
+    }
     $color = trim($_POST['color'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
@@ -325,7 +335,12 @@ $products = $stmt->fetchAll();
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Birim</label>
-                            <input type="text" name="unit" class="form-control" value="<?= e($p['unit']) ?>">
+                            <select name="unit" class="form-select">
+                              <option value=""></option>
+                              <?php foreach ($unitOptions as $u): ?>
+                                <option value="<?= e($u) ?>" <?= ($p['unit'] === $u) ? 'selected' : '' ?>><?= e($u) ?></option>
+                              <?php endforeach; ?>
+                            </select>
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Renk</label>
@@ -333,11 +348,11 @@ $products = $stmt->fetchAll();
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Fiyat *</label>
-                            <input type="number" step="0.01" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
+                            <input type="number" step="10" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">KDV Oranı</label>
-                            <input type="number" step="0.01" name="vat_rate" class="form-control" value="<?= e($p['vat_rate']) ?>">
+                            <input type="number" step="1" name="vat_rate" class="form-control" value="<?= e($p['vat_rate']) ?>">
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Resim (JPEG/PNG, 2MB)</label>
