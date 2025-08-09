@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Anamakine: 127.0.0.1
--- Üretim Zamanı: 08 Ağu 2025, 14:17:07
+-- Üretim Zamanı: 09 Ağu 2025, 08:37:29
 -- Sunucu sürümü: 10.4.32-MariaDB
 -- PHP Sürümü: 8.2.12
 
@@ -112,6 +112,8 @@ CREATE TABLE `products` (
   `category` varchar(100) DEFAULT NULL,
   `unit` varchar(50) DEFAULT NULL,
   `color` varchar(50) DEFAULT NULL,
+  `image_data` longblob DEFAULT NULL,
+  `image_mime` varchar(100) DEFAULT NULL,
   `image_url` text DEFAULT NULL,
   `description` text DEFAULT NULL,
   `unit_price` decimal(10,2) DEFAULT NULL,
