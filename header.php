@@ -16,6 +16,27 @@ require __DIR__ . '/config.php';
 $stmt = $pdo->prepare('SELECT r.name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = :id');
 $stmt->execute(['id' => $_SESSION['user_id']]);
 $role = $stmt->fetchColumn() ?: 'user';
+
+
+// Fetch logged-in user's display name (first_name + last_name, fallback: username)
+$uStmt = $pdo->prepare('SELECT 
+    TRIM(CONCAT(first_name, " ", last_name)) AS full_name, 
+    username 
+  FROM users 
+  WHERE id = :id');
+$uStmt->execute(['id' => $_SESSION['user_id']]);
+$u = $uStmt->fetch(PDO::FETCH_ASSOC);
+
+$userName = 'User';
+if ($u) {
+    if (!empty($u['full_name'])) {
+        $userName = $u['full_name'];
+    } elseif (!empty($u['username'])) {
+        $userName = $u['username'];
+    }
+}
+
+
 ?>
 <!doctype html>
 <html lang="en">
@@ -44,7 +65,7 @@ $role = $stmt->fetchColumn() ?: 'user';
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <?php echo htmlspecialchars($_SESSION['user'] ?? 'User'); ?>
+                            <?php echo htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li><a class="dropdown-item" href="settings">Settings</a></li>
