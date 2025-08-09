@@ -105,6 +105,136 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     } else {
       $error = implode(' ', $errors);
     }
+  } elseif ($action === 'create') {
+    $product_code = trim($_POST['product_code'] ?? '');
+    $name = trim($_POST['name'] ?? '');
+    $category = trim($_POST['category'] ?? '');
+    $unit = trim($_POST['unit'] ?? '');
+    $color = trim($_POST['color'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $unit_price = trim($_POST['unit_price'] ?? '');
+    $vat_rate = trim($_POST['vat_rate'] ?? '');
+
+    if ($name === '') {
+      $errors[] = 'Ürün adı zorunludur.';
+    }
+    if ($unit_price === '' || !is_numeric($unit_price)) {
+      $errors[] = 'Birim fiyatı geçerli bir sayı olmalıdır.';
+    }
+    if ($vat_rate !== '' && !is_numeric($vat_rate)) {
+      $errors[] = 'KDV oranı geçerli bir sayı olmalıdır.';
+    }
+
+    $imageData = null;
+    $imageMime = null;
+    if (!empty($_FILES['image']['tmp_name'])) {
+      if ($_FILES['image']['size'] > 2 * 1024 * 1024) {
+        $errors[] = 'Resim 2MB\'yi aşamaz.';
+      } else {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($_FILES['image']['tmp_name']);
+        if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
+          $errors[] = 'Yalnızca JPEG veya PNG dosyaları kabul edilir.';
+        } else {
+          $imageData = file_get_contents($_FILES['image']['tmp_name']);
+          $imageMime = $mime;
+        }
+      }
+    }
+
+    if (!$errors) {
+      try {
+        $stmt = $pdo->prepare('INSERT INTO products (product_code, name, category, unit, color, description, unit_price, vat_rate, image_data, image_mime) VALUES (:product_code, :name, :category, :unit, :color, :description, :unit_price, :vat_rate, :image_data, :image_mime)');
+        $stmt->execute([
+          ':product_code' => $product_code ?: null,
+          ':name' => $name,
+          ':category' => $category ?: null,
+          ':unit' => $unit ?: null,
+          ':color' => $color ?: null,
+          ':description' => $description ?: null,
+          ':unit_price' => $unit_price,
+          ':vat_rate' => $vat_rate !== '' ? $vat_rate : null,
+          ':image_data' => $imageData,
+          ':image_mime' => $imageMime,
+        ]);
+        header('Location: products?success=' . urlencode('Ürün eklendi.'));
+        exit;
+      } catch (Exception $e) {
+        $error = 'Ürün eklenemedi.';
+      }
+    } else {
+      $error = implode(' ', $errors);
+    }
+  }
+} elseif ($action === 'edit') {
+  $id = (int)($_POST['id'] ?? 0);
+  $product_code = trim($_POST['product_code'] ?? '');
+  $name = trim($_POST['name'] ?? '');
+  $category = trim($_POST['category'] ?? '');
+  $unit = trim($_POST['unit'] ?? '');
+  $color = trim($_POST['color'] ?? '');
+  $description = trim($_POST['description'] ?? '');
+  $unit_price = trim($_POST['unit_price'] ?? '');
+  $vat_rate = trim($_POST['vat_rate'] ?? '');
+
+  if ($name === '') {
+    $errors[] = 'Ürün adı zorunludur.';
+  }
+  if ($unit_price === '' || !is_numeric($unit_price)) {
+    $errors[] = 'Birim fiyatı geçerli bir sayı olmalıdır.';
+  }
+  if ($vat_rate !== '' && !is_numeric($vat_rate)) {
+    $errors[] = 'KDV oranı geçerli bir sayı olmalıdır.';
+  }
+
+  $stmt = $pdo->prepare('SELECT image_data, image_mime FROM products WHERE id = :id');
+  $stmt->execute(['id' => $id]);
+  $current = $stmt->fetch(PDO::FETCH_ASSOC);
+  if (!$current) {
+    $errors[] = 'Ürün bulunamadı.';
+  }
+
+  $imageData = $current['image_data'] ?? null;
+  $imageMime = $current['image_mime'] ?? null;
+
+  if (!empty($_FILES['image']['tmp_name'])) {
+    if ($_FILES['image']['size'] > 2 * 1024 * 1024) {
+      $errors[] = 'Resim 2MB\'yi aşamaz.';
+    } else {
+      $finfo = new finfo(FILEINFO_MIME_TYPE);
+      $mime = $finfo->file($_FILES['image']['tmp_name']);
+      if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
+        $errors[] = 'Yalnızca JPEG veya PNG dosyaları kabul edilir.';
+      } else {
+        $imageData = file_get_contents($_FILES['image']['tmp_name']);
+        $imageMime = $mime;
+      }
+    }
+  }
+
+  if (!$errors) {
+    try {
+      $stmt = $pdo->prepare('UPDATE products SET product_code=:product_code, name=:name, category=:category, unit=:unit, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, image_data=:image_data, image_mime=:image_mime WHERE id=:id');
+      $stmt->execute([
+        ':product_code' => $product_code ?: null,
+        ':name' => $name,
+        ':category' => $category ?: null,
+        ':unit' => $unit ?: null,
+        ':color' => $color ?: null,
+        ':description' => $description ?: null,
+        ':unit_price' => $unit_price,
+        ':vat_rate' => $vat_rate !== '' ? $vat_rate : null,
+        ':image_data' => $imageData,
+        ':image_mime' => $imageMime,
+        ':id' => $id,
+      ]);
+      header('Location: products?success=' . urlencode('Ürün güncellendi.'));
+      exit;
+    } catch (Exception $e) {
+      $error = 'Ürün güncellenemedi.';
+    }
+  } else {
+    $error = implode(' ', $errors);
   }
 }
 
@@ -115,7 +245,12 @@ $stmt = $pdo->query('SELECT id, product_code, name, category, unit, color, image
 $products = $stmt->fetchAll();
 ?>
 <div class="container py-4">
-  <h4 class="mb-3">Ürünler</h4>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Ürünler</h4>
+    <?php if ($role === 'admin'): ?>
+      <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createModal"><i class="bi bi-plus"></i> Yeni Ürün</button>
+    <?php endif; ?>
+  </div>
   <?php if ($success): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
       <?= e($success) ?>
@@ -226,6 +361,65 @@ $products = $stmt->fetchAll();
           </div>
         </div>
       <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+  <?php if ($role === 'admin'): ?>
+    <div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="create">
+            <div class="modal-header">
+              <h5 class="modal-title">Yeni Ürün</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Ürün Kodu</label>
+                  <input type="text" name="product_code" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Adı *</label>
+                  <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Kategori</label>
+                  <input type="text" name="category" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Birim</label>
+                  <input type="text" name="unit" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Renk</label>
+                  <input type="text" name="color" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Fiyat *</label>
+                  <input type="number" step="0.01" name="unit_price" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">KDV Oranı</label>
+                  <input type="number" step="0.01" name="vat_rate" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Resim (JPEG/PNG, 2MB)</label>
+                  <input type="file" name="image" class="form-control">
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Açıklama</label>
+                  <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
+              <button type="submit" class="btn btn-primary">Kaydet</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   <?php endif; ?>
 </div>
