@@ -26,6 +26,15 @@ if (!$id) {
 $error = null;
 $success = null;
 
+if (!empty($_SESSION['flash_success'])) {
+    $success = $_SESSION['flash_success'];
+    unset($_SESSION['flash_success']);
+}
+if (!empty($_SESSION['flash_error'])) {
+    $error = $_SESSION['flash_error'];
+    unset($_SESSION['flash_error']);
+}
+
 // Handle deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete' && $role === 'admin') {
     $token = $_POST['csrf_token'] ?? '';
@@ -65,6 +74,38 @@ try {
 
 if (!$offer) {
     echo '<div class="container mt-4"><div class="alert alert-danger">' . e($error) . '</div></div></body></html>';
+    exit;
+}
+
+$gDel = ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_guillotine' && $role === 'admin');
+if ($gDel) {
+    $token = $_POST['csrf_token'] ?? '';
+    $gId = filter_input(INPUT_POST, 'guillotine_id', FILTER_VALIDATE_INT);
+    if (!hash_equals($csrfToken, $token) || !$gId) {
+        $_SESSION['flash_error'] = 'Geçersiz CSRF tokenı.';
+    } else {
+        try {
+            $del = $pdo->prepare('DELETE FROM guillotinesystems WHERE id = :gid AND general_offer_id = :goid');
+            $del->execute([':gid' => $gId, ':goid' => $id]);
+            if ($del->rowCount()) {
+                $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
+                $gSumStmt->execute([':id' => $id]);
+                $gSum = (float)$gSumStmt->fetchColumn();
+                $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
+                $sSumStmt->execute([':id' => $id]);
+                $sSum = (float)$sSumStmt->fetchColumn();
+                $overall = $gSum + $sSum;
+                $upd = $pdo->prepare('UPDATE generaloffers SET total_amount = :total WHERE id = :id');
+                $upd->execute([':total' => $overall, ':id' => $id]);
+                $_SESSION['flash_success'] = 'Giyotin sistemi silindi.';
+            } else {
+                $_SESSION['flash_error'] = 'Giyotin sistemi silinemedi.';
+            }
+        } catch (Exception $e) {
+            $_SESSION['flash_error'] = 'Giyotin sistemi silinemedi.';
+        }
+    }
+    header('Location: quotation_view.php?id=' . $id);
     exit;
 }
 
@@ -281,6 +322,14 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
                                             data-total="<?= e(number_format($baseAmount, 2, '.', '')) ?>">
                                             Düzenle
                                         </button>
+                                        <?php if ($role === 'admin'): ?>
+                                            <form method="post" class="d-inline" onsubmit="return confirm('Bu giyotin sistemini silmek istediğinize emin misiniz?');">
+                                                <input type="hidden" name="action" value="delete_guillotine">
+                                                <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
+                                                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                                <button type="submit" class="btn btn-sm btn-danger">Sil</button>
+                                            </form>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
