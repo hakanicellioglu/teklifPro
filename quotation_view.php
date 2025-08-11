@@ -146,8 +146,9 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
     </div>
 
     <div class="card mb-4">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Giyotin Sistemleri</h5>
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addGuillotineModal">Add Guillotine System Offer</button>
         </div>
         <div class="card-body p-0">
             <?php if ($guillotines): ?>
@@ -229,6 +230,74 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="addGuillotineModal" tabindex="-1" aria-labelledby="addGuillotineLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addGuillotineLabel">Add Guillotine System Offer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="general_offer_id" value="<?= e((string)$offer['id']) ?>">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="width" class="form-label">Width</label>
+                            <input type="number" class="form-control" id="width" name="width" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="height" class="form-label">Height</label>
+                            <input type="number" class="form-control" id="height" name="height" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="motor_system" class="form-label">Motor System</label>
+                            <select class="form-select" id="motor_system" name="motor_system">
+                                <option value="Somfy">Somfy</option>
+                                <option value="ASA">ASA</option>
+                                <option value="Cuppon">Cuppon</option>
+                                <option value="Mosel">Mosel</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="glass_type" class="form-label">Glass Type</label>
+                            <select class="form-select" id="glass_type" name="glass_type">
+                                <option value="Isıcam">Isıcam</option>
+                                <option value="Tek Cam">Tek Cam</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="glass_color" class="form-label">Glass Color</label>
+                            <select class="form-select" id="glass_color" name="glass_color">
+                                <option value="Şeffaf">Şeffaf</option>
+                                <option value="Füme">Füme</option>
+                                <option value="Mavi">Mavi</option>
+                                <option value="Yeşil">Yeşil</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="remote_control_qty" class="form-label">Remote Control Quantity</label>
+                            <input type="number" class="form-control" id="remote_control_qty" name="remote_control_qty">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="ral_code" class="form-label">RAL Code</label>
+                            <input type="text" class="form-control" id="ral_code" name="ral_code">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 </body>
 
 </html>
