@@ -68,8 +68,8 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
     <div class="card shadow-sm">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="card-title mb-0">Customers</h4>
-                <a href="customers/add" class="btn btn-primary"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>New Customer</a>
+                <h4 class="card-title mb-0">Müşteriler</h4>
+                <a href="customers/add" class="btn btn-primary"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Yeni Müşteri Ekle</a>
             </div>
 
             <?php if ($success): ?>
@@ -97,11 +97,11 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Name</th>
+                            <th>İsim</th>
                             <th>Email</th>
-                            <th>Phone</th>
-                            <th>Registration Date</th>
-                            <th class="text-end">Actions</th>
+                            <th>Telefon Numarası</th>
+                            <th>Kayıt Tarihi</th>
+                            <th class="text-end">İşlemler</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -123,7 +123,7 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="5" class="text-center text-muted">No customers found.</td>
+                                <td colspan="5" class="text-center text-muted">Müşteri bulunamadı.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>

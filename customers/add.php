@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class='container py-4'>
     <div class='card shadow-sm'>
         <div class='card-body'>
-            <h4 class='card-title mb-3'>Add Customer</h4>
+            <h4 class='card-title mb-3'>Müşteri Ekle</h4>
 
             <?php if ($success): ?>
                 <div class='alert alert-success alert-dismissible fade show' role='alert'>
@@ -75,33 +75,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form method='post' class='needs-validation' novalidate>
                 <div class='row'>
                     <div class='col-md-6 mb-3'>
-                        <label for='first_name' class='form-label'>First Name</label>
+                        <label for='first_name' class='form-label'>İsim</label>
                         <input type='text' class='form-control' id='first_name' name='first_name' value='<?= htmlspecialchars($first_name, ENT_QUOTES, 'UTF-8'); ?>' required>
-                        <div class='invalid-feedback'>Please enter the first name.</div>
+                        <div class='invalid-feedback'>Lütfen isminizi girin</div>
                     </div>
                     <div class='col-md-6 mb-3'>
-                        <label for='last_name' class='form-label'>Last Name</label>
+                        <label for='last_name' class='form-label'>Soyisim</label>
                         <input type='text' class='form-control' id='last_name' name='last_name' value='<?= htmlspecialchars($last_name, ENT_QUOTES, 'UTF-8'); ?>' required>
-                        <div class='invalid-feedback'>Please enter the last name.</div>
+                        <div class='invalid-feedback'>Lütfen soyisminizi girin</div>
                     </div>
                 </div>
                 <div class='mb-3'>
                     <label for='email' class='form-label'>Email</label>
                     <input type='email' class='form-control' id='email' name='email' value='<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8'); ?>' required>
-                    <div class='invalid-feedback'>Please enter a valid email.</div>
+                    <div class='invalid-feedback'>Lütfen geçerli bir email adresi girin.</div>
                 </div>
                 <div class='mb-3'>
-                    <label for='phone' class='form-label'>Phone Number</label>
+                    <label for='phone' class='form-label'>Telefon Numarası</label>
                     <input type='text' class='form-control' id='phone' name='phone' value='<?= htmlspecialchars($phone, ENT_QUOTES, 'UTF-8'); ?>' required>
-                    <div class='invalid-feedback'>Please enter the phone number.</div>
+                    <div class='invalid-feedback'>Lütfen bir telefon numarası girin.</div>
                 </div>
                 <div class='mb-3'>
                     <label for='address' class='form-label'>Address</label>
                     <textarea class='form-control' id='address' name='address' rows='3' required><?= htmlspecialchars($address, ENT_QUOTES, 'UTF-8'); ?></textarea>
-                    <div class='invalid-feedback'>Please enter the address.</div>
+                    <div class='invalid-feedback'>Lütfen adres girin.</div>
                 </div>
-                <button type='submit' class='btn btn-primary'>Add Customer</button>
-                <a href='../customer' class='btn btn-secondary ms-2'>Back</a>
+                <button type='submit' class='btn btn-primary'>Ekle</button>
+                <a href='../customer' class='btn btn-secondary ms-2'>Geri Dön</a>
             </form>
         </div>
     </div>

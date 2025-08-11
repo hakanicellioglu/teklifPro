@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
     <div class="container mt-5" style="max-width: 600px;">
-        <h2>Register</h2>
+        <h2>Kayıt Ol</h2>
         <?php if ($errors): ?>
             <div class="alert alert-danger">
                 <?php foreach ($errors as $error): ?>
@@ -72,16 +72,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="post" novalidate>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label for="first_name" class="form-label"><i class="bi bi-person me-1" aria-hidden="true"></i>First Name</label>
+                    <label for="first_name" class="form-label"><i class="bi bi-person me-1" aria-hidden="true"></i>İsim</label>
                     <input type="text" class="form-control" id="first_name" name="first_name" required>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label for="last_name" class="form-label"><i class="bi bi-person me-1" aria-hidden="true"></i>Last Name</label>
+                    <label for="last_name" class="form-label"><i class="bi bi-person me-1" aria-hidden="true"></i>Soyisim</label>
                     <input type="text" class="form-control" id="last_name" name="last_name" required>
                 </div>
             </div>
             <div class="mb-3">
-                <label for="username" class="form-label"><i class="bi bi-person-badge me-1" aria-hidden="true"></i>Username</label>
+                <label for="username" class="form-label"><i class="bi bi-person-badge me-1" aria-hidden="true"></i>Kullanıcı Adı</label>
                 <input type="text" class="form-control" id="username" name="username" required>
             </div>
             <div class="mb-3">
@@ -90,16 +90,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label for="password" class="form-label"><i class="bi bi-lock me-1" aria-hidden="true"></i>Password</label>
+                    <label for="password" class="form-label"><i class="bi bi-lock me-1" aria-hidden="true"></i>Parola</label>
                     <input type="password" class="form-control" id="password" name="password" required>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label for="confirm_password" class="form-label"><i class="bi bi-lock-fill me-1" aria-hidden="true"></i>Confirm Password</label>
+                    <label for="confirm_password" class="form-label"><i class="bi bi-lock-fill me-1" aria-hidden="true"></i>Parolayı Onayla</label>
                     <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Register</button>
-            <a href="login" class="btn btn-link"><i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Login</a>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Kayıt Ol</button>
+            <a href="login" class="btn btn-link"><i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Oturum Aç</a>
         </form>
     </div>
 </body>

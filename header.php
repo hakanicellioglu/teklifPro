@@ -58,9 +58,9 @@ if ($u) {
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="customer"><i class="bi bi-people-fill me-1" aria-hidden="true"></i>Customers</a></li>
-                    <li class="nav-item"><a class="nav-link" href="products"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>Products</a></li>
-                    <li class="nav-item"><a class="nav-link" href="quotations"><i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Quotations</a></li>
+                    <li class="nav-item"><a class="nav-link" href="customer"><i class="bi bi-people-fill me-1" aria-hidden="true"></i>Müşteriler</a></li>
+                    <li class="nav-item"><a class="nav-link" href="products"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>Ürünler</a></li>
+                    <li class="nav-item"><a class="nav-link" href="quotations"><i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Teklifler</a></li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
@@ -68,8 +68,8 @@ if ($u) {
                             <?php echo htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="settings">Settings</a></li>
-                            <li><a class="dropdown-item" href="logout">Logout</a></li>
+                            <li><a class="dropdown-item" href="settings">Ayarlar</a></li>
+                            <li><a class="dropdown-item" href="logout">Çıkış Yap</a></li>
                         </ul>
                     </li>
                 </ul>

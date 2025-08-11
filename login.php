@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
     <div class="container mt-5" style="max-width: 500px;">
-        <h2>Login</h2>
+        <h2>Oturum Aç</h2>
         <?php if ($errors): ?>
             <div class="alert alert-danger">
                 <?php foreach ($errors as $error): ?>
@@ -51,15 +51,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         <form method="post" novalidate>
             <div class="mb-3">
-                <label for="username" class="form-label"><i class="bi bi-person me-1" aria-hidden="true"></i>Username</label>
+                <label for="username" class="form-label"><i class="bi bi-person me-1" aria-hidden="true"></i>Kullanıcı Adı</label>
                 <input type="text" class="form-control" id="username" name="username" required>
             </div>
             <div class="mb-3">
-                <label for="password" class="form-label"><i class="bi bi-lock me-1" aria-hidden="true"></i>Password</label>
+                <label for="password" class="form-label"><i class="bi bi-lock me-1" aria-hidden="true"></i>Parola</label>
                 <input type="password" class="form-control" id="password" name="password" required>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Login</button>
-            <a href="register" class="btn btn-link"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Register</a>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Giriş Yap</button>
+            <a href="register" class="btn btn-link"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Kayıt Ol</a>
         </form>
     </div>
 </body>

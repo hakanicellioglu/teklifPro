@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="container py-4">
     <div class="card shadow-sm">
         <div class="card-body">
-            <h4 class="card-title mb-3">Edit Customer</h4>
+            <h4 class="card-title mb-3">Müşteriyi Düzenle</h4>
 
             <?php if ($success): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -90,11 +90,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <form method="post" novalidate>
                 <div class="mb-3">
-                    <label for="first_name" class="form-label">First Name</label>
+                    <label for="first_name" class="form-label">İsim</label>
                     <input type="text" class="form-control" id="first_name" name="first_name" required value="<?= htmlspecialchars($customer['first_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
                 <div class="mb-3">
-                    <label for="last_name" class="form-label">Last Name</label>
+                    <label for="last_name" class="form-label">Soyisim</label>
                     <input type="text" class="form-control" id="last_name" name="last_name" required value="<?= htmlspecialchars($customer['last_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
                 <div class="mb-3">
@@ -102,16 +102,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="email" class="form-control" id="email" name="email" required value="<?= htmlspecialchars($customer['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
                 <div class="mb-3">
-                    <label for="phone" class="form-label">Phone Number</label>
+                    <label for="phone" class="form-label">Telefon Numarası</label>
                     <input type="text" class="form-control" id="phone" name="phone" required value="<?= htmlspecialchars($customer['phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
                 <div class="mb-3">
-                    <label for="address" class="form-label">Address</label>
+                    <label for="address" class="form-label">Adres</label>
                     <textarea class="form-control" id="address" name="address" rows="3" required><?= htmlspecialchars($customer['address'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                 </div>
                 <div class="d-flex justify-content-end">
-                    <a href="../customer" class="btn btn-secondary me-2">Cancel</a>
-                    <button type="submit" class="btn btn-primary">Update</button>
+                    <a href="../customer" class="btn btn-secondary me-2">İptal</a>
+                    <button type="submit" class="btn btn-primary">Güncelle</button>
                 </div>
             </form>
         </div>

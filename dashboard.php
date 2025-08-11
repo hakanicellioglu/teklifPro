@@ -58,7 +58,7 @@ try {
     <!-- Welcome Card -->
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
-            <h4 class="card-title mb-1">Welcome, <?= htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?>!</h4>
+            <h4 class="card-title mb-1">Hoş geldin, <?= htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?>!</h4>
             <p class="card-text text-muted mb-0"><?= $currentDate; ?></p>
         </div>
     </div>
@@ -68,25 +68,25 @@ try {
         <div class="col-6 col-md-3">
             <a href="quotations/create" class="btn btn-primary w-100 h-100 d-flex flex-column justify-content-center align-items-center py-3">
                 <i class="bi bi-plus-circle fs-2 mb-1" aria-hidden="true"></i>
-                <span>Create Quotation</span>
+                <span>Teklif Oluştur</span>
             </a>
         </div>
         <div class="col-6 col-md-3">
             <a href="customers/add" class="btn btn-outline-primary w-100 h-100 d-flex flex-column justify-content-center align-items-center py-3">
                 <i class="bi bi-person-plus fs-2 mb-1" aria-hidden="true"></i>
-                <span>Add Customer</span>
+                <span>Müşteri Ekle</span>
             </a>
         </div>
         <div class="col-6 col-md-3">
             <a href="products" class="btn btn-outline-primary w-100 h-100 d-flex flex-column justify-content-center align-items-center py-3">
                 <i class="bi bi-box-seam fs-2 mb-1" aria-hidden="true"></i>
-                <span>View Products</span>
+                <span>Ürünleri Listele</span>
             </a>
         </div>
         <div class="col-6 col-md-3">
             <a href="settings" class="btn btn-outline-primary w-100 h-100 d-flex flex-column justify-content-center align-items-center py-3">
                 <i class="bi bi-gear fs-2 mb-1" aria-hidden="true"></i>
-                <span>Settings</span>
+                <span>Ayarlar</span>
             </a>
         </div>
     </div>
@@ -97,7 +97,7 @@ try {
             <div class="card h-100 shadow-sm text-center">
                 <div class="card-body">
                     <i class="bi bi-people-fill text-primary fs-1" aria-hidden="true"></i>
-                    <h5 class="card-title mt-2">Total Customers</h5>
+                    <h5 class="card-title mt-2">Toplam Müşteri</h5>
                     <p class="display-6 mb-0"><?= (int)$totalCustomers ?></p>
                 </div>
             </div>
@@ -106,7 +106,7 @@ try {
             <div class="card h-100 shadow-sm text-center">
                 <div class="card-body">
                     <i class="bi bi-file-earmark-text text-success fs-1" aria-hidden="true"></i>
-                    <h5 class="card-title mt-2">Active Quotations</h5>
+                    <h5 class="card-title mt-2">Aktif Teklifler</h5>
                     <p class="display-6 mb-0"><?= (int)$activeQuotations ?></p>
                 </div>
             </div>
@@ -115,7 +115,7 @@ try {
             <div class="card h-100 shadow-sm text-center">
                 <div class="card-body">
                     <i class="bi bi-clock-history text-secondary fs-1" aria-hidden="true"></i>
-                    <h5 class="card-title mt-2">Recent Activity</h5>
+                    <h5 class="card-title mt-2">Son Güncellemeler</h5>
                     <p class="fs-5 mb-0">Last <?= count($recentActivity) ?> records</p>
                 </div>
             </div>
@@ -125,7 +125,7 @@ try {
     <!-- Recent Activity and Chart -->
     <div class="row g-4">
         <div class="col-lg-8">
-            <h4 class="mb-3">Recent Activity</h4>
+            <h4 class="mb-3">Son Güncellemeler</h4>
             <ul class="list-group">
                 <?php if ($recentActivity): ?>
                     <?php foreach ($recentActivity as $activity): ?>
@@ -135,12 +135,12 @@ try {
                         </li>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <li class="list-group-item text-muted">No recent activity found.</li>
+                    <li class="list-group-item text-muted">Son güncelleme bulunamadı.</li>
                 <?php endif; ?>
             </ul>
         </div>
         <div class="col-lg-4">
-            <h4 class="mb-3">Quotation Status</h4>
+            <h4 class="mb-3">Teklif Durumları</h4>
             <div class="card shadow-sm p-3">
                 <canvas id="quotationChart" style="min-height:300px"></canvas>
             </div>
