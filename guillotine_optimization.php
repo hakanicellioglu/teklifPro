@@ -10,13 +10,19 @@ function fmtPrice(float $v): string {
 }
 
 function fetchProduct(PDO $pdo, string $name): array {
-    $stmt = $pdo->prepare('SELECT unit_price, weight_per_meter FROM products WHERE name = :name');
+    $stmt = $pdo->prepare('SELECT p.unit_price, p.weight_per_meter, p.width, p.height, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE p.name = :name');
     $stmt->execute(['name' => $name]);
-    $row = $stmt->fetch();
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
-        return ['unit_price' => 0, 'weight_per_meter' => 0];
+        return ['unit_price' => 0, 'weight_per_meter' => 0, 'width' => 0, 'height' => 0, 'unit_type' => ''];
     }
-    return ['unit_price' => (float)$row['unit_price'], 'weight_per_meter' => (float)($row['weight_per_meter'] ?? 0)];
+    return [
+        'unit_price' => (float)$row['unit_price'],
+        'weight_per_meter' => (float)($row['weight_per_meter'] ?? 0),
+        'width' => (float)($row['width'] ?? 0),
+        'height' => (float)($row['height'] ?? 0),
+        'unit_type' => $row['unit_type'] ?? '',
+    ];
 }
 
 $results = [];
@@ -125,9 +131,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($partsDef as $def) {
             [$name, $measurement, $qtyPart, $gasketExtra, $wingGasketExtra] = array_pad($def, 5, null);
             $product = fetchProduct($pdo, $name);
-            $totalKg = ($product['weight_per_meter'] * $measurement * $qtyPart) / 1000;
             $unitPrice = $product['unit_price'];
-            $totalPrice = $totalKg * $unitPrice;
+            $unitType = $product['unit_type'];
+            $length = ($measurement * $qtyPart) / 1000; // m
+            $totalKg = null;
+            switch ($unitType) {
+                case 'kg/m':
+                    $totalKg = $product['weight_per_meter'] * $length;
+                    $totalPrice = $totalKg * $unitPrice;
+                    break;
+                case 'm':
+                    $totalPrice = $length * $unitPrice;
+                    break;
+                case 'm²':
+                    $area = ($product['width'] * $product['height'] / 1000000) * $qtyPart;
+                    $totalPrice = $area * $unitPrice;
+                    break;
+                default: // adet
+                    $totalPrice = $qtyPart * $unitPrice;
+            }
             $extraInfo = '';
             if ($name === 'Motor Kutusu') {
                 $extraInfo = 'Motor Kutu Contası: ' . $motorKutusuGasket . ' mm';
@@ -229,7 +251,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <td><?= e($r['name']) ?></td>
                         <td><?= e(number_format($r['measurement'], 2, ',', '.')) ?></td>
                         <td><?= e($r['quantity']) ?></td>
-                        <td><?= e(number_format($r['total_kg'], 3, ',', '.')) ?></td>
+                        <td><?= $r['total_kg'] !== null ? e(number_format($r['total_kg'], 3, ',', '.')) : '-' ?></td>
                         <td><?= e(fmtPrice($r['unit_price'])) ?></td>
                         <td><?= e(fmtPrice($r['total_price'])) ?></td>
                         <td><?= e($r['extra']) ?></td>

@@ -68,7 +68,7 @@ if (
         try {
             $pdo->beginTransaction();
 
-            $pStmt = $pdo->prepare('SELECT unit_price, vat_rate FROM products WHERE product_code = :code');
+            $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, p.width, p.height, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE p.product_code = :code');
 
             // --- Guillotine systems ---
             $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE general_offer_id = :id');
@@ -98,7 +98,13 @@ if (
                         if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
                             $unit = (float)$p['unit_price'];
                             $vat  = (float)$p['vat_rate'];
-                            $base += $calcQty * $unit * (1 + $vat / 100);
+                            $unitType = $p['unit_type'];
+                            if ($unitType === 'kg/m') {
+                                $weight = (float)$p['weight_per_meter'];
+                                $base += $calcQty * $weight * $unit * (1 + $vat / 100);
+                            } else {
+                                $base += $calcQty * $unit * (1 + $vat / 100);
+                            }
                         }
                     }
                 }
@@ -140,7 +146,13 @@ if (
                         if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
                             $unit = (float)$p['unit_price'];
                             $vat  = (float)$p['vat_rate'];
-                            $base += $calcQty * $unit * (1 + $vat / 100);
+                            $unitType = $p['unit_type'];
+                            if ($unitType === 'kg/m') {
+                                $weight = (float)$p['weight_per_meter'];
+                                $base += $calcQty * $weight * $unit * (1 + $vat / 100);
+                            } else {
+                                $base += $calcQty * $unit * (1 + $vat / 100);
+                            }
                         }
                     }
                 }
