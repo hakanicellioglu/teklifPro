@@ -131,12 +131,23 @@ if ($gPost) {
             $glassColor = $_POST['glass_color'] ?? null;
             $remoteQty = filter_input(INPUT_POST, 'remote_quantity', FILTER_VALIDATE_INT);
             $ralCode = trim($_POST['ral_code'] ?? '');
-            $profitMargin = (float)($_POST['profit_margin'] ?? 0);
-            $baseAmount = (float)($_POST['total_amount'] ?? 0);
-            $finalAmount = $baseAmount + ($baseAmount * $profitMargin / 100);
+            $profitMargin = filter_input(INPUT_POST, 'profit_margin', FILTER_VALIDATE_FLOAT);
+            $baseAmount = filter_input(INPUT_POST, 'total_amount', FILTER_VALIDATE_FLOAT);
 
-            if ($gId) {
-                $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin, total_amount=:total_amount WHERE id=:id AND general_offer_id=:goid';
+            $validNumbers = $width !== false && $width > 0
+                && $height !== false && $height > 0
+                && $quantity !== false && $quantity > 0
+                && $profitMargin !== false && $profitMargin > 0
+                && $baseAmount !== false && $baseAmount > 0
+                && ($remoteQty === null || ($remoteQty !== false && $remoteQty > 0));
+
+            if (!$validNumbers) {
+                $error = 'Tüm sayısal alanlar pozitif olmalıdır.';
+            } else {
+                $finalAmount = $baseAmount + ($baseAmount * $profitMargin / 100);
+
+                if ($gId) {
+                    $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin, total_amount=:total_amount WHERE id=:id AND general_offer_id=:goid';
                 $params = [
                     ':width' => $width,
                     ':height' => $height,
@@ -152,35 +163,36 @@ if ($gPost) {
                     ':goid' => $id,
                 ];
             } else {
-                $sql = 'INSERT INTO guillotinesystems (general_offer_id, system_type, width, height, quantity, motor_system, remote_quantity, ral_code, glass_type, glass_color, profit_margin, total_amount) VALUES (:goid, :stype, :width, :height, :quantity, :motor, :remote, :ral, :glass_type, :glass_color, :profit_margin, :total_amount)';
-                $params = [
-                    ':goid' => $id,
-                    ':stype' => 'Guillotine',
-                    ':width' => $width,
-                    ':height' => $height,
-                    ':quantity' => $quantity,
-                    ':motor' => $motor,
-                    ':remote' => $remoteQty,
-                    ':ral' => $ralCode,
-                    ':glass_type' => $glassType,
-                    ':glass_color' => $glassColor,
-                    ':profit_margin' => $profitMargin,
-                    ':total_amount' => $finalAmount,
-                ];
-            }
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
+                    $sql = 'INSERT INTO guillotinesystems (general_offer_id, system_type, width, height, quantity, motor_system, remote_quantity, ral_code, glass_type, glass_color, profit_margin, total_amount) VALUES (:goid, :stype, :width, :height, :quantity, :motor, :remote, :ral, :glass_type, :glass_color, :profit_margin, :total_amount)';
+                    $params = [
+                        ':goid' => $id,
+                        ':stype' => 'Guillotine',
+                        ':width' => $width,
+                        ':height' => $height,
+                        ':quantity' => $quantity,
+                        ':motor' => $motor,
+                        ':remote' => $remoteQty,
+                        ':ral' => $ralCode,
+                        ':glass_type' => $glassType,
+                        ':glass_color' => $glassColor,
+                        ':profit_margin' => $profitMargin,
+                        ':total_amount' => $finalAmount,
+                    ];
+                }
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
 
-            $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
-            $gSumStmt->execute([':id' => $id]);
-            $gSum = (float)$gSumStmt->fetchColumn();
-            $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
-            $sSumStmt->execute([':id' => $id]);
-            $sSum = (float)$sSumStmt->fetchColumn();
-            $overall = $gSum + $sSum;
-            $updStmt = $pdo->prepare('UPDATE generaloffers SET total_amount = :total WHERE id = :id');
-            $updStmt->execute([':total' => $overall, ':id' => $id]);
-            $success = $gId ? 'Giyotin sistemi güncellendi.' : 'Giyotin sistemi eklendi.';
+                $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
+                $gSumStmt->execute([':id' => $id]);
+                $gSum = (float)$gSumStmt->fetchColumn();
+                $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
+                $sSumStmt->execute([':id' => $id]);
+                $sSum = (float)$sSumStmt->fetchColumn();
+                $overall = $gSum + $sSum;
+                $updStmt = $pdo->prepare('UPDATE generaloffers SET total_amount = :total WHERE id = :id');
+                $updStmt->execute([':total' => $overall, ':id' => $id]);
+                $success = $gId ? 'Giyotin sistemi güncellendi.' : 'Giyotin sistemi eklendi.';
+            }
         } catch (Exception $e) {
             $error = 'Giyotin sistemi kaydedilemedi.';
         }
@@ -401,15 +413,15 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="width" class="form-label">Width</label>
-                            <input type="number" class="form-control" id="width" name="width" required>
+                            <input type="number" min="0.01" step="0.01" class="form-control" id="width" name="width" required>
                         </div>
                         <div class="col-md-6">
                             <label for="height" class="form-label">Height</label>
-                            <input type="number" class="form-control" id="height" name="height" required>
+                            <input type="number" min="0.01" step="0.01" class="form-control" id="height" name="height" required>
                         </div>
                         <div class="col-md-6">
                             <label for="quantity" class="form-label">Quantity</label>
-                            <input type="number" class="form-control" id="quantity" name="quantity" required>
+                            <input type="number" min="1" step="1" class="form-control" id="quantity" name="quantity" required>
                         </div>
                         <div class="col-md-6">
                             <label for="motor_system" class="form-label">Motor System</label>
@@ -438,7 +450,7 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
                         </div>
                         <div class="col-md-6">
                             <label for="remote_quantity" class="form-label">Remote Control Quantity</label>
-                            <input type="number" class="form-control" id="remote_quantity" name="remote_quantity">
+                            <input type="number" min="1" step="1" class="form-control" id="remote_quantity" name="remote_quantity">
                         </div>
                         <div class="col-md-6">
                             <label for="ral_code" class="form-label">RAL Code</label>
@@ -446,11 +458,11 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
                         </div>
                         <div class="col-md-6">
                             <label for="profit_margin" class="form-label">Profit Margin (%)</label>
-                            <input type="number" step="0.01" class="form-control" id="profit_margin" name="profit_margin">
+                            <input type="number" min="0.01" step="0.01" class="form-control" id="profit_margin" name="profit_margin">
                         </div>
                         <div class="col-md-6">
                             <label for="total_amount" class="form-label">Base Amount</label>
-                            <input type="number" step="0.01" class="form-control" id="total_amount" name="total_amount">
+                            <input type="number" min="0.01" step="0.01" class="form-control" id="total_amount" name="total_amount">
                         </div>
                     </div>
                 </div>
