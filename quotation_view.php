@@ -132,38 +132,33 @@ if ($gPost) {
             $remoteQty = filter_input(INPUT_POST, 'remote_quantity', FILTER_VALIDATE_INT);
             $ralCode = trim($_POST['ral_code'] ?? '');
             $profitMargin = filter_input(INPUT_POST, 'profit_margin', FILTER_VALIDATE_FLOAT);
-            $baseAmount = filter_input(INPUT_POST, 'total_amount', FILTER_VALIDATE_FLOAT);
 
             $validNumbers = $width !== false && $width > 0
                 && $height !== false && $height > 0
                 && $quantity !== false && $quantity > 0
                 && $profitMargin !== false && $profitMargin > 0
-                && $baseAmount !== false && $baseAmount > 0
                 && ($remoteQty === null || ($remoteQty !== false && $remoteQty > 0));
 
             if (!$validNumbers) {
                 $error = 'Tüm sayısal alanlar pozitif olmalıdır.';
             } else {
-                $finalAmount = $baseAmount + ($baseAmount * $profitMargin / 100);
-
                 if ($gId) {
-                    $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin, total_amount=:total_amount WHERE id=:id AND general_offer_id=:goid';
-                $params = [
-                    ':width' => $width,
-                    ':height' => $height,
-                    ':quantity' => $quantity,
-                    ':motor' => $motor,
-                    ':remote' => $remoteQty,
-                    ':ral' => $ralCode,
-                    ':glass_type' => $glassType,
-                    ':glass_color' => $glassColor,
-                    ':profit_margin' => $profitMargin,
-                    ':total_amount' => $finalAmount,
-                    ':id' => $gId,
-                    ':goid' => $id,
-                ];
-            } else {
-                    $sql = 'INSERT INTO guillotinesystems (general_offer_id, system_type, width, height, quantity, motor_system, remote_quantity, ral_code, glass_type, glass_color, profit_margin, total_amount) VALUES (:goid, :stype, :width, :height, :quantity, :motor, :remote, :ral, :glass_type, :glass_color, :profit_margin, :total_amount)';
+                    $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin WHERE id=:id AND general_offer_id=:goid';
+                    $params = [
+                        ':width' => $width,
+                        ':height' => $height,
+                        ':quantity' => $quantity,
+                        ':motor' => $motor,
+                        ':remote' => $remoteQty,
+                        ':ral' => $ralCode,
+                        ':glass_type' => $glassType,
+                        ':glass_color' => $glassColor,
+                        ':profit_margin' => $profitMargin,
+                        ':id' => $gId,
+                        ':goid' => $id,
+                    ];
+                } else {
+                    $sql = 'INSERT INTO guillotinesystems (general_offer_id, system_type, width, height, quantity, motor_system, remote_quantity, ral_code, glass_type, glass_color, profit_margin) VALUES (:goid, :stype, :width, :height, :quantity, :motor, :remote, :ral, :glass_type, :glass_color, :profit_margin)';
                     $params = [
                         ':goid' => $id,
                         ':stype' => 'Guillotine',
@@ -176,7 +171,6 @@ if ($gPost) {
                         ':glass_type' => $glassType,
                         ':glass_color' => $glassColor,
                         ':profit_margin' => $profitMargin,
-                        ':total_amount' => $finalAmount,
                     ];
                 }
                 $stmt = $pdo->prepare($sql);
@@ -304,12 +298,6 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
                         </thead>
                         <tbody>
                             <?php foreach ($guillotines as $g): ?>
-                                <?php
-                                    $baseAmount = (float)$g['total_amount'];
-                                    if (!is_null($g['profit_margin']) && $g['profit_margin'] != 0) {
-                                        $baseAmount = $baseAmount / (1 + ($g['profit_margin'] / 100));
-                                    }
-                                ?>
                                 <tr>
                                     <td><?= e($g['system_type']) ?></td>
                                     <td><?= e($g['width']) ?></td>
@@ -330,8 +318,7 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
                                             data-glass-color="<?= e($g['glass_color']) ?>"
                                             data-remote="<?= e((string)$g['remote_quantity']) ?>"
                                             data-ral="<?= e($g['ral_code']) ?>"
-                                            data-profit="<?= e((string)$g['profit_margin']) ?>"
-                                            data-total="<?= e(number_format($baseAmount, 2, '.', '')) ?>">
+                                            data-profit="<?= e((string)$g['profit_margin']) ?>">
                                             Düzenle
                                         </button>
                                         <?php if ($role === 'admin'): ?>
@@ -460,10 +447,6 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
                             <label for="profit_margin" class="form-label">Profit Margin (%)</label>
                             <input type="number" min="0.01" step="0.01" class="form-control" id="profit_margin" name="profit_margin">
                         </div>
-                        <div class="col-md-6">
-                            <label for="total_amount" class="form-label">Base Amount</label>
-                            <input type="number" min="0.01" step="0.01" class="form-control" id="total_amount" name="total_amount">
-                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -490,7 +473,6 @@ document.getElementById('addGuillotineModal').addEventListener('show.bs.modal', 
         form.querySelector('#remote_quantity').value = button.getAttribute('data-remote');
         form.querySelector('#ral_code').value = button.getAttribute('data-ral');
         form.querySelector('#profit_margin').value = button.getAttribute('data-profit');
-        form.querySelector('#total_amount').value = button.getAttribute('data-total');
         this.querySelector('.modal-title').textContent = 'Edit Guillotine System Offer';
     } else {
         form.reset();
