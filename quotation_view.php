@@ -34,6 +34,11 @@ if (!empty($_SESSION['flash_error'])) {
     $error = $_SESSION['flash_error'];
     unset($_SESSION['flash_error']);
 }
+$debugError = null;
+if (!empty($_SESSION['debug_error'])) {
+    $debugError = $_SESSION['debug_error'];
+    unset($_SESSION['debug_error']);
+}
 
 // Handle deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete' && $role === 'admin') {
@@ -181,7 +186,8 @@ if (
             $_SESSION['flash_success'] = 'Optimize işlemi tamamlandı.';
         } catch (Exception $e) {
             $pdo->rollBack();
-            $_SESSION['flash_error'] = 'Optimize işleminde hata oluştu.';
+            $_SESSION['flash_error'] = 'Optimize işleminde hata oluştu: ' . $e->getMessage();
+            $_SESSION['debug_error'] = $e->getMessage();
         }
     }
     header('Location: quotation_view.php?id=' . $id);
@@ -622,6 +628,12 @@ document.getElementById('addGuillotineModal').addEventListener('show.bs.modal', 
     }
 });
 </script>
+
+<?php if ($debugError): ?>
+<script>
+console.error('Optimize Error:', <?= json_encode($debugError) ?>);
+</script>
+<?php endif; ?>
 
 </body>
 
