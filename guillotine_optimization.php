@@ -66,13 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $kupesteMeasurement = $width - 185;
         $kupesteQty = $quantity;
 
-        $yatayCitaMeasurement = $kenetliMeasurement - 52;
-        $yatayCitaQty = $tutamakQty + $kenetliBazaQtyCalc + $kupesteBazasiQtyCalc;
-
-        $verticalBaseMeasurement = ($height - 290) / 3;
-        $dikeyCitaMeasurement = $verticalBaseMeasurement - 5;
-        $dikeyCitaQty = $yatayCitaQty;
-
         $dikmeMeasurement = $height - 166;
         $dikmeQty = 2 * $quantity;
         $dikmeGasket = $dikmeMeasurement * $dikmeQty;
@@ -93,6 +86,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $dikeyBazaMeasurement = $wingMeasurement;
         $dikeyBazaQty = $quantity * 4;
+
+        // Single glass bead calculations
+        $yatayCitaMeasurement = $kenetliMeasurement - 52;
+        $yatayCitaQty = $tutamakQty + $kenetliBazaQtyCalc + $kupesteBazasiQtyCalc;
+        $dikeyCitaMeasurement = $dikeyBazaMeasurement - 5;
+        $dikeyCitaQty = $tutamakQty + $kenetliBazaQtyCalc + $kupesteBazasiQtyCalc;
 
         $zincirMeasurement = $height - $wingMeasurement - 221 + 600;
         $zincirQty = 2 * $quantity;
