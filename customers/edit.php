@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="text" class="form-control" id="last_name" name="last_name" required value="<?= htmlspecialchars($customer['last_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
                 <div class="mb-3">
-                    <label for="company_name" class="form-label">Company Name</label>
+                    <label for="company_name" class="form-label">Şirket</label>
                     <input type="text" class="form-control" id="company_name" name="company_name" value="<?= htmlspecialchars($customer['company_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
                 <div class="mb-3">

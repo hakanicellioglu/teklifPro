@@ -98,7 +98,7 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
                     <thead>
                         <tr>
                             <th>İsim</th>
-                            <th>Company Name</th>
+                            <th>Şirket</th>
                             <th>Email</th>
                             <th>Telefon Numarası</th>
                             <th>Kayıt Tarihi</th>
