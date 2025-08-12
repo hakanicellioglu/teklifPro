@@ -28,7 +28,6 @@ $categories = $catStmt->fetchAll(PDO::FETCH_ASSOC);
 $colStmt = $pdo->query('SHOW COLUMNS FROM products');
 $prodCols = $colStmt->fetchAll(PDO::FETCH_COLUMN);
 $hasDimensions = in_array('width', $prodCols, true) && in_array('height', $prodCols, true);
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
   $action = $_POST['action'] ?? '';
   if ($action === 'delete') {
@@ -461,6 +460,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                   <input type="number" step="0.001" name="weight_per_meter" class="form-control">
                 </div>
 <?php if ($hasDimensions): ?>
+
                 <div class="col-md-6 m2-field">
                   <label class="form-label">Genişlik (mm)</label>
                   <input type="number" step="0.01" name="width" class="form-control">
@@ -516,6 +516,7 @@ document.querySelectorAll('.category-select').forEach(function(sel){
     var display = form.querySelector('.unit-display');
     if (display) display.value = unit;
     form.querySelectorAll('.kgm-field').forEach(function(el){ el.classList.toggle('d-none', unit !== 'kg/m'); });
+
     form.querySelectorAll('.m2-field').forEach(function(el){ el.classList.toggle('d-none', unit !== 'm²'); });
   }
   sel.addEventListener('change', update);

@@ -418,7 +418,7 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Giyotin Sistemleri</h5>
-            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addGuillotineModal">Add Guillotine System Offer</button>
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addGuillotineModal">Giyotin Sistemi Teklifi Ekle</button>
         </div>
         <div class="card-body p-0">
             <?php if ($guillotines): ?>
@@ -533,26 +533,26 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
                 <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
                 <input type="hidden" name="guillotine_id" id="guillotine_id" value="">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addGuillotineLabel">Add Guillotine System Offer</h5>
+                    <h5 class="modal-title" id="addGuillotineLabel">Giyotin Sistemi Teklifi Ekle</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="general_offer_id" value="<?= e((string)$offer['id']) ?>">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label for="width" class="form-label">Width</label>
+                            <label for="width" class="form-label">Genişlik</label>
                             <input type="number" min="0.01" step="0.01" class="form-control" id="width" name="width" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="height" class="form-label">Height</label>
+                            <label for="height" class="form-label">Yükseklik</label>
                             <input type="number" min="0.01" step="0.01" class="form-control" id="height" name="height" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="quantity" class="form-label">Quantity</label>
+                            <label for="quantity" class="form-label">Sistem Adedi</label>
                             <input type="number" min="1" step="1" class="form-control" id="quantity" name="quantity" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="motor_system" class="form-label">Motor System</label>
+                            <label for="motor_system" class="form-label">Motor Sistemi</label>
                             <select class="form-select" id="motor_system" name="motor_system">
                                 <option value="Somfy">Somfy</option>
                                 <option value="ASA">ASA</option>
@@ -561,14 +561,14 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="glass_type" class="form-label">Glass Type</label>
+                            <label for="glass_type" class="form-label">Cam Tipi</label>
                             <select class="form-select" id="glass_type" name="glass_type">
                                 <option value="Isıcam">Isıcam</option>
                                 <option value="Tek Cam">Tek Cam</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="glass_color" class="form-label">Glass Color</label>
+                            <label for="glass_color" class="form-label">Cam Rengi</label>
                             <select class="form-select" id="glass_color" name="glass_color">
                                 <option value="Şeffaf">Şeffaf</option>
                                 <option value="Füme">Füme</option>
@@ -577,22 +577,22 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="remote_quantity" class="form-label">Remote Control Quantity</label>
+                            <label for="remote_quantity" class="form-label">Kumanda Adedi</label>
                             <input type="number" min="1" step="1" class="form-control" id="remote_quantity" name="remote_quantity">
                         </div>
                         <div class="col-md-6">
-                            <label for="ral_code" class="form-label">RAL Code</label>
+                            <label for="ral_code" class="form-label">RAL Kodu</label>
                             <input type="text" class="form-control" id="ral_code" name="ral_code">
                         </div>
                         <div class="col-md-6">
-                            <label for="profit_margin" class="form-label">Profit Margin (%)</label>
+                            <label for="profit_margin" class="form-label">Kâr Marjı (%)</label>
                             <input type="number" min="0.01" step="0.01" class="form-control" id="profit_margin" name="profit_margin">
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
                 </div>
             </form>
         </div>
