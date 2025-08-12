@@ -83,34 +83,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
       $errors[] = 'KDV oranı geçerli bir sayı olmalıdır.';
     }
 
-    $stmt = $pdo->prepare('SELECT image_data, image_mime FROM products WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT image_url FROM products WHERE id = :id');
     $stmt->execute(['id' => $id]);
     $current = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$current) {
       $errors[] = 'Ürün bulunamadı.';
     }
 
-    $imageData = $current['image_data'] ?? null;
-    $imageMime = $current['image_mime'] ?? null;
+    $imageUrl = $current['image_url'] ?? null;
 
-    if (!empty($_FILES['image']['tmp_name'])) {
-      if ($_FILES['image']['size'] > 2 * 1024 * 1024) {
-        $errors[] = 'Resim 2MB\'yi aşamaz.';
+    if (!empty($_FILES['product_image']['tmp_name'])) {
+      if ($_FILES['product_image']['size'] > 5 * 1024 * 1024) {
+        $errors[] = 'Görsel 5MB\'yi aşamaz.';
       } else {
         $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file($_FILES['image']['tmp_name']);
-        if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
-          $errors[] = 'Yalnızca JPEG veya PNG dosyaları kabul edilir.';
+        $mime = $finfo->file($_FILES['product_image']['tmp_name']);
+        $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($mime, $allowed, true)) {
+          $errors[] = 'Yalnızca JPG, PNG, GIF veya WebP dosyaları kabul edilir.';
         } else {
-          $imageData = file_get_contents($_FILES['image']['tmp_name']);
-          $imageMime = $mime;
+          $uploadDir = __DIR__ . '/uploads/';
+          if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+          }
+          $ext = pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION);
+          $filename = uniqid('prod_', true) . '.' . strtolower($ext);
+          $targetPath = $uploadDir . $filename;
+          if (!move_uploaded_file($_FILES['product_image']['tmp_name'], $targetPath)) {
+            $errors[] = 'Görsel kaydedilemedi.';
+          } else {
+            if ($imageUrl && file_exists(__DIR__ . '/' . $imageUrl)) {
+              @unlink(__DIR__ . '/' . $imageUrl);
+            }
+            $imageUrl = 'uploads/' . $filename;
+          }
         }
       }
     }
 
     if (!$errors) {
       try {
-        $sql = 'UPDATE products SET product_code=:product_code, name=:name, category=:category, unit=:unit_type, weight_per_meter=:unit_value, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, image_data=:image_data, image_mime=:image_mime WHERE id=:id';
+        $sql = 'UPDATE products SET product_code=:product_code, name=:name, category=:category, unit=:unit_type, weight_per_meter=:unit_value, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, image_url=:image_url WHERE id=:id';
         $stmt = $pdo->prepare($sql);
         $params = [
           ':product_code' => $product_code ?: null,
@@ -122,8 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
           ':description' => $description ?: null,
           ':unit_price' => $unit_price,
           ':vat_rate' => $vat_rate !== '' ? $vat_rate : null,
-          ':image_data' => $imageData,
-          ':image_mime' => $imageMime,
+          ':image_url' => $imageUrl,
           ':id' => $id,
         ];
         $stmt->execute($params);
@@ -173,19 +185,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
       $errors[] = 'KDV oranı geçerli bir sayı olmalıdır.';
     }
 
-    $imageData = null;
-    $imageMime = null;
-    if (!empty($_FILES['image']['tmp_name'])) {
-      if ($_FILES['image']['size'] > 2 * 1024 * 1024) {
-        $errors[] = 'Resim 2MB\'yi aşamaz.';
+    $imageUrl = null;
+    if (!empty($_FILES['product_image']['tmp_name'])) {
+      if ($_FILES['product_image']['size'] > 5 * 1024 * 1024) {
+        $errors[] = 'Görsel 5MB\'yi aşamaz.';
       } else {
         $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file($_FILES['image']['tmp_name']);
-        if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
-          $errors[] = 'Yalnızca JPEG veya PNG dosyaları kabul edilir.';
+        $mime = $finfo->file($_FILES['product_image']['tmp_name']);
+        $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($mime, $allowed, true)) {
+          $errors[] = 'Yalnızca JPG, PNG, GIF veya WebP dosyaları kabul edilir.';
         } else {
-          $imageData = file_get_contents($_FILES['image']['tmp_name']);
-          $imageMime = $mime;
+          $uploadDir = __DIR__ . '/uploads/';
+          if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+          }
+          $ext = pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION);
+          $filename = uniqid('prod_', true) . '.' . strtolower($ext);
+          $targetPath = $uploadDir . $filename;
+          if (!move_uploaded_file($_FILES['product_image']['tmp_name'], $targetPath)) {
+            $errors[] = 'Görsel kaydedilemedi.';
+          } else {
+            $imageUrl = 'uploads/' . $filename;
+          }
         }
       }
     }
@@ -199,10 +221,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 
     if (!$errors) {
       try {
-        $cols = 'product_code, name, category, unit, weight_per_meter, color, description, unit_price, vat_rate';
-        $vals = ':product_code, :name, :category, :unit_type, :unit_value, :color, :description, :unit_price, :vat_rate';
-        $cols .= ', image_data, image_mime';
-        $vals .= ', :image_data, :image_mime';
+        $cols = 'product_code, name, category, unit, weight_per_meter, color, description, unit_price, vat_rate, image_url';
+        $vals = ':product_code, :name, :category, :unit_type, :unit_value, :color, :description, :unit_price, :vat_rate, :image_url';
         $stmt = $pdo->prepare("INSERT INTO products ($cols) VALUES ($vals)");
         $params = [
           ':product_code' => $product_code,
@@ -214,8 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
           ':description' => $description ?: null,
           ':unit_price' => $unit_price,
           ':vat_rate' => $vat_rate !== '' ? $vat_rate : null,
-          ':image_data' => $imageData,
-          ':image_mime' => $imageMime,
+          ':image_url' => $imageUrl,
         ];
         $stmt->execute($params);
         header('Location: products?success=' . urlencode('Ürün eklendi.'));
@@ -231,13 +250,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 $success = filter_input(INPUT_GET, 'success', FILTER_SANITIZE_SPECIAL_CHARS);
   $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHARS);
 
-$fields = 'id, product_code, name, category, unit AS unit_type, weight_per_meter AS unit_value, color, image_data, image_mime, description, unit_price, vat_rate';
+$fields = 'id, product_code, name, category, unit AS unit_type, weight_per_meter AS unit_value, color, image_url, description, unit_price, vat_rate';
 if ($hasDimensions) {
   $fields .= ', width, height';
 }
 $stmt = $pdo->query("SELECT $fields FROM products ORDER BY id DESC");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+<style>
+  .image-upload-area {
+    border: 2px dashed #ced4da;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+  }
+  .image-upload-area:hover,
+  .image-upload-area.dragover {
+    background-color: #f8f9fa;
+  }
+  .image-upload-area .image-input {
+    display: none;
+  }
+  .image-preview img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+  .default-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #6c757d;
+  }
+  .upload-instructions {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+</style>
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0">Ürünler</h4>
@@ -267,8 +320,8 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <?php foreach ($products as $p): ?>
         <div class="col">
           <div class="card h-100">
-            <?php if (!empty($p['image_data'])): ?>
-              <img src="data:<?= e($p['image_mime']) ?>;base64,<?= base64_encode($p['image_data']) ?>" class="card-img-top" alt="<?= e($p['name']) ?>">
+            <?php if (!empty($p['image_url'])): ?>
+              <img src="<?= e($p['image_url']) ?>" class="card-img-top" alt="<?= e($p['name']) ?>">
             <?php else: ?>
               <svg class="bd-placeholder-img card-img-top" width="100%" height="180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder" preserveAspectRatio="xMidYMid slice" focusable="false">
                 <rect width="100%" height="100%" fill="#e9ecef"></rect><text x="50%" y="50%" fill="#6c757d" dy=".3em" text-anchor="middle">Resim yok</text>
@@ -364,8 +417,29 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                           </div>
 
                           <div class="col-md-6">
-                            <label class="form-label">Resim (JPEG/PNG, 2MB)</label>
-                            <input type="file" name="image" class="form-control">
+                            <div class="form-group">
+                              <label for="product_image-<?= $p['id'] ?>" class="form-label">
+                                <i class="fas fa-image"></i>
+                                Ürün Görseli
+                              </label>
+                              <div class="image-upload-area" id="imageUploadArea-<?= $p['id'] ?>">
+                                <div class="image-preview" id="imagePreview-<?= $p['id'] ?>">
+                                  <?php if (!empty($p['image_url'])): ?>
+                                    <img src="<?= e($p['image_url']) ?>" alt="Preview">
+                                  <?php else: ?>
+                                    <div class="default-image">
+                                      <i class="fas fa-box"></i>
+                                      <span>Görsel Yükle</span>
+                                    </div>
+                                  <?php endif; ?>
+                                </div>
+                                <input type="file" id="product_image-<?= $p['id'] ?>" name="product_image" accept="image/*" class="image-input">
+                                <div class="upload-instructions">
+                                  <p>JPG, PNG, GIF or WebP format</p>
+                                  <p>Maximum 5MB</p>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                           <div class="col-12">
                             <label class="form-label">Açıklama</label>
@@ -450,8 +524,25 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Resim (JPEG/PNG, 2MB)</label>
-                  <input type="file" name="image" class="form-control">
+                  <div class="form-group">
+                    <label for="product_image-create" class="form-label">
+                      <i class="fas fa-image"></i>
+                      Ürün Görseli
+                    </label>
+                    <div class="image-upload-area" id="imageUploadArea-create">
+                      <div class="image-preview" id="imagePreview-create">
+                        <div class="default-image">
+                          <i class="fas fa-box"></i>
+                          <span>Görsel Yükle</span>
+                        </div>
+                      </div>
+                      <input type="file" id="product_image-create" name="product_image" accept="image/*" class="image-input">
+                      <div class="upload-instructions">
+                        <p>JPG, PNG, GIF or WebP format</p>
+                        <p>Maximum 5MB</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div class="col-12">
                   <label class="form-label">Açıklama</label>
@@ -470,7 +561,53 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <?php endif; ?>
 </div>
 <script>
-// No additional JavaScript required
+document.querySelectorAll('.image-upload-area').forEach(area => {
+  const fileInput = area.querySelector('.image-input');
+  const preview = area.querySelector('.image-preview');
+  const defaultHtml = preview.innerHTML;
+
+  const resetPreview = () => {
+    preview.innerHTML = defaultHtml;
+  };
+
+  const showImage = file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  area.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file) {
+      showImage(file);
+    } else {
+      resetPreview();
+    }
+  });
+
+  area.addEventListener('dragover', e => {
+    e.preventDefault();
+    area.classList.add('dragover');
+  });
+
+  area.addEventListener('dragleave', e => {
+    e.preventDefault();
+    area.classList.remove('dragover');
+  });
+
+  area.addEventListener('drop', e => {
+    e.preventDefault();
+    area.classList.remove('dragover');
+    if (e.dataTransfer.files && e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      fileInput.dispatchEvent(new Event('change'));
+    }
+  });
+});
 </script>
 </body>
 
