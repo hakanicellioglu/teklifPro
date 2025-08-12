@@ -53,6 +53,141 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     }
 }
 
+// Handle optimize action
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    ($_POST['action'] ?? '') === 'optimize' &&
+    $role === 'admin'
+) {
+    $token  = $_POST['csrf_token'] ?? '';
+    $postId = (int)($_POST['id'] ?? 0);
+    if (!hash_equals($csrfToken, $token) || $postId !== $id) {
+        $_SESSION['flash_error'] = 'Geçersiz CSRF tokenı.';
+    } else {
+        $rules = require __DIR__ . '/rules.php';
+        try {
+            $pdo->beginTransaction();
+
+            $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, p.width, p.height, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE p.product_code = :code');
+
+            // --- Guillotine systems ---
+            $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE general_offer_id = :id');
+            $gFetch->execute([':id' => $id]);
+            $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
+            $gTotal = 0.0;
+            foreach ($gFetch->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $width    = (float)$row['width'];
+                $height   = (float)$row['height'];
+                $qty      = (int)$row['quantity'];
+                $remote   = $row['remote_quantity'] !== null ? (int)$row['remote_quantity'] : 0;
+                if ($width <= 0 || $height <= 0 || $qty <= 0 || $remote < 0) {
+                    throw new RuntimeException('Geçersiz giyotin verisi.');
+                }
+
+                $base = 0.0;
+                foreach ($rules['guillotine'] ?? [] as $rule) {
+                    if (!is_callable($rule['match']) || !$rule['match']($row)) {
+                        continue;
+                    }
+                    foreach ($rule['products'] as $prod) {
+                        $calcQty = (float)$prod['qty']($row);
+                        if ($calcQty <= 0) {
+                            continue;
+                        }
+                        $pStmt->execute([':code' => $prod['code']]);
+                        if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
+                            $unit = (float)$p['unit_price'];
+                            $vat  = (float)$p['vat_rate'];
+                            $unitType = $p['unit_type'];
+                            if ($unitType === 'kg/m') {
+                                $weight = (float)$p['weight_per_meter'];
+                                $base += $calcQty * $weight * $unit * (1 + $vat / 100);
+                            } else {
+                                $base += $calcQty * $unit * (1 + $vat / 100);
+                            }
+                        }
+                    }
+                }
+                $rate = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
+                $profitAmount = $base * ($rate / 100);
+                $totalAmount  = $base + $profitAmount;
+                $gUpd->execute([
+                    ':pamount' => $profitAmount,
+                    ':tamount' => $totalAmount,
+                    ':id'      => $row['id'],
+                ]);
+                $gTotal += $totalAmount;
+            }
+
+            // --- Sliding systems ---
+            $sFetch = $pdo->prepare('SELECT * FROM slidingsystems WHERE general_offer_id = :id');
+            $sFetch->execute([':id' => $id]);
+            $sUpd = $pdo->prepare('UPDATE slidingsystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
+            $sTotal = 0.0;
+            foreach ($sFetch->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $width  = (float)$row['width'];
+                $height = (float)$row['height'];
+                $qty    = (int)$row['quantity'];
+                if ($width <= 0 || $height <= 0 || $qty <= 0) {
+                    throw new RuntimeException('Geçersiz sürme verisi.');
+                }
+
+                $base = 0.0;
+                foreach ($rules['sliding'] ?? [] as $rule) {
+                    if (!is_callable($rule['match']) || !$rule['match']($row)) {
+                        continue;
+                    }
+                    foreach ($rule['products'] as $prod) {
+                        $calcQty = (float)$prod['qty']($row);
+                        if ($calcQty <= 0) {
+                            continue;
+                        }
+                        $pStmt->execute([':code' => $prod['code']]);
+                        if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
+                            $unit = (float)$p['unit_price'];
+                            $vat  = (float)$p['vat_rate'];
+                            $unitType = $p['unit_type'];
+                            if ($unitType === 'kg/m') {
+                                $weight = (float)$p['weight_per_meter'];
+                                $base += $calcQty * $weight * $unit * (1 + $vat / 100);
+                            } else {
+                                $base += $calcQty * $unit * (1 + $vat / 100);
+                            }
+                        }
+                    }
+                }
+
+                if ($base > 0) {
+                    $rate = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
+                    $profitAmount = $base * ($rate / 100);
+                    $totalAmount  = $base + $profitAmount;
+                    $sUpd->execute([
+                        ':pamount' => $profitAmount,
+                        ':tamount' => $totalAmount,
+                        ':id'      => $row['id'],
+                    ]);
+                    $sTotal += $totalAmount;
+                } else {
+                    $sTotal += (float)$row['total_amount'];
+                }
+            }
+
+            // Update general offer total
+            $overall = $gTotal + $sTotal;
+            $gUpdTotal = $pdo->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id');
+            $gUpdTotal->execute([':t' => $overall, ':id' => $id]);
+
+            $pdo->commit();
+            $_SESSION['flash_success'] = 'Optimize işlemi tamamlandı.';
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            $_SESSION['flash_error'] = 'Optimize işleminde hata oluştu.';
+        }
+    }
+    header('Location: quotation_view.php?id=' . $id);
+    exit;
+}
+
 try {
     $stmt = $pdo->prepare('
         SELECT g.*, c.first_name, c.last_name, c.company AS customer_company, co.name AS company_name
@@ -239,6 +374,12 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
                 <a href="quotations.php" class="btn btn-secondary btn-sm">Geri Dön</a>
                 <a href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-primary btn-sm">Düzenle</a>
                 <?php if ($role === 'admin'): ?>
+                    <form method="post" class="d-inline">
+                        <input type="hidden" name="action" value="optimize">
+                        <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
+                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                        <button type="submit" class="btn btn-success btn-sm">Optimize</button>
+                    </form>
                     <form method="post" class="d-inline" onsubmit="return confirm('Bu teklifi silmek istediğinize emin misiniz?');">
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">

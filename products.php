@@ -18,9 +18,11 @@ function formatPrice(float $price): string
 $errors = [];
 $error = null;
 $success = null;
-$unitOptions = ['adet', 'kilogram', 'litre', 'metre', 'metrekare', 'paket'];
 $vatAllowed = [1, 8, 18, 20];
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
+
+$catStmt = $pdo->query('SELECT id, name, unit_type FROM categories ORDER BY name');
+$categories = $catStmt->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
   $action = $_POST['action'] ?? '';
@@ -42,15 +44,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $id = (int)($_POST['id'] ?? 0);
     $product_code = trim($_POST['product_code'] ?? '');
     $name = trim($_POST['name'] ?? '');
-    $category = trim($_POST['category'] ?? '');
-    $unit = trim($_POST['unit'] ?? '');
-    if ($unit !== '' && !in_array($unit, $unitOptions, true)) {
-      $errors[] = 'Geçersiz birim.';
+    $category_id = (int)($_POST['category_id'] ?? 0);
+    $unit_type = '';
+    if ($category_id <= 0) {
+      $errors[] = 'Kategori seçilmelidir.';
     }
+    if ($category_id > 0) {
+      $uStmt = $pdo->prepare('SELECT unit_type FROM categories WHERE id = :id');
+      $uStmt->execute([':id' => $category_id]);
+      $unit_type = $uStmt->fetchColumn() ?: '';
+    }
+    $unit = $unit_type;
     $color = trim($_POST['color'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
     $vat_rate = trim($_POST['vat_rate'] ?? '');
+    $weight_per_meter = $unit_type === 'kg/m' ? (float)($_POST['weight_per_meter'] ?? 0) : null;
+    $widthVal = $unit_type === 'm²' ? (float)($_POST['width'] ?? 0) : null;
+    $heightVal = $unit_type === 'm²' ? (float)($_POST['height'] ?? 0) : null;
+    if ($unit_type === 'kg/m' && $weight_per_meter <= 0) {
+      $errors[] = 'Ağırlık (kg/m) > 0 olmalıdır.';
+    }
+    if ($unit_type === 'm²' && ($widthVal <= 0 || $heightVal <= 0)) {
+      $errors[] = 'Genişlik ve yükseklik > 0 olmalıdır.';
+    }
     if ($vat_rate === '') {
       $vat_rate = null;
     } elseif (!in_array((int)$vat_rate, $vatAllowed, true)) {
@@ -96,16 +113,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 
     if (!$errors) {
       try {
-        $stmt = $pdo->prepare('UPDATE products SET product_code=:product_code, name=:name, category=:category, unit=:unit, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, image_data=:image_data, image_mime=:image_mime WHERE id=:id');
+        $stmt = $pdo->prepare('UPDATE products SET product_code=:product_code, name=:name, category=:category, unit=:unit, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, weight_per_meter=:wpm, width=:width, height=:height, image_data=:image_data, image_mime=:image_mime WHERE id=:id');
         $stmt->execute([
           ':product_code' => $product_code ?: null,
           ':name' => $name,
-          ':category' => $category ?: null,
+          ':category' => $category_id ?: null,
           ':unit' => $unit ?: null,
           ':color' => $color ?: null,
           ':description' => $description ?: null,
           ':unit_price' => $unit_price,
           ':vat_rate' => $vat_rate !== '' ? $vat_rate : null,
+          ':wpm' => $weight_per_meter,
+          ':width' => $widthVal,
+          ':height' => $heightVal,
           ':image_data' => $imageData,
           ':image_mime' => $imageMime,
           ':id' => $id,
@@ -121,15 +141,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
   } elseif ($action === 'create') {
     $product_code = trim($_POST['product_code'] ?? '');
     $name = trim($_POST['name'] ?? '');
-    $category = trim($_POST['category'] ?? '');
-    $unit = trim($_POST['unit'] ?? '');
-    if ($unit !== '' && !in_array($unit, $unitOptions, true)) {
-      $errors[] = 'Geçersiz birim.';
+    $category_id = (int)($_POST['category_id'] ?? 0);
+    $unit_type = '';
+    if ($category_id <= 0) {
+      $errors[] = 'Kategori seçilmelidir.';
     }
+    if ($category_id > 0) {
+      $uStmt = $pdo->prepare('SELECT unit_type FROM categories WHERE id = :id');
+      $uStmt->execute([':id' => $category_id]);
+      $unit_type = $uStmt->fetchColumn() ?: '';
+    }
+    $unit = $unit_type;
     $color = trim($_POST['color'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
     $vat_rate = trim($_POST['vat_rate'] ?? '');
+    $weight_per_meter = $unit_type === 'kg/m' ? (float)($_POST['weight_per_meter'] ?? 0) : null;
+    $widthVal = $unit_type === 'm²' ? (float)($_POST['width'] ?? 0) : null;
+    $heightVal = $unit_type === 'm²' ? (float)($_POST['height'] ?? 0) : null;
+    if ($unit_type === 'kg/m' && $weight_per_meter <= 0) {
+      $errors[] = 'Ağırlık (kg/m) > 0 olmalıdır.';
+    }
+    if ($unit_type === 'm²' && ($widthVal <= 0 || $heightVal <= 0)) {
+      $errors[] = 'Genişlik ve yükseklik > 0 olmalıdır.';
+    }
     if ($vat_rate === '') {
       $vat_rate = null;
     } elseif (!in_array((int)$vat_rate, $vatAllowed, true)) {
@@ -174,16 +209,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 
     if (!$errors) {
       try {
-        $stmt = $pdo->prepare('INSERT INTO products (product_code, name, category, unit, color, description, unit_price, vat_rate, image_data, image_mime) VALUES (:product_code, :name, :category, :unit, :color, :description, :unit_price, :vat_rate, :image_data, :image_mime)');
+        $stmt = $pdo->prepare('INSERT INTO products (product_code, name, category, unit, color, description, unit_price, vat_rate, weight_per_meter, width, height, image_data, image_mime) VALUES (:product_code, :name, :category, :unit, :color, :description, :unit_price, :vat_rate, :wpm, :width, :height, :image_data, :image_mime)');
         $stmt->execute([
           ':product_code' => $product_code,
           ':name' => $name,
-          ':category' => $category ?: null,
+          ':category' => $category_id ?: null,
           ':unit' => $unit ?: null,
           ':color' => $color ?: null,
           ':description' => $description ?: null,
           ':unit_price' => $unit_price,
           ':vat_rate' => $vat_rate !== '' ? $vat_rate : null,
+          ':wpm' => $weight_per_meter,
+          ':width' => $widthVal,
+          ':height' => $heightVal,
           ':image_data' => $imageData,
           ':image_mime' => $imageMime,
         ]);
@@ -195,91 +233,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     } else {
       $error = implode(' ', $errors);
     }
-  }
-} elseif ($action === 'edit') {
-  $id = (int)($_POST['id'] ?? 0);
-  $product_code = trim($_POST['product_code'] ?? '');
-  $name = trim($_POST['name'] ?? '');
-  $category = trim($_POST['category'] ?? '');
-  $unit = trim($_POST['unit'] ?? '');
-  $color = trim($_POST['color'] ?? '');
-  $description = trim($_POST['description'] ?? '');
-  $unit_price = trim($_POST['unit_price'] ?? '');
-  $vat_rate = trim($_POST['vat_rate'] ?? '');
-  if ($vat_rate === '') {
-    $vat_rate = null;
-  } elseif (!in_array((int)$vat_rate, $vatAllowed, true)) {
-    $errors[] = 'KDV oranı sadece %1, %8, %18 veya %20 olabilir.';
-  } else {
-    $vat_rate = (int)$vat_rate;
-  }
-
-  if ($name === '') {
-    $errors[] = 'Ürün adı zorunludur.';
-  }
-  if ($unit_price === '' || !is_numeric($unit_price)) {
-    $errors[] = 'Birim fiyatı geçerli bir sayı olmalıdır.';
-  }
-  if ($vat_rate !== '' && !is_numeric($vat_rate)) {
-    $errors[] = 'KDV oranı geçerli bir sayı olmalıdır.';
-  }
-
-  $stmt = $pdo->prepare('SELECT image_data, image_mime FROM products WHERE id = :id');
-  $stmt->execute(['id' => $id]);
-  $current = $stmt->fetch(PDO::FETCH_ASSOC);
-  if (!$current) {
-    $errors[] = 'Ürün bulunamadı.';
-  }
-
-  $imageData = $current['image_data'] ?? null;
-  $imageMime = $current['image_mime'] ?? null;
-
-  if (!empty($_FILES['image']['tmp_name'])) {
-    if ($_FILES['image']['size'] > 2 * 1024 * 1024) {
-      $errors[] = 'Resim 2MB\'yi aşamaz.';
-    } else {
-      $finfo = new finfo(FILEINFO_MIME_TYPE);
-      $mime = $finfo->file($_FILES['image']['tmp_name']);
-      if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
-        $errors[] = 'Yalnızca JPEG veya PNG dosyaları kabul edilir.';
-      } else {
-        $imageData = file_get_contents($_FILES['image']['tmp_name']);
-        $imageMime = $mime;
-      }
     }
   }
+  $success = filter_input(INPUT_GET, 'success', FILTER_SANITIZE_SPECIAL_CHARS);
+  $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHARS);
 
-  if (!$errors) {
-    try {
-      $stmt = $pdo->prepare('UPDATE products SET product_code=:product_code, name=:name, category=:category, unit=:unit, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, image_data=:image_data, image_mime=:image_mime WHERE id=:id');
-      $stmt->execute([
-        ':product_code' => $product_code ?: null,
-        ':name' => $name,
-        ':category' => $category ?: null,
-        ':unit' => $unit ?: null,
-        ':color' => $color ?: null,
-        ':description' => $description ?: null,
-        ':unit_price' => $unit_price,
-        ':vat_rate' => $vat_rate !== '' ? $vat_rate : null,
-        ':image_data' => $imageData,
-        ':image_mime' => $imageMime,
-        ':id' => $id,
-      ]);
-      header('Location: products?success=' . urlencode('Ürün güncellendi.'));
-      exit;
-    } catch (Exception $e) {
-      $error = 'Ürün güncellenemedi.';
-    }
-  } else {
-    $error = implode(' ', $errors);
-  }
-}
-
-$success = filter_input(INPUT_GET, 'success', FILTER_SANITIZE_SPECIAL_CHARS);
-$error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHARS);
-
-$stmt = $pdo->query('SELECT id, product_code, name, category, unit, color, image_data, image_mime, description, unit_price, vat_rate FROM products ORDER BY id DESC');
-$products = $stmt->fetchAll();
+$stmt = $pdo->query('SELECT p.id, p.product_code, p.name, p.category, p.unit, p.color, p.image_data, p.image_mime, p.description, p.unit_price, p.vat_rate, p.weight_per_meter, p.width, p.height, c.name AS category_name, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id ORDER BY p.id DESC');
+$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
@@ -320,7 +280,7 @@ $products = $stmt->fetchAll();
             <div class="card-body">
               <h5 class="card-title"><?= e($p['name']) ?></h5>
               <?php if ($p['category']): ?>
-                <p class="card-text mb-1"><?= e($p['category']) ?></p>
+                <p class="card-text mb-1"><?= e($p['category_name']) ?></p>
               <?php endif; ?>
               <?php if ($p['color'] || $p['unit']): ?>
                 <p class="card-text mb-1"><?= e($p['color']) ?> <?= e($p['unit']) ?></p>
@@ -360,17 +320,29 @@ $products = $stmt->fetchAll();
                             <input type="text" name="name" class="form-control" required value="<?= e($p['name']) ?>">
                           </div>
                           <div class="col-md-6">
-                            <label class="form-label">Kategori</label>
-                            <input type="text" name="category" class="form-control" value="<?= e($p['category']) ?>">
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">Birim</label>
-                            <select name="unit" class="form-select">
-                              <option value=""></option>
-                              <?php foreach ($unitOptions as $u): ?>
-                                <option value="<?= e($u) ?>" <?= ($p['unit'] === $u) ? 'selected' : '' ?>><?= e($u) ?></option>
+                            <label class="form-label">Kategori *</label>
+                            <select name="category_id" class="form-select category-select" required>
+                              <option value="">Seçiniz</option>
+                              <?php foreach ($categories as $cat): ?>
+                                <option value="<?= $cat['id'] ?>" data-unit-type="<?= e($cat['unit_type']) ?>" <?= ((int)$p['category'] === (int)$cat['id']) ? 'selected' : '' ?>><?= e($cat['name']) ?></option>
                               <?php endforeach; ?>
                             </select>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Birim Türü</label>
+                            <input type="text" class="form-control unit-display" value="<?= e($p['unit']) ?>" readonly>
+                          </div>
+                          <div class="col-md-6 kgm-field">
+                            <label class="form-label">Ağırlık (kg/m)</label>
+                            <input type="number" step="0.001" name="weight_per_meter" class="form-control" value="<?= e($p['weight_per_meter']) ?>">
+                          </div>
+                          <div class="col-md-6 m2-field">
+                            <label class="form-label">Genişlik (mm)</label>
+                            <input type="number" step="0.01" name="width" class="form-control" value="<?= e($p['width']) ?>">
+                          </div>
+                          <div class="col-md-6 m2-field">
+                            <label class="form-label">Yükseklik (mm)</label>
+                            <input type="number" step="0.01" name="height" class="form-control" value="<?= e($p['height']) ?>">
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Renk</label>
@@ -441,17 +413,29 @@ $products = $stmt->fetchAll();
                   <input type="text" name="name" class="form-control" required>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Kategori</label>
-                  <input type="text" name="category" class="form-control">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Birim</label>
-                  <select name="unit" class="form-select">
-                    <option value=""></option>
-                    <?php foreach ($unitOptions as $u): ?>
-                      <option value="<?= e($u) ?>"><?= e($u) ?></option>
+                  <label class="form-label">Kategori *</label>
+                  <select name="category_id" class="form-select category-select" required>
+                    <option value="">Seçiniz</option>
+                    <?php foreach ($categories as $cat): ?>
+                      <option value="<?= $cat['id'] ?>" data-unit-type="<?= e($cat['unit_type']) ?>"><?= e($cat['name']) ?></option>
                     <?php endforeach; ?>
                   </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Birim Türü</label>
+                  <input type="text" class="form-control unit-display" readonly>
+                </div>
+                <div class="col-md-6 kgm-field">
+                  <label class="form-label">Ağırlık (kg/m)</label>
+                  <input type="number" step="0.001" name="weight_per_meter" class="form-control">
+                </div>
+                <div class="col-md-6 m2-field">
+                  <label class="form-label">Genişlik (mm)</label>
+                  <input type="number" step="0.01" name="width" class="form-control">
+                </div>
+                <div class="col-md-6 m2-field">
+                  <label class="form-label">Yükseklik (mm)</label>
+                  <input type="number" step="0.01" name="height" class="form-control">
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Renk</label>
@@ -491,6 +475,20 @@ $products = $stmt->fetchAll();
     </div>
   <?php endif; ?>
 </div>
+<script>
+document.querySelectorAll('.category-select').forEach(function(sel){
+  function update(){
+    var unit = sel.options[sel.selectedIndex]?.dataset.unitType || '';
+    var form = sel.closest('form');
+    var display = form.querySelector('.unit-display');
+    if (display) display.value = unit;
+    form.querySelectorAll('.kgm-field').forEach(function(el){ el.classList.toggle('d-none', unit !== 'kg/m'); });
+    form.querySelectorAll('.m2-field').forEach(function(el){ el.classList.toggle('d-none', unit !== 'm²'); });
+  }
+  sel.addEventListener('change', update);
+  update();
+});
+</script>
 </body>
 
 </html>
