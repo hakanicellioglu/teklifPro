@@ -9,13 +9,15 @@ $last_name = '';
 $email = '';
 $phone = '';
 $address = '';
+$company_name = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = trim($_POST['first_name'] ?? '');
     $last_name  = trim($_POST['last_name'] ?? '');
-    $email      = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
-    $phone      = trim($_POST['phone'] ?? '');
-    $address    = trim($_POST['address'] ?? '');
+    $email        = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
+    $phone        = trim($_POST['phone'] ?? '');
+    $address      = trim($_POST['address'] ?? '');
+    $company_name = trim($_POST['company_name'] ?? '');
 
     if ($first_name === '') {
         $errors[] = 'First name is required.';
@@ -35,16 +37,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         try {
-            $stmt = $pdo->prepare('INSERT INTO customers (first_name, last_name, email, phone, address) VALUES (:first_name, :last_name, :email, :phone, :address)');
+            $stmt = $pdo->prepare('INSERT INTO customers (first_name, last_name, company_name, email, phone, address) VALUES (:first_name, :last_name, :company_name, :email, :phone, :address)');
             $stmt->execute([
                 'first_name' => $first_name,
                 'last_name'  => $last_name,
+                'company_name' => $company_name,
                 'email'      => $email,
                 'phone'      => $phone,
                 'address'    => $address,
             ]);
             $success = 'Customer added successfully.';
-            $first_name = $last_name = $email = $phone = $address = '';
+            $first_name = $last_name = $company_name = $email = $phone = $address = '';
         } catch (Exception $e) {
             $errors[] = 'Failed to add customer.';
         }
@@ -84,6 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type='text' class='form-control' id='last_name' name='last_name' value='<?= htmlspecialchars($last_name, ENT_QUOTES, 'UTF-8'); ?>' required>
                         <div class='invalid-feedback'>Lütfen soyisminizi girin</div>
                     </div>
+                </div>
+                <div class='mb-3'>
+                    <label for='company_name' class='form-label'>Company Name</label>
+                    <input type='text' class='form-control' id='company_name' name='company_name' value='<?= htmlspecialchars($company_name, ENT_QUOTES, 'UTF-8'); ?>'>
                 </div>
                 <div class='mb-3'>
                     <label for='email' class='form-label'>Email</label>

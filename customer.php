@@ -30,12 +30,12 @@ try {
     $hasDate = false;
 }
 
-$sql = 'SELECT id, first_name, last_name, email, phone';
+$sql = 'SELECT id, first_name, last_name, company_name, email, phone';
 $sql .= $hasDate ? ', created_at AS registration_date' : ', NULL AS registration_date';
 $sql .= ' FROM customers';
 $params = [];
 if ($search !== '') {
-    $sql .= ' WHERE first_name LIKE :term OR last_name LIKE :term OR email LIKE :term OR phone LIKE :term';
+    $sql .= ' WHERE first_name LIKE :term OR last_name LIKE :term OR company_name LIKE :term OR email LIKE :term OR phone LIKE :term';
     $params['term'] = "%$search%";
 }
 $sql .= ' ORDER BY id DESC LIMIT :limit OFFSET :offset';
@@ -51,7 +51,7 @@ $customers = $stmt->fetchAll();
 // Count total for pagination
 $countSql = 'SELECT COUNT(*) FROM customers';
 if ($search !== '') {
-    $countSql .= ' WHERE first_name LIKE :term OR last_name LIKE :term OR email LIKE :term OR phone LIKE :term';
+    $countSql .= ' WHERE first_name LIKE :term OR last_name LIKE :term OR company_name LIKE :term OR email LIKE :term OR phone LIKE :term';
 }
 $countStmt = $pdo->prepare($countSql);
 if ($search !== '') {
@@ -98,6 +98,7 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
                     <thead>
                         <tr>
                             <th>İsim</th>
+                            <th>Company Name</th>
                             <th>Email</th>
                             <th>Telefon Numarası</th>
                             <th>Kayıt Tarihi</th>
@@ -109,6 +110,7 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
                             <?php foreach ($customers as $cust): ?>
                                 <tr>
                                     <td><?= htmlspecialchars(trim(($cust['first_name'] ?? '') . ' ' . ($cust['last_name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><?= htmlspecialchars($cust['company_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td><?= htmlspecialchars($cust['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td><?= htmlspecialchars($cust['phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td><?= htmlspecialchars($cust['registration_date'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
@@ -123,7 +125,7 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="5" class="text-center text-muted">Müşteri bulunamadı.</td>
+                                <td colspan="6" class="text-center text-muted">Müşteri bulunamadı.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
