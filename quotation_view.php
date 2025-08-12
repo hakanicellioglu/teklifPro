@@ -68,7 +68,7 @@ if (
         try {
             $pdo->beginTransaction();
 
-            $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, p.width, p.height, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE p.product_code = :code');
+            $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, p.width, p.height, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE LOWER(p.name) = LOWER(:name)');
 
             // --- Guillotine systems ---
             $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE general_offer_id = :id');
@@ -94,7 +94,7 @@ if (
                         if ($calcQty <= 0) {
                             continue;
                         }
-                        $pStmt->execute([':code' => $prod['code']]);
+                        $pStmt->execute([':name' => $prod['name']]);
                         if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
                             $unit = (float)$p['unit_price'];
                             $vat  = (float)$p['vat_rate'];
@@ -142,7 +142,7 @@ if (
                         if ($calcQty <= 0) {
                             continue;
                         }
-                        $pStmt->execute([':code' => $prod['code']]);
+                        $pStmt->execute([':name' => $prod['name']]);
                         if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
                             $unit = (float)$p['unit_price'];
                             $vat  = (float)$p['vat_rate'];

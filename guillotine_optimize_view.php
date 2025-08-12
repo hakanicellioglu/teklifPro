@@ -54,28 +54,28 @@ function computeSystem(array $row, PDO $pdo, array &$alerts): array {
     $qty = max(0, (int)($row['quantity'] ?? 0));
 
     $rules = [
-        ['label' => 'Motor Kutusu',          'code' => 'MOTOR_KUTUSU',  'measure' => fn($w,$h,$q) => $w - 14,                                            'qty' => fn($w,$h,$q) => $q],
-        ['label' => 'Motor Kapak',           'code' => 'MOTOR_KAPAK',   'measure' => fn($w,$h,$q) => $w - 15,                                            'qty' => fn($w,$h,$q) => $q],
-        ['label' => 'Alt Kasa',              'code' => 'ALT_KASA',      'measure' => fn($w,$h,$q) => $w,                                                 'qty' => fn($w,$h,$q) => $q],
-        ['label' => 'Tutamak',               'code' => 'TUTAMAK',       'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => 6*$q],
-        ['label' => 'Kenetli Baza',          'code' => 'KENETLI_BAZA',  'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => 3*$q],
-        ['label' => 'Küpeşte Bazası',        'code' => 'KUPESTE_BAZA',  'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => 2*$q],
-        ['label' => 'Küpeşte',               'code' => 'KUPESTE',       'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => $q],
-        ['label' => 'Yatay Tek Cam Çıtası',  'code' => 'YATAY_CITA',    'measure' => fn($w,$h,$q) => ($w - 185) - 52,                                    'qty' => fn($w,$h,$q) => 11*$q],
-        ['label' => 'Dikey Tek Cam Çıtası',  'code' => 'DIKEY_CITA',    'measure' => fn($w,$h,$q) => (($h - 290) / 3) - 5,                               'qty' => fn($w,$h,$q) => 11*$q],
-        ['label' => 'Dikme',                 'code' => 'DIKME',         'measure' => fn($w,$h,$q) => $h - 166,                                           'qty' => fn($w,$h,$q) => 2*$q],
-        ['label' => 'Orta Dikme',            'code' => 'ORTA_DIKME',    'measure' => fn($w,$h,$q) => $h - 166,                                           'qty' => fn($w,$h,$q) => 2*$q],
-        ['label' => 'Son Kapatma',           'code' => 'SON_KAPATMA',   'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221,                          'qty' => fn($w,$h,$q) => 2*$q],
-        ['label' => 'Kanat',                 'code' => 'KANAT',         'measure' => fn($w,$h,$q) => ($h - 290) / 3,                                      'qty' => fn($w,$h,$q) => 2*$q],
-        ['label' => 'Dikey Baza',            'code' => 'DIKEY_BAZA',    'measure' => fn($w,$h,$q) => ($h - 290) / 3,                                      'qty' => fn($w,$h,$q) => 4*$q],
-        ['label' => 'Zincir',                'code' => 'ZINCIR',        'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600,                    'qty' => fn($w,$h,$q) => 2*$q],
-        ['label' => 'Flatbelt Kayış',        'code' => 'FLATBELT',      'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600,                    'qty' => fn($w,$h,$q) => 2*$q],
-        ['label' => 'Motor Borusu',          'code' => 'MOTOR_BORUSU',  'measure' => fn($w,$h,$q) => $w - 59,                                            'qty' => fn($w,$h,$q) => $q],
-        ['label' => 'Motor Kutu Contası',    'code' => 'MOTOR_KUTU_CNT','measure' => fn($w,$h,$q) => ($w - 14)*$q + $w*$q,                                'qty' => fn($w,$h,$q) => 1],
-        ['label' => 'Kanat Contası',         'code' => 'KANAT_CNT',     'measure' => fn($w,$h,$q) => (($h - 290)/3)*$q*2,                                 'qty' => fn($w,$h,$q) => 1],
+        ['label' => 'Motor Kutusu',          'name' => 'Motor Kutusu',  'measure' => fn($w,$h,$q) => $w - 14,                                            'qty' => fn($w,$h,$q) => $q],
+        ['label' => 'Motor Kapak',           'name' => 'Motor Kapak',   'measure' => fn($w,$h,$q) => $w - 15,                                            'qty' => fn($w,$h,$q) => $q],
+        ['label' => 'Alt Kasa',              'name' => 'Alt Kasa',      'measure' => fn($w,$h,$q) => $w,                                                 'qty' => fn($w,$h,$q) => $q],
+        ['label' => 'Tutamak',               'name' => 'Tutamak',       'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => 6*$q],
+        ['label' => 'Kenetli Baza',          'name' => 'Kenetli Baza',  'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => 3*$q],
+        ['label' => 'Küpeşte Bazası',        'name' => 'Küpeşte Bazası',  'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => 2*$q],
+        ['label' => 'Küpeşte',               'name' => 'Küpeşte',       'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => $q],
+        ['label' => 'Yatay Tek Cam Çıtası',  'name' => 'Yatay Tek Cam Çıtası',    'measure' => fn($w,$h,$q) => ($w - 185) - 52,                                    'qty' => fn($w,$h,$q) => 11*$q],
+        ['label' => 'Dikey Tek Cam Çıtası',  'name' => 'Dikey Tek Cam Çıtası',    'measure' => fn($w,$h,$q) => (($h - 290) / 3) - 5,                               'qty' => fn($w,$h,$q) => 11*$q],
+        ['label' => 'Dikme',                 'name' => 'Dikme',         'measure' => fn($w,$h,$q) => $h - 166,                                           'qty' => fn($w,$h,$q) => 2*$q],
+        ['label' => 'Orta Dikme',            'name' => 'Orta Dikme',    'measure' => fn($w,$h,$q) => $h - 166,                                           'qty' => fn($w,$h,$q) => 2*$q],
+        ['label' => 'Son Kapatma',           'name' => 'Son Kapatma',   'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221,                          'qty' => fn($w,$h,$q) => 2*$q],
+        ['label' => 'Kanat',                 'name' => 'Kanat',         'measure' => fn($w,$h,$q) => ($h - 290) / 3,                                      'qty' => fn($w,$h,$q) => 2*$q],
+        ['label' => 'Dikey Baza',            'name' => 'Dikey Baza',    'measure' => fn($w,$h,$q) => ($h - 290) / 3,                                      'qty' => fn($w,$h,$q) => 4*$q],
+        ['label' => 'Zincir',                'name' => 'Zincir',        'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600,                    'qty' => fn($w,$h,$q) => 2*$q],
+        ['label' => 'Flatbelt Kayış',        'name' => 'Flatbelt Kayış',      'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600,                    'qty' => fn($w,$h,$q) => 2*$q],
+        ['label' => 'Motor Borusu',          'name' => 'Motor Borusu',  'measure' => fn($w,$h,$q) => $w - 59,                                            'qty' => fn($w,$h,$q) => $q],
+        ['label' => 'Motor Kutu Contası',    'name' => 'Motor Kutu Contası','measure' => fn($w,$h,$q) => ($w - 14)*$q + $w*$q,                                'qty' => fn($w,$h,$q) => 1],
+        ['label' => 'Kanat Contası',         'name' => 'Kanat Contası',     'measure' => fn($w,$h,$q) => (($h - 290)/3)*$q*2,                                 'qty' => fn($w,$h,$q) => 1],
     ];
 
-    $pStmt = $pdo->prepare('SELECT product_code, name, unit, unit_price, vat_rate, weight_per_meter FROM products WHERE product_code = :code');
+    $pStmt = $pdo->prepare('SELECT product_code, name, unit, unit_price, vat_rate, weight_per_meter FROM products WHERE LOWER(name) = LOWER(:name)');
 
     $lines = [];
     $base = 0.0;
@@ -87,10 +87,10 @@ function computeSystem(array $row, PDO $pdo, array &$alerts): array {
             $alerts[] = $rule['label'] . ' için geçersiz ölçü/adet.';
             continue;
         }
-        $pStmt->execute([':code' => $rule['code']]);
+        $pStmt->execute([':name' => $rule['name']]);
         $product = $pStmt->fetch(PDO::FETCH_ASSOC);
         if (!$product) {
-            $alerts[] = 'Ürün kodu eksik: ' . $rule['code'];
+            $alerts[] = 'Ürün bulunamadı: ' . $rule['name'];
             continue;
         }
         $unit = strtolower($product['unit'] ?? '');
