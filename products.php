@@ -20,9 +20,8 @@ $error = null;
 $success = null;
 $vatAllowed = [1, 8, 18, 20];
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
-
-$catStmt = $pdo->query('SELECT id, name, unit_type FROM categories ORDER BY name');
-$categories = $catStmt->fetchAll(PDO::FETCH_ASSOC);
+$categoryOptions = ['Cam', 'Alüminyum', 'Aksesuar', 'Fitil'];
+$unitTypeOptions = ['kg', 'metre', 'metrekare'];
 
 // Determine whether optional width/height columns exist
 $colStmt = $pdo->query('SHOW COLUMNS FROM products');
@@ -48,30 +47,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $id = (int)($_POST['id'] ?? 0);
     $product_code = trim($_POST['product_code'] ?? '');
     $name = trim($_POST['name'] ?? '');
-    $category_id = (int)($_POST['category_id'] ?? 0);
-    $unit_type = '';
-    if ($category_id <= 0) {
+    $category = trim($_POST['category'] ?? '');
+    $unit_type = trim($_POST['unit_type'] ?? '');
+    $unit_value = (float)($_POST['unit_value'] ?? 0);
+
+    if ($category === '' || !in_array($category, $categoryOptions, true)) {
       $errors[] = 'Kategori seçilmelidir.';
     }
-    if ($category_id > 0) {
-      $uStmt = $pdo->prepare('SELECT unit_type FROM categories WHERE id = :id');
-      $uStmt->execute([':id' => $category_id]);
-      $unit_type = $uStmt->fetchColumn() ?: '';
+    if ($unit_type === '' || !in_array($unit_type, $unitTypeOptions, true)) {
+      $errors[] = 'Birim türü seçilmelidir.';
     }
-    $unit = $unit_type;
+    if ($unit_value <= 0) {
+      $errors[] = 'Birim değeri > 0 olmalıdır.';
+    }
+
     $color = trim($_POST['color'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
     $vat_rate = trim($_POST['vat_rate'] ?? '');
-    $weight_per_meter = $unit_type === 'kg/m' ? (float)($_POST['weight_per_meter'] ?? 0) : null;
-    $widthVal = $hasDimensions && $unit_type === 'm²' ? (float)($_POST['width'] ?? 0) : null;
-    $heightVal = $hasDimensions && $unit_type === 'm²' ? (float)($_POST['height'] ?? 0) : null;
-    if ($unit_type === 'kg/m' && $weight_per_meter <= 0) {
-      $errors[] = 'Ağırlık (kg/m) > 0 olmalıdır.';
-    }
-    if ($hasDimensions && $unit_type === 'm²' && ($widthVal <= 0 || $heightVal <= 0)) {
-      $errors[] = 'Genişlik ve yükseklik > 0 olmalıdır.';
-    }
     if ($vat_rate === '') {
       $vat_rate = null;
     } elseif (!in_array((int)$vat_rate, $vatAllowed, true)) {
@@ -90,57 +83,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
       $errors[] = 'KDV oranı geçerli bir sayı olmalıdır.';
     }
 
-    $stmt = $pdo->prepare('SELECT image_data, image_mime FROM products WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT image_url FROM products WHERE id = :id');
     $stmt->execute(['id' => $id]);
     $current = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$current) {
       $errors[] = 'Ürün bulunamadı.';
     }
 
-    $imageData = $current['image_data'] ?? null;
-    $imageMime = $current['image_mime'] ?? null;
+    $imageUrl = $current['image_url'] ?? null;
 
-    if (!empty($_FILES['image']['tmp_name'])) {
-      if ($_FILES['image']['size'] > 2 * 1024 * 1024) {
-        $errors[] = 'Resim 2MB\'yi aşamaz.';
+    if (!empty($_FILES['product_image']['tmp_name'])) {
+      if ($_FILES['product_image']['size'] > 5 * 1024 * 1024) {
+        $errors[] = 'Görsel 5MB\'yi aşamaz.';
       } else {
         $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file($_FILES['image']['tmp_name']);
-        if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
-          $errors[] = 'Yalnızca JPEG veya PNG dosyaları kabul edilir.';
+        $mime = $finfo->file($_FILES['product_image']['tmp_name']);
+        $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($mime, $allowed, true)) {
+          $errors[] = 'Yalnızca JPG, PNG, GIF veya WebP dosyaları kabul edilir.';
         } else {
-          $imageData = file_get_contents($_FILES['image']['tmp_name']);
-          $imageMime = $mime;
+          $uploadDir = __DIR__ . '/uploads/';
+          if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+          }
+          $ext = pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION);
+          $filename = uniqid('prod_', true) . '.' . strtolower($ext);
+          $targetPath = $uploadDir . $filename;
+          if (!move_uploaded_file($_FILES['product_image']['tmp_name'], $targetPath)) {
+            $errors[] = 'Görsel kaydedilemedi.';
+          } else {
+            if ($imageUrl && file_exists(__DIR__ . '/' . $imageUrl)) {
+              @unlink(__DIR__ . '/' . $imageUrl);
+            }
+            $imageUrl = 'uploads/' . $filename;
+          }
         }
       }
     }
 
     if (!$errors) {
       try {
-        $sql = 'UPDATE products SET product_code=:product_code, name=:name, category=:category, unit=:unit, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, weight_per_meter=:wpm';
-        if ($hasDimensions) {
-          $sql .= ', width=:width, height=:height';
-        }
-        $sql .= ', image_data=:image_data, image_mime=:image_mime WHERE id=:id';
+        $sql = 'UPDATE products SET product_code=:product_code, name=:name, category=:category, unit=:unit_type, weight_per_meter=:unit_value, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, image_url=:image_url WHERE id=:id';
         $stmt = $pdo->prepare($sql);
         $params = [
           ':product_code' => $product_code ?: null,
           ':name' => $name,
-          ':category' => $category_id ?: null,
-          ':unit' => $unit ?: null,
+          ':category' => $category ?: null,
+          ':unit_type' => $unit_type ?: null,
+          ':unit_value' => $unit_value,
           ':color' => $color ?: null,
           ':description' => $description ?: null,
           ':unit_price' => $unit_price,
           ':vat_rate' => $vat_rate !== '' ? $vat_rate : null,
-          ':wpm' => $weight_per_meter,
-          ':image_data' => $imageData,
-          ':image_mime' => $imageMime,
+          ':image_url' => $imageUrl,
           ':id' => $id,
         ];
-        if ($hasDimensions) {
-          $params[':width'] = $widthVal;
-          $params[':height'] = $heightVal;
-        }
         $stmt->execute($params);
         header('Location: products?success=' . urlencode('Ürün güncellendi.'));
         exit;
@@ -153,29 +150,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
   } elseif ($action === 'create') {
     $product_code = trim($_POST['product_code'] ?? '');
     $name = trim($_POST['name'] ?? '');
-    $category_id = (int)($_POST['category_id'] ?? 0);
-    $unit_type = '';
-    if ($category_id <= 0) {
-      $errors[] = 'Kategori seçilmelidir.';
-    }
-    if ($category_id > 0) {
-      $uStmt = $pdo->prepare('SELECT unit_type FROM categories WHERE id = :id');
-      $uStmt->execute([':id' => $category_id]);
-      $unit_type = $uStmt->fetchColumn() ?: '';
-    }
-    $unit = $unit_type;
+    $category = trim($_POST['category'] ?? '');
+    $unit_type = trim($_POST['unit_type'] ?? '');
+    $unit_value = (float)($_POST['unit_value'] ?? 0);
     $color = trim($_POST['color'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
     $vat_rate = trim($_POST['vat_rate'] ?? '');
-    $weight_per_meter = $unit_type === 'kg/m' ? (float)($_POST['weight_per_meter'] ?? 0) : null;
-    $widthVal = $hasDimensions && $unit_type === 'm²' ? (float)($_POST['width'] ?? 0) : null;
-    $heightVal = $hasDimensions && $unit_type === 'm²' ? (float)($_POST['height'] ?? 0) : null;
-    if ($unit_type === 'kg/m' && $weight_per_meter <= 0) {
-      $errors[] = 'Ağırlık (kg/m) > 0 olmalıdır.';
+
+    if ($category === '' || !in_array($category, $categoryOptions, true)) {
+      $errors[] = 'Kategori seçilmelidir.';
     }
-    if ($hasDimensions && $unit_type === 'm²' && ($widthVal <= 0 || $heightVal <= 0)) {
-      $errors[] = 'Genişlik ve yükseklik > 0 olmalıdır.';
+    if ($unit_type === '' || !in_array($unit_type, $unitTypeOptions, true)) {
+      $errors[] = 'Birim türü seçilmelidir.';
+    }
+    if ($unit_value <= 0) {
+      $errors[] = 'Birim değeri > 0 olmalıdır.';
     }
     if ($vat_rate === '') {
       $vat_rate = null;
@@ -195,19 +185,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
       $errors[] = 'KDV oranı geçerli bir sayı olmalıdır.';
     }
 
-    $imageData = null;
-    $imageMime = null;
-    if (!empty($_FILES['image']['tmp_name'])) {
-      if ($_FILES['image']['size'] > 2 * 1024 * 1024) {
-        $errors[] = 'Resim 2MB\'yi aşamaz.';
+    $imageUrl = null;
+    if (!empty($_FILES['product_image']['tmp_name'])) {
+      if ($_FILES['product_image']['size'] > 5 * 1024 * 1024) {
+        $errors[] = 'Görsel 5MB\'yi aşamaz.';
       } else {
         $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file($_FILES['image']['tmp_name']);
-        if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
-          $errors[] = 'Yalnızca JPEG veya PNG dosyaları kabul edilir.';
+        $mime = $finfo->file($_FILES['product_image']['tmp_name']);
+        $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($mime, $allowed, true)) {
+          $errors[] = 'Yalnızca JPG, PNG, GIF veya WebP dosyaları kabul edilir.';
         } else {
-          $imageData = file_get_contents($_FILES['image']['tmp_name']);
-          $imageMime = $mime;
+          $uploadDir = __DIR__ . '/uploads/';
+          if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+          }
+          $ext = pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION);
+          $filename = uniqid('prod_', true) . '.' . strtolower($ext);
+          $targetPath = $uploadDir . $filename;
+          if (!move_uploaded_file($_FILES['product_image']['tmp_name'], $targetPath)) {
+            $errors[] = 'Görsel kaydedilemedi.';
+          } else {
+            $imageUrl = 'uploads/' . $filename;
+          }
         }
       }
     }
@@ -221,32 +221,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 
     if (!$errors) {
       try {
-        $cols = 'product_code, name, category, unit, color, description, unit_price, vat_rate, weight_per_meter';
-        $vals = ':product_code, :name, :category, :unit, :color, :description, :unit_price, :vat_rate, :wpm';
-        if ($hasDimensions) {
-          $cols .= ', width, height';
-          $vals .= ', :width, :height';
-        }
-        $cols .= ', image_data, image_mime';
-        $vals .= ', :image_data, :image_mime';
+        $cols = 'product_code, name, category, unit, weight_per_meter, color, description, unit_price, vat_rate, image_url';
+        $vals = ':product_code, :name, :category, :unit_type, :unit_value, :color, :description, :unit_price, :vat_rate, :image_url';
         $stmt = $pdo->prepare("INSERT INTO products ($cols) VALUES ($vals)");
         $params = [
           ':product_code' => $product_code,
           ':name' => $name,
-          ':category' => $category_id ?: null,
-          ':unit' => $unit ?: null,
+          ':category' => $category ?: null,
+          ':unit_type' => $unit_type ?: null,
+          ':unit_value' => $unit_value,
           ':color' => $color ?: null,
           ':description' => $description ?: null,
           ':unit_price' => $unit_price,
           ':vat_rate' => $vat_rate !== '' ? $vat_rate : null,
-          ':wpm' => $weight_per_meter,
-          ':image_data' => $imageData,
-          ':image_mime' => $imageMime,
+          ':image_url' => $imageUrl,
         ];
-        if ($hasDimensions) {
-          $params[':width'] = $widthVal;
-          $params[':height'] = $heightVal;
-        }
         $stmt->execute($params);
         header('Location: products?success=' . urlencode('Ürün eklendi.'));
         exit;
@@ -256,19 +245,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     } else {
       $error = implode(' ', $errors);
     }
-    }
   }
-  $success = filter_input(INPUT_GET, 'success', FILTER_SANITIZE_SPECIAL_CHARS);
-  $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHARS);
-
-$fields = 'p.id, p.product_code, p.name, p.category, p.unit, p.color, p.image_data, p.image_mime, p.description, p.unit_price, p.vat_rate, p.weight_per_meter';
-if ($hasDimensions) {
-  $fields .= ', p.width, p.height';
 }
-$fields .= ', c.name AS category_name, c.unit_type';
-$stmt = $pdo->query("SELECT $fields FROM products p LEFT JOIN categories c ON p.category = c.id ORDER BY p.id DESC");
+$success = filter_input(INPUT_GET, 'success', FILTER_SANITIZE_SPECIAL_CHARS);
+$error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHARS);
+
+$fields = 'id, product_code, name, category, unit AS unit_type, weight_per_meter AS unit_value, color, image_url, description, unit_price, vat_rate';
+if ($hasDimensions) {
+  $fields .= ', width, height';
+}
+$stmt = $pdo->query("SELECT $fields FROM products ORDER BY id DESC");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+<style>
+  .image-upload-area {
+    border: 2px dashed #ced4da;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .image-upload-area:hover,
+  .image-upload-area.dragover {
+    background-color: #f8f9fa;
+  }
+
+  .image-upload-area .image-input {
+    display: none;
+  }
+
+  .image-preview img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .default-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #6c757d;
+  }
+
+  .upload-instructions {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+</style>
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0">Ürünler</h4>
@@ -298,8 +325,8 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <?php foreach ($products as $p): ?>
         <div class="col">
           <div class="card h-100">
-            <?php if (!empty($p['image_data'])): ?>
-              <img src="data:<?= e($p['image_mime']) ?>;base64,<?= base64_encode($p['image_data']) ?>" class="card-img-top" alt="<?= e($p['name']) ?>">
+            <?php if (!empty($p['image_url'])): ?>
+              <img src="<?= e($p['image_url']) ?>" class="card-img-top" alt="<?= e($p['name']) ?>">
             <?php else: ?>
               <svg class="bd-placeholder-img card-img-top" width="100%" height="180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder" preserveAspectRatio="xMidYMid slice" focusable="false">
                 <rect width="100%" height="100%" fill="#e9ecef"></rect><text x="50%" y="50%" fill="#6c757d" dy=".3em" text-anchor="middle">Resim yok</text>
@@ -308,14 +335,17 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="card-body">
               <h5 class="card-title"><?= e($p['name']) ?></h5>
               <?php if ($p['category']): ?>
-                <p class="card-text mb-1"><?= e($p['category_name']) ?></p>
+                <p class="card-text mb-1"><?= e($p['category']) ?></p>
               <?php endif; ?>
-              <?php if ($p['color'] || $p['unit']): ?>
-                <p class="card-text mb-1"><?= e($p['color']) ?> <?= e($p['unit']) ?></p>
+              <?php if ($p['color']): ?>
+                <p class="card-text mb-1"><?= e($p['color']) ?></p>
+              <?php endif; ?>
+              <?php if ($p['unit_type']): ?>
+                <p class="card-text mb-1"><?= e($p['unit_type']) ?> <?= e($p['unit_value']) ?></p>
               <?php endif; ?>
               <p class="card-text fw-semibold">
                 <?= e(formatPrice((float)$p['unit_price'])) ?>
-                <?= $p['unit'] ? ' / ' . e($p['unit']) : '' ?>
+                <?= $p['unit_type'] ? ' / ' . e($p['unit_type']) : '' ?>
               </p>
             </div>
             <?php if ($role === 'admin'): ?>
@@ -349,31 +379,26 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Kategori *</label>
-                            <select name="category_id" class="form-select category-select" required>
+                            <select name="category" class="form-select" required>
                               <option value="">Seçiniz</option>
-                              <?php foreach ($categories as $cat): ?>
-                                <option value="<?= $cat['id'] ?>" data-unit-type="<?= e($cat['unit_type']) ?>" <?= ((int)$p['category'] === (int)$cat['id']) ? 'selected' : '' ?>><?= e($cat['name']) ?></option>
+                              <?php foreach ($categoryOptions as $cat): ?>
+                                <option value="<?= e($cat) ?>" <?= ($p['category'] === $cat) ? 'selected' : '' ?>><?= e($cat) ?></option>
                               <?php endforeach; ?>
                             </select>
                           </div>
                           <div class="col-md-6">
-                            <label class="form-label">Birim Türü</label>
-                            <input type="text" class="form-control unit-display" value="<?= e($p['unit']) ?>" readonly>
+                            <label class="form-label">Birim Türü *</label>
+                            <select name="unit_type" class="form-select" required>
+                              <option value="">Seçiniz</option>
+                              <?php foreach ($unitTypeOptions as $ut): ?>
+                                <option value="<?= e($ut) ?>" <?= ($p['unit_type'] === $ut) ? 'selected' : '' ?>><?= e($ut) ?></option>
+                              <?php endforeach; ?>
+                            </select>
                           </div>
-                          <div class="col-md-6 kgm-field">
-                            <label class="form-label">Ağırlık (kg/m)</label>
-                            <input type="number" step="0.001" name="weight_per_meter" class="form-control" value="<?= e($p['weight_per_meter']) ?>">
+                          <div class="col-md-6">
+                            <label class="form-label">Birim Değeri *</label>
+                            <input type="number" step="0.001" min="0.001" name="unit_value" class="form-control" required value="<?= e($p['unit_value']) ?>">
                           </div>
-<?php if ($hasDimensions): ?>
-                          <div class="col-md-6 m2-field">
-                            <label class="form-label">Genişlik (mm)</label>
-                            <input type="number" step="0.01" name="width" class="form-control" value="<?= e($p['width'] ?? '') ?>">
-                          </div>
-                          <div class="col-md-6 m2-field">
-                            <label class="form-label">Yükseklik (mm)</label>
-                            <input type="number" step="0.01" name="height" class="form-control" value="<?= e($p['height'] ?? '') ?>">
-                          </div>
-<?php endif; ?>
                           <div class="col-md-6">
                             <label class="form-label">Renk</label>
                             <input type="text" name="color" class="form-control" value="<?= e($p['color']) ?>">
@@ -397,8 +422,29 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                           </div>
 
                           <div class="col-md-6">
-                            <label class="form-label">Resim (JPEG/PNG, 2MB)</label>
-                            <input type="file" name="image" class="form-control">
+                            <div class="form-group">
+                              <label for="product_image-<?= $p['id'] ?>" class="form-label">
+                                <i class="fas fa-image"></i>
+                                Ürün Görseli
+                              </label>
+                              <div class="image-upload-area" id="imageUploadArea-<?= $p['id'] ?>">
+                                <div class="image-preview" id="imagePreview-<?= $p['id'] ?>">
+                                  <?php if (!empty($p['image_url'])): ?>
+                                    <img src="<?= e($p['image_url']) ?>" alt="Preview">
+                                  <?php else: ?>
+                                    <div class="default-image">
+                                      <i class="fas fa-box"></i>
+                                      <span>Görsel Yükle</span>
+                                    </div>
+                                  <?php endif; ?>
+                                </div>
+                                <input type="file" id="product_image-<?= $p['id'] ?>" name="product_image" accept="image/*" class="image-input">
+                                <div class="upload-instructions">
+                                  <p>JPG, PNG, GIF or WebP format</p>
+                                  <p>Maximum 5MB</p>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                           <div class="col-12">
                             <label class="form-label">Açıklama</label>
@@ -432,6 +478,27 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
             <div class="modal-body">
               <div class="row g-3">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label for="product_image-create" class="form-label">
+                      <i class="fas fa-image"></i>
+                      Ürün Görseli
+                    </label>
+                    <div class="image-upload-area" id="imageUploadArea-create">
+                      <div class="image-preview" id="imagePreview-create">
+                        <div class="default-image">
+                          <i class="fas fa-box"></i>
+                          <span>Görsel Yükle</span>
+                        </div>
+                      </div>
+                      <input type="file" id="product_image-create" name="product_image" accept="image/*" class="image-input">
+                      <div class="upload-instructions">
+                        <p>JPG, PNG, GIF or WebP format</p>
+                        <p>Maximum 5MB</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <div class="col-md-6">
                   <label class="form-label">Ürün Kodu</label>
                   <input type="text" name="product_code" class="form-control"
@@ -444,32 +511,26 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Kategori *</label>
-                  <select name="category_id" class="form-select category-select" required>
+                  <select name="category" class="form-select" required>
                     <option value="">Seçiniz</option>
-                    <?php foreach ($categories as $cat): ?>
-                      <option value="<?= $cat['id'] ?>" data-unit-type="<?= e($cat['unit_type']) ?>"><?= e($cat['name']) ?></option>
+                    <?php foreach ($categoryOptions as $cat): ?>
+                      <option value="<?= e($cat) ?>" <?= (isset($_POST['category']) && $_POST['category'] === $cat) ? 'selected' : '' ?>><?= e($cat) ?></option>
                     <?php endforeach; ?>
                   </select>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Birim Türü</label>
-                  <input type="text" class="form-control unit-display" readonly>
+                  <label class="form-label">Birim Türü *</label>
+                  <select name="unit_type" class="form-select" required>
+                    <option value="">Seçiniz</option>
+                    <?php foreach ($unitTypeOptions as $ut): ?>
+                      <option value="<?= e($ut) ?>" <?= (isset($_POST['unit_type']) && $_POST['unit_type'] === $ut) ? 'selected' : '' ?>><?= e($ut) ?></option>
+                    <?php endforeach; ?>
+                  </select>
                 </div>
-                <div class="col-md-6 kgm-field">
-                  <label class="form-label">Ağırlık (kg/m)</label>
-                  <input type="number" step="0.001" name="weight_per_meter" class="form-control">
+                <div class="col-md-6">
+                  <label class="form-label">Birim Değeri *</label>
+                  <input type="number" step="0.001" min="0.001" name="unit_value" class="form-control" required value="<?= e($_POST['unit_value'] ?? '') ?>">
                 </div>
-<?php if ($hasDimensions): ?>
-
-                <div class="col-md-6 m2-field">
-                  <label class="form-label">Genişlik (mm)</label>
-                  <input type="number" step="0.01" name="width" class="form-control">
-                </div>
-                <div class="col-md-6 m2-field">
-                  <label class="form-label">Yükseklik (mm)</label>
-                  <input type="number" step="0.01" name="height" class="form-control">
-                </div>
-<?php endif; ?>
                 <div class="col-md-6">
                   <label class="form-label">Renk</label>
                   <input type="text" name="color" class="form-control">
@@ -488,13 +549,19 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                   </select>
 
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label">Resim (JPEG/PNG, 2MB)</label>
-                  <input type="file" name="image" class="form-control">
-                </div>
                 <div class="col-12">
                   <label class="form-label">Açıklama</label>
-                  <textarea name="description" class="form-control" rows="3"></textarea>
+                  <textarea name="description" class="form-control" rows="3" style="width: 100%;
+            min-height: 100px;
+            max-height: 300px;
+            padding: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            overflow-y: auto;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;"></textarea>
                 </div>
               </div>
             </div>
@@ -509,19 +576,53 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <?php endif; ?>
 </div>
 <script>
-document.querySelectorAll('.category-select').forEach(function(sel){
-  function update(){
-    var unit = sel.options[sel.selectedIndex]?.dataset.unitType || '';
-    var form = sel.closest('form');
-    var display = form.querySelector('.unit-display');
-    if (display) display.value = unit;
-    form.querySelectorAll('.kgm-field').forEach(function(el){ el.classList.toggle('d-none', unit !== 'kg/m'); });
+  document.querySelectorAll('.image-upload-area').forEach(area => {
+    const fileInput = area.querySelector('.image-input');
+    const preview = area.querySelector('.image-preview');
+    const defaultHtml = preview.innerHTML;
 
-    form.querySelectorAll('.m2-field').forEach(function(el){ el.classList.toggle('d-none', unit !== 'm²'); });
-  }
-  sel.addEventListener('change', update);
-  update();
-});
+    const resetPreview = () => {
+      preview.innerHTML = defaultHtml;
+    };
+
+    const showImage = file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    area.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file) {
+        showImage(file);
+      } else {
+        resetPreview();
+      }
+    });
+
+    area.addEventListener('dragover', e => {
+      e.preventDefault();
+      area.classList.add('dragover');
+    });
+
+    area.addEventListener('dragleave', e => {
+      e.preventDefault();
+      area.classList.remove('dragover');
+    });
+
+    area.addEventListener('drop', e => {
+      e.preventDefault();
+      area.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        fileInput.dispatchEvent(new Event('change'));
+      }
+    });
+  });
 </script>
 </body>
 
