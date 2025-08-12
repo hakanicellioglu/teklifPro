@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/header.php';
+require __DIR__ . '/components/page_header.php';
 
 function e(?string $v): string
 {
@@ -358,32 +359,28 @@ foreach ($slidings as $s) {
 }
 $totalFormatted = number_format($totalAmount, 2, ',', '.') . ' ₺';
 $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
-
 ?>
-<div class="container mt-4">
-    <?php if ($success): ?>
-        <div class="alert alert-success"><?= e($success) ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-        <div class="alert alert-danger"><?= e($error) ?></div>
-    <?php endif; ?>
-    <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Teklif #<?= e((string)$offer['id']) ?></h5>
-            <div>
-                <a href="quotations.php" class="btn btn-secondary btn-sm">Geri Dön</a>
-                <a href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-primary btn-sm">Düzenle</a>
-                <?php if ($role === 'admin'): ?>
-                    <a href="guillotine_optimize_view.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-success btn-sm">Optimize</a>
-                    <form method="post" class="d-inline" onsubmit="return confirm('Bu teklifi silmek istediğinize emin misiniz?');">
-                        <input type="hidden" name="action" value="delete">
-                        <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
-                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                        <button type="submit" class="btn btn-danger btn-sm">Sil</button>
-                    </form>
-                <?php endif; ?>
-            </div>
-        </div>
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="quotations.php">Teklifler</a></li>
+    <li class="breadcrumb-item active" aria-current="page">#<?= e((string)$offer['id']) ?></li>
+  </ol>
+</nav>
+<?php page_header('Teklif #' . e((string)$offer['id']), '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary btn-icon"><i class="bi bi-pencil"></i>Düzenle</a>'); ?>
+<?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
+<?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Özet</h5>
+        <?php if ($role === 'admin'): ?>
+            <form method="post" class="d-inline">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
+                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                <button type="submit" class="btn btn-danger btn-sm" data-confirm="Bu teklifi silmek istediğinize emin misiniz?">Sil</button>
+            </form>
+        <?php endif; ?>
+    </div>
         <div class="card-body">
             <div class="row mb-2">
                 <div class="col-md-6"><strong>Müşteri:</strong> <?= e(trim($offer['first_name'] . ' ' . $offer['last_name'])) ?></div>
@@ -617,7 +614,4 @@ document.getElementById('addGuillotineModal').addEventListener('show.bs.modal', 
     }
 });
 </script>
-
-</body>
-
-</html>
+<?php require __DIR__ . '/footer.php'; ?>
