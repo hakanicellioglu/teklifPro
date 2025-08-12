@@ -37,8 +37,8 @@ if (!$offer) {
     exit;
 }
 
-// Fetch guillotine systems
-$gStmt = $pdo->prepare('SELECT * FROM guillotinesystems WHERE general_offer_id = :id');
+// Fetch guillotine systems including profit margin
+$gStmt = $pdo->prepare('SELECT id, general_offer_id, system_type, width, height, quantity, motor_system, remote_quantity, ral_code, glass_type, glass_color, profit_rate, profit_amount, total_amount, profit_margin FROM guillotinesystems WHERE general_offer_id = :id');
 $gStmt->execute([':id' => $id]);
 $systems = $gStmt->fetchAll(PDO::FETCH_ASSOC);
 if (!$systems) {
@@ -149,7 +149,8 @@ function computeSystem(array $row, PDO $pdo, array &$alerts): array {
         $base += $lineTotal;
     }
 
-    $profitRate = (float)($row['profit_rate'] ?? 0);
+    // Use profit_rate if available, otherwise fallback to profit_margin
+    $profitRate = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
     $profit = $base * ($profitRate / 100);
     $total = $base + $profit;
 
