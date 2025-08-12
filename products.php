@@ -248,7 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
   }
 }
 $success = filter_input(INPUT_GET, 'success', FILTER_SANITIZE_SPECIAL_CHARS);
-  $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHARS);
+$error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHARS);
 
 $fields = 'id, product_code, name, category, unit AS unit_type, weight_per_meter AS unit_value, color, image_url, description, unit_price, vat_rate';
 if ($hasDimensions) {
@@ -266,25 +266,30 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     cursor: pointer;
     transition: background-color 0.2s ease-in-out;
   }
+
   .image-upload-area:hover,
   .image-upload-area.dragover {
     background-color: #f8f9fa;
   }
+
   .image-upload-area .image-input {
     display: none;
   }
+
   .image-preview img {
     max-width: 100%;
     height: auto;
     display: block;
     margin: 0 auto;
   }
+
   .default-image {
     display: flex;
     flex-direction: column;
     align-items: center;
     color: #6c757d;
   }
+
   .upload-instructions {
     margin-top: 0.5rem;
     font-size: 0.875rem;
@@ -473,6 +478,27 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
             <div class="modal-body">
               <div class="row g-3">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label for="product_image-create" class="form-label">
+                      <i class="fas fa-image"></i>
+                      Ürün Görseli
+                    </label>
+                    <div class="image-upload-area" id="imageUploadArea-create">
+                      <div class="image-preview" id="imagePreview-create">
+                        <div class="default-image">
+                          <i class="fas fa-box"></i>
+                          <span>Görsel Yükle</span>
+                        </div>
+                      </div>
+                      <input type="file" id="product_image-create" name="product_image" accept="image/*" class="image-input">
+                      <div class="upload-instructions">
+                        <p>JPG, PNG, GIF or WebP format</p>
+                        <p>Maximum 5MB</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <div class="col-md-6">
                   <label class="form-label">Ürün Kodu</label>
                   <input type="text" name="product_code" class="form-control"
@@ -523,30 +549,19 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                   </select>
 
                 </div>
-                <div class="col-md-6">
-                  <div class="form-group">
-                    <label for="product_image-create" class="form-label">
-                      <i class="fas fa-image"></i>
-                      Ürün Görseli
-                    </label>
-                    <div class="image-upload-area" id="imageUploadArea-create">
-                      <div class="image-preview" id="imagePreview-create">
-                        <div class="default-image">
-                          <i class="fas fa-box"></i>
-                          <span>Görsel Yükle</span>
-                        </div>
-                      </div>
-                      <input type="file" id="product_image-create" name="product_image" accept="image/*" class="image-input">
-                      <div class="upload-instructions">
-                        <p>JPG, PNG, GIF or WebP format</p>
-                        <p>Maximum 5MB</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
                 <div class="col-12">
                   <label class="form-label">Açıklama</label>
-                  <textarea name="description" class="form-control" rows="3"></textarea>
+                  <textarea name="description" class="form-control" rows="3" style="width: 100%;
+            min-height: 100px;
+            max-height: 300px;
+            padding: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            overflow-y: auto;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;"></textarea>
                 </div>
               </div>
             </div>
@@ -561,53 +576,53 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <?php endif; ?>
 </div>
 <script>
-document.querySelectorAll('.image-upload-area').forEach(area => {
-  const fileInput = area.querySelector('.image-input');
-  const preview = area.querySelector('.image-preview');
-  const defaultHtml = preview.innerHTML;
+  document.querySelectorAll('.image-upload-area').forEach(area => {
+    const fileInput = area.querySelector('.image-input');
+    const preview = area.querySelector('.image-preview');
+    const defaultHtml = preview.innerHTML;
 
-  const resetPreview = () => {
-    preview.innerHTML = defaultHtml;
-  };
-
-  const showImage = file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+    const resetPreview = () => {
+      preview.innerHTML = defaultHtml;
     };
-    reader.readAsDataURL(file);
-  };
 
-  area.addEventListener('click', () => fileInput.click());
+    const showImage = file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+      };
+      reader.readAsDataURL(file);
+    };
 
-  fileInput.addEventListener('change', () => {
-    const file = fileInput.files[0];
-    if (file) {
-      showImage(file);
-    } else {
-      resetPreview();
-    }
+    area.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file) {
+        showImage(file);
+      } else {
+        resetPreview();
+      }
+    });
+
+    area.addEventListener('dragover', e => {
+      e.preventDefault();
+      area.classList.add('dragover');
+    });
+
+    area.addEventListener('dragleave', e => {
+      e.preventDefault();
+      area.classList.remove('dragover');
+    });
+
+    area.addEventListener('drop', e => {
+      e.preventDefault();
+      area.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        fileInput.dispatchEvent(new Event('change'));
+      }
+    });
   });
-
-  area.addEventListener('dragover', e => {
-    e.preventDefault();
-    area.classList.add('dragover');
-  });
-
-  area.addEventListener('dragleave', e => {
-    e.preventDefault();
-    area.classList.remove('dragover');
-  });
-
-  area.addEventListener('drop', e => {
-    e.preventDefault();
-    area.classList.remove('dragover');
-    if (e.dataTransfer.files && e.dataTransfer.files.length) {
-      fileInput.files = e.dataTransfer.files;
-      fileInput.dispatchEvent(new Event('change'));
-    }
-  });
-});
 </script>
 </body>
 
