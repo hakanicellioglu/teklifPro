@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/header.php';
+$pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_turkish_ci');
 
 // Handle deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
@@ -98,7 +99,7 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
                     <thead>
                         <tr>
                             <th>İsim</th>
-                            <th>Şirket</th>
+                            <th>Company Name</th>
                             <th>Email</th>
                             <th>Telefon Numarası</th>
                             <th>Kayıt Tarihi</th>
