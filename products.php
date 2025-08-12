@@ -482,7 +482,7 @@ document.querySelectorAll('.category-select').forEach(function(sel){
     var form = sel.closest('form');
     var display = form.querySelector('.unit-display');
     if (display) display.value = unit;
-    form.querySelectorAll('.kgm-field').forEach(function(el){ el.classList.toggle('d-none', unit !== 'kg/m'); });
+    form.querySelectorAll('.kgm-field').forEach(function(el){ el.classList.toggle('d-none', unit !== 'kg/m'); }); 
     form.querySelectorAll('.m2-field').forEach(function(el){ el.classList.toggle('d-none', unit !== 'm²'); });
   }
   sel.addEventListener('change', update);
