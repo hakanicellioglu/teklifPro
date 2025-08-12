@@ -140,6 +140,18 @@ INSERT INTO `guillotinesystems` (`id`, `general_offer_id`, `system_type`, `width
 -- --------------------------------------------------------
 
 --
+-- Tablo için tablo yapısı `categories`
+--
+
+CREATE TABLE `categories` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `unit_type` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Tablo için tablo yapısı `products`
 --
 
@@ -147,7 +159,7 @@ CREATE TABLE `products` (
   `id` int(11) NOT NULL,
   `product_code` varchar(100) NOT NULL,
   `name` varchar(255) NOT NULL,
-  `category` varchar(100) DEFAULT NULL,
+  `category` int(11) DEFAULT NULL,
   `unit` varchar(50) DEFAULT NULL,
   `color` varchar(50) DEFAULT NULL,
   `image_data` longblob DEFAULT NULL,
@@ -155,9 +167,10 @@ CREATE TABLE `products` (
   `image_url` text DEFAULT NULL,
   `description` text DEFAULT NULL,
   `unit_price` decimal(10,2) DEFAULT NULL,
-  `weight_per_meter` decimal(10,3) DEFAULT NULL,
   `vat_rate` decimal(5,2) DEFAULT NULL,
-  `category_id` int(11) DEFAULT NULL
+  `weight_per_meter` decimal(10,4) DEFAULT NULL,
+  `width` decimal(10,2) DEFAULT NULL,
+  `height` decimal(10,2) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
 --
