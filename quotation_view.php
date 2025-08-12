@@ -73,7 +73,8 @@ if (
         try {
             $pdo->beginTransaction();
 
-            $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, p.width, p.height, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE p.product_code = :code');
+            // Width/height columns are not guaranteed to exist, so only fetch the fields we actually use
+            $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE p.product_code = :code');
 
             // --- Guillotine systems ---
             $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE general_offer_id = :id');
