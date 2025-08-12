@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
                 <div class='mb-3'>
-                    <label for='company_name' class='form-label'>Şirket</label>
+                    <label for='company_name' class='form-label'>Company Name</label>
                     <input type='text' class='form-control' id='company_name' name='company_name' value='<?= htmlspecialchars($company_name, ENT_QUOTES, 'UTF-8'); ?>'>
                 </div>
                 <div class='mb-3'>

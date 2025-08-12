@@ -22,12 +22,12 @@ $errors = [];
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $firstName = trim(filter_input(INPUT_POST, 'first_name', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
-    $lastName  = trim(filter_input(INPUT_POST, 'last_name', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
-    $email       = trim(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL));
-    $phone       = trim(filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
-    $address     = trim(filter_input(INPUT_POST, 'address', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
-    $companyName = trim(filter_input(INPUT_POST, 'company_name', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $firstName   = trim($_POST['first_name'] ?? '');
+    $lastName    = trim($_POST['last_name'] ?? '');
+    $email       = trim($_POST['email'] ?? '');
+    $phone       = trim($_POST['phone'] ?? '');
+    $address     = trim($_POST['address'] ?? '');
+    $companyName = trim($_POST['company_name'] ?? '');
 
     if ($firstName === '') {
         $errors[] = 'First name is required.';
@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="text" class="form-control" id="last_name" name="last_name" required value="<?= htmlspecialchars($customer['last_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
                 <div class="mb-3">
-                    <label for="company_name" class="form-label">Şirket</label>
+                    <label for="company_name" class="form-label">Company Name</label>
                     <input type="text" class="form-control" id="company_name" name="company_name" value="<?= htmlspecialchars($customer['company_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
                 <div class="mb-3">
