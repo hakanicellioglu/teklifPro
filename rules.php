@@ -7,7 +7,7 @@ return [
             },
             'products' => [
                 [
-                    'code' => 'G_FRAME',
+                    'name' => 'G_FRAME',
                     'qty' => function(array $r) {
                         $width = (float)($r['width'] ?? 0);
                         $height = (float)($r['height'] ?? 0);
@@ -16,19 +16,19 @@ return [
                     }
                 ],
                 [
-                    'code' => 'G_MOTOR',
+                    'name' => 'G_MOTOR',
                     'qty' => function(array $r) {
                         return ($r['motor_system'] ?? '') === 'motorlu' ? (int)($r['quantity'] ?? 0) : 0;
                     }
                 ],
                 [
-                    'code' => 'G_REMOTE',
+                    'name' => 'G_REMOTE',
                     'qty' => function(array $r) {
                         return (int)($r['remote_quantity'] ?? 0);
                     }
                 ],
                 [
-                    'code' => 'G_GLASS_CLR',
+                    'name' => 'G_GLASS_CLR',
                     'qty' => function(array $r) {
                         $width = (float)($r['width'] ?? 0);
                         $height = (float)($r['height'] ?? 0);
@@ -46,7 +46,7 @@ return [
             },
             'products' => [
                 [
-                    'code' => 'S_FRAME',
+                    'name' => 'S_FRAME',
                     'qty' => function(array $r) {
                         $width = (float)($r['width'] ?? 0);
                         $qty = (int)($r['quantity'] ?? 0);

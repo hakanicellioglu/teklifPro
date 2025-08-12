@@ -68,7 +68,7 @@ if (
         try {
             $pdo->beginTransaction();
 
-            $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, p.width, p.height, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE p.product_code = :code');
+            $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, p.width, p.height, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE LOWER(p.name) = LOWER(:name)');
 
             // --- Guillotine systems ---
             $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE general_offer_id = :id');
@@ -94,7 +94,7 @@ if (
                         if ($calcQty <= 0) {
                             continue;
                         }
-                        $pStmt->execute([':code' => $prod['code']]);
+                        $pStmt->execute([':name' => $prod['name']]);
                         if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
                             $unit = (float)$p['unit_price'];
                             $vat  = (float)$p['vat_rate'];
@@ -142,7 +142,7 @@ if (
                         if ($calcQty <= 0) {
                             continue;
                         }
-                        $pStmt->execute([':code' => $prod['code']]);
+                        $pStmt->execute([':name' => $prod['name']]);
                         if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
                             $unit = (float)$p['unit_price'];
                             $vat  = (float)$p['vat_rate'];
@@ -374,12 +374,7 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
                 <a href="quotations.php" class="btn btn-secondary btn-sm">Geri Dön</a>
                 <a href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-primary btn-sm">Düzenle</a>
                 <?php if ($role === 'admin'): ?>
-                    <form method="post" class="d-inline">
-                        <input type="hidden" name="action" value="optimize">
-                        <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
-                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                        <button type="submit" class="btn btn-success btn-sm">Optimize</button>
-                    </form>
+                    <a href="guillotine_optimize_view.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-success btn-sm">Optimize</a>
                     <form method="post" class="d-inline" onsubmit="return confirm('Bu teklifi silmek istediğinize emin misiniz?');">
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
