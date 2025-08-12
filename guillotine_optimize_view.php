@@ -183,7 +183,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($role === 'admin') && ($_POST['act
             $pdo->beginTransaction();
             $upd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount = :p, total_amount = :t WHERE id = :id');
             foreach ($systems as $sys) {
-                $res = computeSystem($sys, $pdo, $tmp = []);
+                $tmp = [];
+                $res = computeSystem($sys, $pdo, $tmp);
                 $upd->execute([':p' => $res['profit'], ':t' => $res['total'], ':id' => $sys['id']]);
             }
             $sumG = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
