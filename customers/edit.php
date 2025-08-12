@@ -9,7 +9,7 @@ if (!$id) {
 }
 
 // Fetch existing customer data
-$stmt = $pdo->prepare('SELECT first_name, last_name, email, phone, address FROM customers WHERE id = :id');
+$stmt = $pdo->prepare('SELECT first_name, last_name, company_name, email, phone, address FROM customers WHERE id = :id');
 $stmt->execute(['id' => $id]);
 $customer = $stmt->fetch();
 
@@ -24,9 +24,10 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firstName = trim(filter_input(INPUT_POST, 'first_name', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
     $lastName  = trim(filter_input(INPUT_POST, 'last_name', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
-    $email     = trim(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL));
-    $phone     = trim(filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
-    $address   = trim(filter_input(INPUT_POST, 'address', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $email       = trim(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL));
+    $phone       = trim(filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $address     = trim(filter_input(INPUT_POST, 'address', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $companyName = trim(filter_input(INPUT_POST, 'company_name', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
 
     if ($firstName === '') {
         $errors[] = 'First name is required.';
@@ -46,22 +47,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         try {
-            $stmt = $pdo->prepare('UPDATE customers SET first_name = :first_name, last_name = :last_name, email = :email, phone = :phone, address = :address WHERE id = :id');
+            $stmt = $pdo->prepare('UPDATE customers SET first_name = :first_name, last_name = :last_name, company_name = :company_name, email = :email, phone = :phone, address = :address WHERE id = :id');
             $stmt->execute([
-                'first_name' => $firstName,
-                'last_name'  => $lastName,
-                'email'      => $email,
-                'phone'      => $phone,
-                'address'    => $address,
-                'id'         => $id,
+                'first_name'   => $firstName,
+                'last_name'    => $lastName,
+                'company_name' => $companyName,
+                'email'        => $email,
+                'phone'        => $phone,
+                'address'      => $address,
+                'id'           => $id,
             ]);
             $success = 'Customer updated successfully.';
             $customer = [
-                'first_name' => $firstName,
-                'last_name'  => $lastName,
-                'email'      => $email,
-                'phone'      => $phone,
-                'address'    => $address,
+                'first_name'   => $firstName,
+                'last_name'    => $lastName,
+                'company_name' => $companyName,
+                'email'        => $email,
+                'phone'        => $phone,
+                'address'      => $address,
             ];
         } catch (Exception $e) {
             $errors[] = 'Failed to update customer.';
@@ -96,6 +99,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="mb-3">
                     <label for="last_name" class="form-label">Soyisim</label>
                     <input type="text" class="form-control" id="last_name" name="last_name" required value="<?= htmlspecialchars($customer['last_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                </div>
+                <div class="mb-3">
+                    <label for="company_name" class="form-label">Company Name</label>
+                    <input type="text" class="form-control" id="company_name" name="company_name" value="<?= htmlspecialchars($customer['company_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
                 <div class="mb-3">
                     <label for="email" class="form-label">Email</label>
