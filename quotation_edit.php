@@ -11,6 +11,14 @@ $assemblyTypes = [
     'bayi'    => 'Bayi Montajlı',
 ];
 
+$paymentLabels = [
+    'cash'          => 'Peşin',
+    'bank_transfer' => 'Havale/EFT',
+    'credit_card'   => 'Kredi Kartı',
+    'installment'   => 'Taksitli',
+    'other'         => 'Diğer',
+];
+
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
     header('Location: quotations.php?error=' . urlencode('Teklif bulunamadı.'));
@@ -32,40 +40,52 @@ $errors = [];
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $customerId     = (int)($_POST['customer_id'] ?? 0);
-    $companyId      = $_POST['company_id'] !== '' ? (int)$_POST['company_id'] : null;
-    $offerDate      = trim($_POST['offer_date'] ?? '');
-    $assemblyType   = $_POST['assembly_type'] ?? '';
-    $paymentMethod  = trim($_POST['payment_method'] ?? '');
-    $deliveryTime   = trim($_POST['delivery_time'] ?? '');
-    $maturityPeriod = trim($_POST['maturity_period'] ?? '');
+    $customerId      = (int)($_POST['customer_id'] ?? 0);
+    $companyId       = $_POST['company_id'] !== '' ? (int)$_POST['company_id'] : null;
+    $offerDate       = trim($_POST['offer_date'] ?? '');
+    $assemblyType    = $_POST['assembly_type'] ?? '';
+    $paymentMethod   = $_POST['payment_method'] ?? '';
+    $validityDays    = trim($_POST['validity_days'] ?? '');
+    $installmentTerm = trim($_POST['installment_term'] ?? '');
 
     if ($customerId <= 0) { $errors['customer_id'] = 'Müşteri zorunludur.'; }
     if ($offerDate === '' || !strtotime($offerDate)) { $errors['offer_date'] = 'Geçerli tarih girin.'; }
     if ($assemblyType === '' || !isset($assemblyTypes[$assemblyType])) { $errors['assembly_type'] = 'Montaj tipi seçiniz.'; }
+    if ($paymentMethod === '' || !isset($paymentLabels[$paymentMethod])) { $errors['payment_method'] = 'Ödeme yöntemi seçiniz.'; }
+
+    $validityInt = null;
+    if ($validityDays !== '') {
+        if (!ctype_digit($validityDays) || (int)$validityDays < 1 || (int)$validityDays > 365) {
+            $errors['validity_days'] = 'Teklif süresi 1–365 gün aralığında olmalıdır.';
+        } else {
+            $validityInt = (int)$validityDays;
+        }
+    }
+    if ($installmentTerm !== '' && mb_strlen($installmentTerm) > 100) {
+        $errors['installment_term'] = 'Vade en fazla 100 karakter olabilir.';
+    }
 
     if (!$errors) {
         try {
-            $stmt = $pdo->prepare('UPDATE generaloffers SET customer_id=:customer_id, company_id=:company_id, offer_date=:offer_date, assembly_type=:assembly_type, payment_method=:payment_method, delivery_time=:delivery_time, maturity_period=:maturity_period WHERE id=:id');
-            $stmt->execute([
-                ':customer_id'    => $customerId,
-                ':company_id'     => $companyId,
-                ':offer_date'     => $offerDate,
-                ':assembly_type'  => $assemblyType,
-                ':payment_method' => $paymentMethod !== '' ? $paymentMethod : null,
-                ':delivery_time'  => $deliveryTime !== '' ? $deliveryTime : null,
-                ':maturity_period'=> $maturityPeriod !== '' ? $maturityPeriod : null,
-                ':id'             => $id,
-            ]);
+            $stmt = $pdo->prepare('UPDATE generaloffers SET customer_id=:customer_id, company_id=:company_id, offer_date=:offer_date, assembly_type=:assembly_type, payment_method=:payment_method, validity_days=:validity_days, installment_term=:installment_term WHERE id=:id');
+            $stmt->bindValue(':customer_id', $customerId, PDO::PARAM_INT);
+            $stmt->bindValue(':company_id', $companyId, $companyId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindValue(':offer_date', $offerDate);
+            $stmt->bindValue(':assembly_type', $assemblyType);
+            $stmt->bindValue(':payment_method', $paymentMethod);
+            $stmt->bindValue(':validity_days', $validityInt, $validityInt === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindValue(':installment_term', $installmentTerm !== '' ? $installmentTerm : null, $installmentTerm === '' ? PDO::PARAM_NULL : PDO::PARAM_STR);
+            $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
             $success = 'Teklif güncellendi.';
             $offer = array_merge($offer, [
-                'customer_id'    => $customerId,
-                'company_id'     => $companyId,
-                'offer_date'     => $offerDate,
-                'assembly_type'  => $assemblyType,
-                'payment_method' => $paymentMethod,
-                'delivery_time'  => $deliveryTime,
-                'maturity_period'=> $maturityPeriod,
+                'customer_id'      => $customerId,
+                'company_id'       => $companyId,
+                'offer_date'       => $offerDate,
+                'assembly_type'    => $assemblyType,
+                'payment_method'   => $paymentMethod,
+                'validity_days'    => $validityInt,
+                'installment_term' => $installmentTerm,
             ]);
         } catch (Exception $e) {
             $errors['form'] = 'Güncellenemedi.';
@@ -102,10 +122,18 @@ foreach ($assemblyTypes as $key => $label) {
 }
 form_group('assembly_type', 'Montaj Tipi', "<select name='assembly_type' id='assembly_type' class='form-select' required>$assemblyOptions</select>", '', $errors['assembly_type'] ?? '');
 
-form_group('offer_date', 'Teklif Tarihi', "<input type='date' class='form-control' id='offer_date' name='offer_date' required value='" . e($offer['offer_date']) . "'>", '', $errors['offer_date'] ?? '');
-form_group('payment_method', 'Ödeme', "<input type='text' class='form-control' id='payment_method' name='payment_method' value='" . e($offer['payment_method']) . "'>");
-form_group('delivery_time', 'Teslim', "<input type='text' class='form-control' id='delivery_time' name='delivery_time' value='" . e($offer['delivery_time']) . "'>");
-form_group('maturity_period', 'Vaade', "<input type='text' class='form-control' id='maturity_period' name='maturity_period' value='" . e($offer['maturity_period']) . "'>");
+ form_group('offer_date', 'Teklif Tarihi', "<input type='date' class='form-control' id='offer_date' name='offer_date' required value='" . e($offer['offer_date']) . "'>", '', $errors['offer_date'] ?? '');
+
+ $paymentOptions = '<option value="">Seçiniz</option>';
+ foreach ($paymentLabels as $key => $label) {
+     $selected = ($offer['payment_method'] === $key) ? ' selected' : '';
+     $paymentOptions .= '<option value="' . e($key) . '"' . $selected . '>' . e($label) . '</option>';
+ }
+ form_group('payment_method', 'Ödeme Yöntemi', "<select name='payment_method' id='payment_method' class='form-select' required>$paymentOptions</select>", '', $errors['payment_method'] ?? '');
+
+ $validityValue = $offer['validity_days'] !== null ? (string)(int)$offer['validity_days'] : '';
+ form_group('validity_days', 'Teklif Süresi (gün)', "<input type='number' min='1' max='365' class='form-control' id='validity_days' name='validity_days' value='" . e($validityValue) . "'>", '', $errors['validity_days'] ?? '');
+ form_group('installment_term', 'Vade', "<input type='text' class='form-control' id='installment_term' name='installment_term' value='" . e($offer['installment_term']) . "'>", '', $errors['installment_term'] ?? '');
 ?>
 <div class="d-flex justify-content-end gap-2">
   <a href="quotation_view.php?id=<?= (int)$id ?>" class="btn btn-secondary">İptal</a>
