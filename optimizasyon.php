@@ -79,15 +79,19 @@ foreach ($systems as $sys) {
         <thead>
             <tr>
                 <th>Ürün</th>
+                <th>Birim Uzunluk (mm)</th>
                 <th>Toplam Uzunluk (mm)</th>
                 <th>Adet</th>
                 <th>Toplam Kg</th>
             </tr>
         </thead>
         <tbody>
-        <?php foreach ($aggregated as $row): ?>
+        <?php foreach ($aggregated as $row):
+            $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
+        ?>
             <tr>
                 <td><?= e($row['name']) ?></td>
+                <td><?= e((int)round($unit)) ?></td>
                 <td><?= e((int)round($row['length'])) ?></td>
                 <td><?= e((string)$row['qty']) ?></td>
                 <td><?= e(number_format($row['kg'], 3, ',', '.')) ?></td>
