@@ -22,6 +22,17 @@ $paymentLabels = [
     'installment'   => 'Taksitli',
     'other'         => 'Diğer',
 ];
+$statusLabels = [
+    'active'    => 'Aktif',
+    'pending'   => 'Beklemede',
+    'closed'    => 'Kapalı',
+    'draft'     => 'Taslak (müşteriye gitmedi)',
+    'sent'      => 'Müşteriye gönderildi',
+    'accepted'  => 'Müşteri onayladı',
+    'rejected'  => 'Müşteri reddetti',
+    'expired'   => 'Geçerlilik tarihi geçti',
+    'cancelled' => 'Siz iptal ettiniz (revize edilmeyecek)',
+];
 
 // idempotent migration for new columns
 try {
@@ -171,7 +182,7 @@ $error   = $_SESSION['flash_error'] ?? null; unset($_SESSION['flash_error']);
   <td><?= e($o['installment_term'] ?? '') ?></td>
   <td><time datetime="<?= e($o['offer_date']) ?>"><?= e($o['offer_date']) ?></time></td>
   <td><?= number_format((float)$o['total_amount'],2,',','.') ?> ₺</td>
-  <td><?= e($o['status']) ?></td>
+  <td><?= e($statusLabels[$o['status']] ?? $o['status']) ?></td>
   <td class="text-center">
     <a href="quotation_view.php?id=<?= (int)$o['id'] ?>" class="btn btn-sm btn-outline-secondary" title="Görüntüle"><i class="bi bi-eye"></i></a>
     <form method="post" class="d-inline">
