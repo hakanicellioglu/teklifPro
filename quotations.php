@@ -163,9 +163,9 @@ $error   = $_SESSION['flash_error'] ?? null; unset($_SESSION['flash_error']);
   <div class="col-md-6">
     <input type="search" name="search" class="form-control" placeholder="Ara" value="<?= e($search) ?>">
   </div>
-  <div class="col-md-6 d-flex align-items-center gap-2">
-    <?php foreach ([""=>'Tümü','active'=>'Aktif','pending'=>'Beklemede','closed'=>'Kapalı'] as $code=>$label): ?>
-      <a href="quotations.php?<?= http_build_query(['status'=>$code===''?null:$code, 'search'=>$search]) ?>" class="badge rounded-pill <?= $status===$code?'text-bg-primary':'text-bg-light' ?>"><?= $label ?></a>
+  <div class="col-md-6 d-flex align-items-center gap-2 flex-wrap">
+    <?php foreach (array_merge(['' => 'Tümü'], $statusLabels) as $code => $label): ?>
+      <a href="quotations.php?<?= http_build_query(['status' => $code === '' ? null : $code, 'search' => $search]) ?>" class="badge rounded-pill <?= $status === $code ? 'text-bg-primary' : 'text-bg-light' ?>"><?= e($label) ?></a>
     <?php endforeach; ?>
   </div>
 </form>
