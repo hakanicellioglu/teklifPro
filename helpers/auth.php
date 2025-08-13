@@ -41,7 +41,7 @@ function require_role(string $role): void
 /** Giriş (örnek: users tablosu -> email, password_hash, role) */
 function login(PDO $pdo, string $identifier, string $password): bool
 {
-    // Tek parametre: :iden (email veya username)
+    // email ve username için AYRI parametre isimleri kullanalım
     $stmt = $pdo->prepare("
         SELECT 
             u.id,
@@ -55,14 +55,16 @@ function login(PDO $pdo, string $identifier, string $password): bool
             r.name AS role
         FROM users u
         LEFT JOIN roles r ON r.id = u.role_id
-        WHERE (u.email = :iden OR u.username = :iden) AND u.status = 'active'
+        WHERE (u.email = :email OR u.username = :username) AND u.status = 'active'
         LIMIT 1
     ");
-    $stmt->execute([':iden' => $identifier]);
+    $stmt->execute([
+        ':email'    => $identifier,
+        ':username' => $identifier,
+    ]);
     $u = $stmt->fetch();
 
     if ($u && password_verify($password, $u['password_hash'])) {
-        // İsteğe bağlı rehash
         if (password_needs_rehash($u['password_hash'], PASSWORD_BCRYPT)) {
             $newHash = password_hash($password, PASSWORD_BCRYPT);
             $up = $pdo->prepare("UPDATE users SET password = :p WHERE id = :id");
@@ -82,9 +84,9 @@ function login(PDO $pdo, string $identifier, string $password): bool
         session_regenerate_id(true);
         return true;
     }
-
     return false;
 }
+
 
 /** Çıkış */
 function logout(): void
