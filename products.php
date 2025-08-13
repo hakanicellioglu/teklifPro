@@ -585,10 +585,11 @@ require __DIR__ . '/header.php';
                     <?php endforeach; ?>
                   </select>
                 </div>
-                  <div class="col-md-6 unit-value-group">
-                    <label class="form-label">Birim Değeri *</label>
-                    <input type="number" step="0.001" min="0.001" name="unit_value" class="form-control unit-value-field" required value="<?= e($_POST['unit_value'] ?? '') ?>">
-                  </div>
+                <div class="col-md-6 unit-value-group">
+                  <label class="form-label">Birim Değeri *</label>
+                  <input type="number" step="0.001" min="0.001" name="unit_value" class="form-control" required value="<?= e($_POST['unit_value'] ?? '') ?>">
+                </div>
+
                 <div class="col-md-6">
                   <label class="form-label">Renk</label>
                   <input type="text" name="color" class="form-control">
@@ -680,6 +681,20 @@ require __DIR__ . '/header.php';
         fileInput.dispatchEvent(new Event('change'));
       }
     });
+  });
+
+  document.querySelectorAll('select[name="unit_type"]').forEach(select => {
+    const unitGroup = select.closest('form')?.querySelector('.unit-value-group');
+    const unitInput = unitGroup?.querySelector('input[name="unit_value"]');
+
+    const toggleUnitValue = () => {
+      const show = select.value === 'kg/m';
+      if (unitGroup) unitGroup.style.display = show ? '' : 'none';
+      if (unitInput) unitInput.required = show;
+    };
+
+    toggleUnitValue();
+    select.addEventListener('change', toggleUnitValue);
   });
 </script>
 <?php require __DIR__ . '/footer.php'; ?>
