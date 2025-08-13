@@ -58,6 +58,7 @@ body.dark .skeleton { background: #495057; }
   white-space:normal;
 }
 
-input[type=number] {
-  text-align: right;
+input[type=number],
+.form-control[type=number] {
+  text-align: left !important;
 }
