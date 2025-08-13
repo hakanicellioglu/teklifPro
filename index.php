@@ -25,7 +25,7 @@ try {
     $totalProducts = 0;
 }
 try {
-    $totalQuotations = (int)$pdo->query("SELECT COUNT(*) FROM master_quotes")->fetchColumn();
+    $totalQuotations = (int)$pdo->query("SELECT COUNT(*) FROM generaloffers")->fetchColumn();
 } catch (PDOException $e) {
     $totalQuotations = 0;
 }
@@ -81,12 +81,12 @@ require_once __DIR__ . '/templates/header.php';
             <div class="card-body">
                 <?php
                 $stmt = $pdo->query("
-                    SELECT mq.id, mq.quote_no, mq.offer_date, mq.status,
-                           CONCAT(cus.first_name,' ',cus.last_name) AS customer_name
-                    FROM master_quotes mq
-                    LEFT JOIN customers cus ON cus.id = mq.customer_id
-                    ORDER BY mq.offer_date DESC
-                    LIMIT 5
+                SELECT go.id, go.quote_no, go.offer_date, go.status,
+                       CONCAT(cus.first_name,' ',cus.last_name) AS customer_name
+                FROM generaloffers go
+                LEFT JOIN customers cus ON cus.id = go.customer_id
+                ORDER BY go.offer_date DESC
+                LIMIT 5
                 ");
                 $recentQuotes = $stmt->fetchAll();
                 if ($recentQuotes):
