@@ -590,7 +590,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">Vade (Ay)</label>
-                            <input type="number" name="term_months" id="term_months" min="1" max="60" class="form-control <?= isset($paymentErrors['term_months']) ? 'is-invalid' : '' ?>" value="<?= e($paymentData['term_months']) ?>">
+                            <input type="number" name="term_months" id="term_months" min="1" max="60" class="form-control text-start <?= isset($paymentErrors['term_months']) ? 'is-invalid' : '' ?>" value="<?= e($paymentData['term_months']) ?>">
                             <?php if(isset($paymentErrors['term_months'])): ?><div class="invalid-feedback"><?= e($paymentErrors['term_months']) ?></div><?php endif; ?>
                         </div>
                         <div class="col-md-8">
@@ -604,17 +604,17 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                 <label class="form-check-label" for="interest_mode_fixed">Tutar (TRY)</label>
                             </div>
                             <div class="mt-2" id="interest_percent_field" <?= $paymentData['interest_mode'] === 'percent' ? '' : 'style="display:none;"' ?>>
-                                <input type="number" step="0.01" min="0" max="100" name="interest_value_percent" id="interest_value_percent" class="form-control <?= isset($paymentErrors['interest_value']) ? 'is-invalid' : '' ?>" value="<?= $paymentData['interest_mode'] === 'percent' ? e($paymentData['interest_value']) : '' ?>">
+                                <input type="number" step="0.01" min="0" max="100" name="interest_value_percent" id="interest_value_percent" class="form-control text-start <?= isset($paymentErrors['interest_value']) ? 'is-invalid' : '' ?>" value="<?= $paymentData['interest_mode'] === 'percent' ? e($paymentData['interest_value']) : '' ?>">
                                 <?php if(isset($paymentErrors['interest_value']) && $paymentData['interest_mode'] === 'percent'): ?><div class="invalid-feedback"><?= e($paymentErrors['interest_value']) ?></div><?php endif; ?>
                             </div>
                             <div class="mt-2" id="interest_fixed_field" <?= $paymentData['interest_mode'] === 'fixed' ? '' : 'style="display:none;"' ?>>
-                                <input type="number" step="0.01" min="0" name="interest_value_fixed" id="interest_value_fixed" class="form-control <?= isset($paymentErrors['interest_value']) ? 'is-invalid' : '' ?>" value="<?= $paymentData['interest_mode'] === 'fixed' ? e($paymentData['interest_value']) : '' ?>">
+                                <input type="number" step="0.01" min="0" name="interest_value_fixed" id="interest_value_fixed" class="form-control text-start <?= isset($paymentErrors['interest_value']) ? 'is-invalid' : '' ?>" value="<?= $paymentData['interest_mode'] === 'fixed' ? e($paymentData['interest_value']) : '' ?>">
                                 <?php if(isset($paymentErrors['interest_value']) && $paymentData['interest_mode'] === 'fixed'): ?><div class="invalid-feedback"><?= e($paymentErrors['interest_value']) ?></div><?php endif; ?>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Erteleme (Gün)</label>
-                            <input type="number" name="grace_days" id="grace_days" min="0" max="180" class="form-control <?= isset($paymentErrors['grace_days']) ? 'is-invalid' : '' ?>" value="<?= e($paymentData['grace_days']) ?>">
+                            <input type="number" name="grace_days" id="grace_days" min="0" max="180" class="form-control text-start <?= isset($paymentErrors['grace_days']) ? 'is-invalid' : '' ?>" value="<?= e($paymentData['grace_days']) ?>">
                             <?php if(isset($paymentErrors['grace_days'])): ?><div class="invalid-feedback"><?= e($paymentErrors['grace_days']) ?></div><?php endif; ?>
                         </div>
                         <div class="col-md-4">
@@ -764,15 +764,15 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="width" class="form-label">Genişlik</label>
-                            <input type="number" min="0.01" step="0.01" class="form-control" id="width" name="width" required>
+                            <input type="number" min="0.01" step="0.01" class="form-control text-start" id="width" name="width" required>
                         </div>
                         <div class="col-md-6">
                             <label for="height" class="form-label">Yükseklik</label>
-                            <input type="number" min="0.01" step="0.01" class="form-control" id="height" name="height" required>
+                            <input type="number" min="0.01" step="0.01" class="form-control text-start" id="height" name="height" required>
                         </div>
                         <div class="col-md-6">
                             <label for="quantity" class="form-label">Sistem Adedi</label>
-                            <input type="number" min="1" step="1" class="form-control" id="quantity" name="quantity" required>
+                            <input type="number" min="1" step="1" class="form-control text-start" id="quantity" name="quantity" required>
                         </div>
                         <div class="col-md-6">
                             <label for="motor_system" class="form-label">Motor Sistemi</label>
@@ -801,7 +801,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                         </div>
                         <div class="col-md-6">
                             <label for="remote_quantity" class="form-label">Kumanda Adedi</label>
-                            <input type="number" min="1" step="1" class="form-control" id="remote_quantity" name="remote_quantity">
+                            <input type="number" min="1" step="1" class="form-control text-start" id="remote_quantity" name="remote_quantity">
                         </div>
                         <div class="col-md-6">
                             <label for="ral_code" class="form-label">RAL Kodu</label>
@@ -809,7 +809,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                         </div>
                         <div class="col-md-6">
                             <label for="profit_margin" class="form-label">Kâr Marjı (%)</label>
-                            <input type="number" min="0.01" step="0.01" class="form-control" id="profit_margin" name="profit_margin">
+                            <input type="number" min="0.01" step="0.01" class="form-control text-start" id="profit_margin" name="profit_margin">
                         </div>
                     </div>
                 </div>
