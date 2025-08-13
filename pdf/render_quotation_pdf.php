@@ -25,7 +25,8 @@ if (!$id) {
     exit('Not found');
 }
 
-$stmt = $pdo->prepare('SELECT g.*, c.first_name, c.last_name, COALESCE(c.company_name, c.company) AS company, c.email, c.phone, c.address FROM generaloffers g JOIN customers c ON g.customer_id = c.id WHERE g.id = :id');
+
+$stmt = $pdo->prepare('SELECT q.*, c.first_name, c.last_name, c.company, c.email, c.phone, c.address FROM generaloffers q JOIN customers c ON q.customer_id = c.id WHERE q.id = :id');
 $stmt->execute([':id' => $id]);
 $quote = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$quote) {
@@ -112,31 +113,13 @@ $body = (function () use ($quote, $items, $approveUrl, $subTotal, $discountTotal
     return ob_get_clean();
 })();
 
-$tmpDir = __DIR__ . '/../storage/mpdf_tmp';
-if (!is_dir($tmpDir)) {
-    mkdir($tmpDir, 0777, true);
-}
+require __DIR__ . '/../libs/fpdf.php';
 
-$mpdf = new \Mpdf\Mpdf([
-    'mode' => 'utf-8',
-    'format' => 'A4',
-    'margin_top' => 42,
-    'margin_bottom' => 18,
-    'margin_left' => 12,
-    'margin_right' => 12,
-    'tempDir' => $tmpDir,
-]);
-$mpdf->use_kwt = true;
-$mpdf->shrinkTablesToFit = 1;
+header('Content-Type: application/pdf');
+header('Content-Disposition: inline; filename="teklif.pdf"');
 
-$css = file_get_contents(__DIR__ . '/templates/quotation.css');
-$mpdf->SetHTMLHeader($header);
-$mpdf->SetHTMLFooter($footer);
-$mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
-$mpdf->WriteHTML($body, \Mpdf\HTMLParserMode::HTML_BODY);
-
-$quoteNo = $quote['quote_no'] ?? $quote['id'];
-$customer = $quote['company'] ?: trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''));
-$filename = 'Teklif_' . $quoteNo . '_' . preg_replace('/[^A-Za-z0-9]+/', '_', $customer) . '.pdf';
-
-$mpdf->Output($filename, 'I');
+$pdf = new FPDF();
+$pdf->AddPage();
+$pdf->SetFont('Arial', 'B', 16);
+$pdf->Cell(40, 10, 'Merhaba Hakan Bey!');
+$pdf->Output('I', 'teklif.pdf');
