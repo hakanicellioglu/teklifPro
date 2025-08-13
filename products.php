@@ -69,8 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
       } else {
         $channel_count = (int)$channel_count;
       }
+      $unit_value = null;
     } else {
       $channel_count = null;
+      if ($unit_value <= 0) {
+        $errors[] = 'Birim değeri > 0 olmalıdır.';
+      }
     }
 
     if ($category === '' || !in_array($category, $categoryOptions, true)) {
@@ -78,9 +82,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     }
     if ($unit_type === '' || !in_array($unit_type, $unitTypeOptions, true)) {
       $errors[] = 'Birim türü seçilmelidir.';
-    }
-    if ($unit_value <= 0) {
-      $errors[] = 'Birim değeri > 0 olmalıdır.';
     }
 
     $color = trim($_POST['color'] ?? '');
@@ -184,8 +185,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
       } else {
         $channel_count = (int)$channel_count;
       }
+      $unit_value = null;
     } else {
       $channel_count = null;
+      if ($unit_value <= 0) {
+        $errors[] = 'Birim değeri > 0 olmalıdır.';
+      }
     }
     $color = trim($_POST['color'] ?? '');
     $description = trim($_POST['description'] ?? '');
@@ -197,9 +202,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     }
     if ($unit_type === '' || !in_array($unit_type, $unitTypeOptions, true)) {
       $errors[] = 'Birim türü seçilmelidir.';
-    }
-    if ($unit_value <= 0) {
-      $errors[] = 'Birim değeri > 0 olmalıdır.';
     }
     if ($vat_rate === '') {
       $vat_rate = null;
@@ -443,7 +445,7 @@ require __DIR__ . '/header.php';
                           </div>
                           <div class="col-md-6 unit-value-group">
                             <label class="form-label">Birim Değeri *</label>
-                            <input type="number" step="0.001" min="0.001" name="unit_value" class="form-control" required value="<?= e($p['unit_value']) ?>">
+                            <input type="number" step="0.001" min="0.001" name="unit_value" class="form-control unit-value-field" required value="<?= e($p['unit_value']) ?>">
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Renk</label>
@@ -587,6 +589,7 @@ require __DIR__ . '/header.php';
                   <label class="form-label">Birim Değeri *</label>
                   <input type="number" step="0.001" min="0.001" name="unit_value" class="form-control" required value="<?= e($_POST['unit_value'] ?? '') ?>">
                 </div>
+
                 <div class="col-md-6">
                   <label class="form-label">Renk</label>
                   <input type="text" name="color" class="form-control">
