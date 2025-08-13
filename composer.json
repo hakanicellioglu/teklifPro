@@ -1,0 +1,20 @@
+{
+  "name": "teklifpro/app",
+  "require": {
+    "vlucas/phpdotenv": "^5.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    },
+    "files": [
+      "config/bootstrap.php",
+      "helpers/utils.php",
+      "helpers/auth.php",
+      "helpers/audit.php",
+      "helpers/cost.php",
+      "helpers/theme.php",
+      "helpers/device.php"
+    ]
+  }
+}
