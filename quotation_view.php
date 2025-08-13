@@ -26,6 +26,15 @@ $paymentLabels = [
     'other'         => 'Diğer',
 ];
 
+$statusLabels = [
+    'draft'     => 'Taslak (müşteriye gitmedi)',
+    'sent'      => 'Müşteriye gönderildi',
+    'accepted'  => 'Müşteri onayladı',
+    'rejected'  => 'Müşteri reddetti',
+    'expired'   => 'Geçerlilik tarihi geçti',
+    'cancelled' => 'Siz iptal ettiniz (revize edilmeyecek)',
+];
+
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
     echo '<div class="container mt-4"><div class="alert alert-danger">Teklif bulunamadı.</div></div></body></html>';
@@ -60,6 +69,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
             $error = 'Teklif silinemedi.';
         }
     }
+}
+
+// Handle status update
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    ($_POST['action'] ?? '') === 'update_status' &&
+    $role === 'admin'
+) {
+    $token    = $_POST['csrf_token'] ?? '';
+    $postId   = (int)($_POST['id'] ?? 0);
+    $newStatus = $_POST['status'] ?? '';
+    if (!hash_equals($csrfToken, $token) || $postId !== $id || !array_key_exists($newStatus, $statusLabels)) {
+        $_SESSION['flash_error'] = 'Geçersiz durum seçimi.';
+    } else {
+        try {
+            $upd = $pdo->prepare('UPDATE generaloffers SET status = :status WHERE id = :id');
+            $upd->execute([':status' => $newStatus, ':id' => $id]);
+            $_SESSION['flash_success'] = 'Durum güncellendi.';
+        } catch (Exception $e) {
+            $_SESSION['flash_error'] = 'Durum güncellenemedi.';
+        }
+    }
+    header('Location: quotation_view.php?id=' . $id);
+    exit;
 }
 
 // Handle optimize action
@@ -412,6 +445,26 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                 <?php if (!empty($offer['installment_term'])): ?>
                     <div class="col-md-4"><strong>Vade:</strong> <?= e($offer['installment_term']) ?></div>
                 <?php endif; ?>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <?php if ($role === 'admin'): ?>
+                        <form method="post" class="d-flex align-items-center gap-2">
+                            <input type="hidden" name="action" value="update_status">
+                            <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
+                            <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                            <label class="form-label mb-0"><strong>Durum:</strong></label>
+                            <select name="status" class="form-select form-select-sm w-auto">
+                                <?php foreach ($statusLabels as $code => $label): ?>
+                                    <option value="<?= e($code) ?>" <?= $offer['status'] === $code ? 'selected' : '' ?>><?= e($label) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-primary">Kaydet</button>
+                        </form>
+                    <?php else: ?>
+                        <strong>Durum:</strong> <?= e($statusLabels[$offer['status']] ?? $offer['status']) ?>
+                    <?php endif; ?>
+                </div>
             </div>
             <div class="row">
                 <div class="col-md-6"><strong>Toplam Tutar:</strong> <?= e($totalFormatted) ?></div>
