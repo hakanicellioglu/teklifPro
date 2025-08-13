@@ -5,11 +5,9 @@ if (!defined('BOOTSTRAP_LOADED')) {
     ini_set('display_errors', '0');
     ini_set('log_errors', '1');
 
-    define('BASE_PATH', '/teklifpro');
-
     function url(string $path = ''): string
     {
-        return BASE_PATH . '/' . ltrim($path, '/');
+        return '/' . ltrim($path, '/');
     }
 
     set_error_handler(function ($severity, $message, $file, $line) {
