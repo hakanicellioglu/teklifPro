@@ -165,7 +165,7 @@ $error   = $_SESSION['flash_error'] ?? null; unset($_SESSION['flash_error']);
   </div>
   <div class="col-md-6 d-flex align-items-center gap-2">
     <?php foreach ([""=>'Tümü','active'=>'Aktif','pending'=>'Beklemede','closed'=>'Kapalı'] as $code=>$label): ?>
-      <a href="quotations?<?= http_build_query(['status'=>$code===''?null:$code, 'search'=>$search]) ?>" class="badge rounded-pill <?= $status===$code?'text-bg-primary':'text-bg-light' ?>"><?= $label ?></a>
+      <a href="quotations.php?<?= http_build_query(['status'=>$code===''?null:$code, 'search'=>$search]) ?>" class="badge rounded-pill <?= $status===$code?'text-bg-primary':'text-bg-light' ?>"><?= $label ?></a>
     <?php endforeach; ?>
   </div>
 </form>
