@@ -18,14 +18,6 @@ $assemblyTypes = [
     'bayi'    => 'Bayi Montajlı',
 ];
 
-$paymentLabels = [
-    'cash'          => 'Peşin',
-    'bank_transfer' => 'Havale/EFT',
-    'credit_card'   => 'Kredi Kartı',
-    'installment'   => 'Taksitli',
-    'other'         => 'Diğer',
-];
-
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
     echo '<div class="container mt-4"><div class="alert alert-danger">Teklif bulunamadı.</div></div></body></html>';
@@ -404,13 +396,13 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
             </div>
             <div class="row mb-2">
                 <?php if (!empty($offer['payment_method'])): ?>
-                    <div class="col-md-4"><strong>Ödeme:</strong> <?= e($paymentLabels[$offer['payment_method']] ?? $offer['payment_method']) ?></div>
+                    <div class="col-md-4"><strong>Ödeme:</strong> <?= e($offer['payment_method']) ?></div>
                 <?php endif; ?>
-                <?php if (!empty($offer['validity_days'])): ?>
-                    <div class="col-md-4"><strong>Geçerlilik:</strong> <?= (int)$offer['validity_days'] ?> gün</div>
+                <?php if (!empty($offer['delivery_time'])): ?>
+                    <div class="col-md-4"><strong>Teslim:</strong> <?= e($offer['delivery_time']) ?></div>
                 <?php endif; ?>
-                <?php if (!empty($offer['installment_term'])): ?>
-                    <div class="col-md-4"><strong>Vade:</strong> <?= e($offer['installment_term']) ?></div>
+                <?php if (!empty($offer['maturity_period'])): ?>
+                    <div class="col-md-4"><strong>Vaade:</strong> <?= e($offer['maturity_period']) ?></div>
                 <?php endif; ?>
             </div>
             <div class="row">
