@@ -26,12 +26,12 @@ $statusLabels = [
     'active'    => 'Aktif',
     'pending'   => 'Beklemede',
     'closed'    => 'Kapalı',
-    'draft'     => 'Taslak (müşteriye gitmedi)',
-    'sent'      => 'Müşteriye gönderildi',
-    'accepted'  => 'Müşteri onayladı',
-    'rejected'  => 'Müşteri reddetti',
-    'expired'   => 'Geçerlilik tarihi geçti',
-    'cancelled' => 'Siz iptal ettiniz (revize edilmeyecek)',
+    'draft'     => 'Taslak',
+    'sent'      => 'Gönderildi',
+    'accepted'  => 'Onaylandı',
+    'rejected'  => 'Reddedildi',
+    'expired'   => 'Süresi doldu',
+    'cancelled' => 'İptal',
 ];
 
 // idempotent migration for new columns
