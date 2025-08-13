@@ -62,13 +62,13 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
 </form>
 <?php data_table_start(['İsim','Şirket','Email','Telefon','Kayıt Tarihi','İşlemler']); ?>
 <?php if ($customers): foreach ($customers as $cust): ?>
-<tr>
+<tr class="text-center">
   <td><?= htmlspecialchars(trim(($cust['first_name'] ?? '') . ' ' . ($cust['last_name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
   <td><?= htmlspecialchars($cust['company_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
   <td><?= htmlspecialchars($cust['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
   <td><?= htmlspecialchars($cust['phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
   <td><?= htmlspecialchars($cust['registration_date'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-  <td class="text-end">
+  <td class="text-center">
     <a href="customers/edit?id=<?= (int)$cust['id']; ?>" class="btn btn-sm btn-outline-secondary" title="Düzenle"><i class="bi bi-pencil"></i></a>
     <form method="post" class="d-inline">
       <input type="hidden" name="delete_id" value="<?= (int)$cust['id']; ?>">
