@@ -160,7 +160,7 @@ $error   = $_SESSION['flash_error'] ?? null; unset($_SESSION['flash_error']);
 </form>
 <?php if ($success): ?><div class="alert alert-success" role="alert"><?= e($success) ?></div><?php endif; ?>
 <?php if ($error): ?><div class="alert alert-danger" role="alert"><?= e($error) ?></div><?php endif; ?>
-<?php data_table_start(['#','Müşteri','Montaj','Ödeme','Süre','Vade','Tarih','Tutar','Durum','İşlemler']); ?>
+<?php data_table_start(['#','Müşteri','Montaj','Ödeme','Süre','Vade','Tarih','Tutar','Durum','İşlemler'], 'text-center'); ?>
 <?php if ($offers): foreach ($offers as $o): ?>
 <tr class="text-center">
   <td><?= (int)$o['id'] ?></td>

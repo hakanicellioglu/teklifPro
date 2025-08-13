@@ -60,7 +60,7 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
     <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
   </div>
 </form>
-<?php data_table_start(['İsim','Şirket','Email','Telefon','Kayıt Tarihi','İşlemler']); ?>
+<?php data_table_start(['İsim','Şirket','Email','Telefon','Kayıt Tarihi','İşlemler'], 'text-center'); ?>
 <?php if ($customers): foreach ($customers as $cust): ?>
 <tr class="text-center">
   <td><?= htmlspecialchars(trim(($cust['first_name'] ?? '') . ' ' . ($cust['last_name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
