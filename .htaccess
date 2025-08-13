@@ -1,11 +1,16 @@
-ErrorDocument 404 /teklifpro/errors/404.php
-ErrorDocument 403 /teklifpro/errors/403.php
-ErrorDocument 500 /teklifpro/errors/500.php
+# Hata sayfaları: önce statik HTML ile stabil edin
+ErrorDocument 404 /errors/404.html
+ErrorDocument 403 /errors/403.html
+ErrorDocument 500 /errors/500.html
 
 RewriteEngine On
-RewriteBase /teklifpro/
+RewriteBase /
 
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+# 1) Hata sayfalarına ve fiziksel varlıklara dokunma (loop'u kes)
+RewriteCond %{REQUEST_URI} ^/errors/ [OR]
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 2) Geri kalan her şeyi front controller'a gönder
 RewriteRule ^ index.php [L]
-
