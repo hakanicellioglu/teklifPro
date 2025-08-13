@@ -57,3 +57,7 @@ body.dark .skeleton { background: #495057; }
   clip:auto;
   white-space:normal;
 }
+
+input[type=number] {
+  text-align: right;
+}

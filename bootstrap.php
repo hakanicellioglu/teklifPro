@@ -10,6 +10,11 @@ if (!defined('BOOTSTRAP_LOADED')) {
         return '/' . ltrim($path, '/');
     }
 
+    function tr_money(float $v): string
+    {
+        return number_format($v, 2, ',', '.');
+    }
+
     set_error_handler(function ($severity, $message, $file, $line) {
         if (!(error_reporting() & $severity)) {
             return false;

@@ -40,6 +40,14 @@ try {
     $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS payment_method VARCHAR(100) NULL AFTER assembly_type");
     $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS validity_days INT NULL AFTER payment_method");
     $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS installment_term VARCHAR(100) NULL AFTER validity_days");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS payment_type ENUM('cash','installment') NOT NULL DEFAULT 'cash' AFTER installment_term");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS term_months INT NULL AFTER payment_type");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS interest_mode ENUM('percent','fixed') NULL AFTER term_months");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS interest_value DECIMAL(12,2) NULL AFTER interest_mode");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS interest_amount DECIMAL(12,2) NULL AFTER interest_value");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS total_with_interest DECIMAL(12,2) NULL AFTER interest_amount");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS monthly_installment DECIMAL(12,2) NULL AFTER total_with_interest");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS grace_days INT NULL DEFAULT 0 AFTER monthly_installment");
 } catch (Exception $e) {
     // ignore migration errors
 }
