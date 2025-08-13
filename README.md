@@ -82,3 +82,14 @@ For inquiries or support, please contact:
 **Project Maintainer**  
 Hakan Berke İçellioğlu 
 [hakanicellioglu@gmail.com](mailto:hakanicellioglu@gmail.com)
+## Apache Configuration
+To enable the custom error pages and routing, ensure the Apache vhost allows `.htaccess` overrides:
+
+```
+<Directory "/path/to/htdocs">
+    AllowOverride All
+</Directory>
+```
+
+After updating the configuration, restart Apache for the changes to take effect.
+
