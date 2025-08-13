@@ -1,0 +1,31 @@
+body { font-family: 'DejaVu Sans', sans-serif; font-size: 11px; }
+header, footer { font-size: 10px; }
+header { height: 42mm; }
+footer { height: 18mm; }
+
+.card { border: 0.1mm solid #bbb; padding: 3mm; margin-bottom: 4mm; }
+.columns.two { display: flex; gap: 4mm; }
+.columns.two > div { flex: 1; }
+
+.table-items { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.table-items th, .table-items td { border: 0.1mm solid #ddd; padding: 1.5mm; }
+.table-items thead th { background: #f0f0f0; }
+.table-items td.num, .table-items th.num { text-align: right; white-space: nowrap; }
+.table-items th.code { width: 12%; }
+.table-items th.name { width: 32%; }
+.table-items th.desc { width: 20%; }
+.table-items th.unit { width: 8%; }
+.table-items th.qty { width: 8%; }
+.table-items th.uprice { width: 10%; }
+.table-items th.disc { width: 5%; }
+.table-items th.vat { width: 5%; }
+.table-items th.total { width: 10%; }
+
+thead { display: table-header-group; }
+tfoot { display: table-footer-group; }
+.no-split { page-break-inside: avoid; }
+.keep-next { page-break-after: avoid; }
+
+.approval { margin-top: 6mm; }
+.approval .signatures { display: flex; justify-content: space-between; margin-top: 10mm; }
+.approval .signatures div { width: 45%; border-top: 0.1mm solid #000; text-align: center; padding-top: 2mm; }
