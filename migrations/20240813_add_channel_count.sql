@@ -1,0 +1,1 @@
+ALTER TABLE products ADD COLUMN channel_count TINYINT UNSIGNED NULL AFTER unit;

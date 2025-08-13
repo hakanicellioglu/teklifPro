@@ -30,8 +30,8 @@ $error = null;
 $success = null;
 $vatAllowed = [1, 8, 18, 20];
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
-$categoryOptions = ['Cam', 'Alüminyum', 'Aksesuar', 'Fitil'];
-$unitTypeOptions = ['kg', 'metre', 'metrekare'];
+$categoryOptions = ['Cam', 'Alüminyum', 'Aksesuar', 'Fitil', 'Kumanda'];
+$unitTypeOptions = ['kg/m', 'm', 'm²', 'adet'];
 
 // Determine whether optional width/height columns exist
 $colStmt = $pdo->query('SHOW COLUMNS FROM products');
@@ -60,6 +60,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $category = trim($_POST['category'] ?? '');
     $unit_type = trim($_POST['unit_type'] ?? '');
     $unit_value = (float)($_POST['unit_value'] ?? 0);
+
+    $channel_count = $_POST['channel_count'] ?? null;
+    $isKumanda = mb_strtolower($category, 'UTF-8') === 'kumanda';
+    if ($isKumanda) {
+      if (!in_array((int)$channel_count, [5, 10, 15], true)) {
+        $errors[] = 'Kumanda kategorisi için Kanal Adedi alanı zorunludur ve 5, 10 veya 15 olmalıdır.';
+      } else {
+        $channel_count = (int)$channel_count;
+      }
+    } else {
+      $channel_count = null;
+    }
 
     if ($category === '' || !in_array($category, $categoryOptions, true)) {
       $errors[] = 'Kategori seçilmelidir.';
@@ -133,13 +145,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 
     if (!$errors) {
       try {
-        $sql = 'UPDATE products SET product_code=:product_code, name=:name, category=:category, unit=:unit_type, weight_per_meter=:unit_value, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, image_url=:image_url WHERE id=:id';
+        $sql = 'UPDATE products SET product_code=:product_code, name=:name, category=:category, unit=:unit_type, channel_count=:channel_count, weight_per_meter=:unit_value, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, image_url=:image_url WHERE id=:id';
         $stmt = $pdo->prepare($sql);
         $params = [
           ':product_code' => $product_code ?: null,
           ':name' => $name,
           ':category' => $category ?: null,
           ':unit_type' => $unit_type ?: null,
+          ':channel_count' => $channel_count,
           ':unit_value' => $unit_value,
           ':color' => $color ?: null,
           ':description' => $description ?: null,
@@ -163,6 +176,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $category = trim($_POST['category'] ?? '');
     $unit_type = trim($_POST['unit_type'] ?? '');
     $unit_value = (float)($_POST['unit_value'] ?? 0);
+    $channel_count = $_POST['channel_count'] ?? null;
+    $isKumanda = mb_strtolower($category, 'UTF-8') === 'kumanda';
+    if ($isKumanda) {
+      if (!in_array((int)$channel_count, [5, 10, 15], true)) {
+        $errors[] = 'Kumanda kategorisi için Kanal Adedi alanı zorunludur ve 5, 10 veya 15 olmalıdır.';
+      } else {
+        $channel_count = (int)$channel_count;
+      }
+    } else {
+      $channel_count = null;
+    }
     $color = trim($_POST['color'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
@@ -231,14 +255,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 
     if (!$errors) {
       try {
-        $cols = 'product_code, name, category, unit, weight_per_meter, color, description, unit_price, vat_rate, image_url';
-        $vals = ':product_code, :name, :category, :unit_type, :unit_value, :color, :description, :unit_price, :vat_rate, :image_url';
+        $cols = 'product_code, name, category, unit, channel_count, weight_per_meter, color, description, unit_price, vat_rate, image_url';
+        $vals = ':product_code, :name, :category, :unit_type, :channel_count, :unit_value, :color, :description, :unit_price, :vat_rate, :image_url';
         $stmt = $pdo->prepare("INSERT INTO products ($cols) VALUES ($vals)");
         $params = [
           ':product_code' => $product_code,
           ':name' => $name,
           ':category' => $category ?: null,
           ':unit_type' => $unit_type ?: null,
+          ':channel_count' => $channel_count,
           ':unit_value' => $unit_value,
           ':color' => $color ?: null,
           ':description' => $description ?: null,
@@ -260,7 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 $success = filter_input(INPUT_GET, 'success', FILTER_SANITIZE_SPECIAL_CHARS);
 $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHARS);
 
-$fields = 'id, product_code, name, category, unit AS unit_type, weight_per_meter AS unit_value, color, image_url, description, unit_price, vat_rate';
+$fields = 'id, product_code, name, category, unit AS unit_type, channel_count, weight_per_meter AS unit_value, color, image_url, description, unit_price, vat_rate';
 if ($hasDimensions) {
   $fields .= ', width, height';
 }
@@ -390,12 +415,22 @@ require __DIR__ . '/header.php';
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Kategori *</label>
-                            <select name="category" class="form-select" required>
+                            <select name="category" id="category-<?= $p['id'] ?>" class="form-select category-select" required>
                               <option value="">Seçiniz</option>
                               <?php foreach ($categoryOptions as $cat): ?>
                                 <option value="<?= e($cat) ?>" <?= ($p['category'] === $cat) ? 'selected' : '' ?>><?= e($cat) ?></option>
                               <?php endforeach; ?>
                             </select>
+                          </div>
+                          <div class="col-md-6 channel-count-group">
+                            <label class="form-label" for="channel_count-<?= $p['id'] ?>">Kanal Adedi</label>
+                            <select id="channel_count-<?= $p['id'] ?>" name="channel_count" class="form-select channel-count-field">
+                              <option value="">Seçiniz</option>
+                              <?php foreach ([5,10,15] as $n): ?>
+                                <option value="<?= $n ?>" <?= ((int)($p['channel_count'] ?? 0) === $n) ? 'selected' : '' ?>><?= $n ?></option>
+                              <?php endforeach; ?>
+                            </select>
+                            <div class="form-text">Only required for remote (‘kumanda’) products.</div>
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Birim Türü *</label>
@@ -522,12 +557,22 @@ require __DIR__ . '/header.php';
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Kategori *</label>
-                  <select name="category" class="form-select" required>
+                  <select name="category" id="category-create" class="form-select category-select" required>
                     <option value="">Seçiniz</option>
                     <?php foreach ($categoryOptions as $cat): ?>
                       <option value="<?= e($cat) ?>" <?= (isset($_POST['category']) && $_POST['category'] === $cat) ? 'selected' : '' ?>><?= e($cat) ?></option>
                     <?php endforeach; ?>
                   </select>
+                </div>
+                <div class="col-md-6 channel-count-group">
+                  <label class="form-label" for="channel_count-create">Kanal Adedi</label>
+                  <select id="channel_count-create" name="channel_count" class="form-select channel-count-field">
+                    <option value="">Seçiniz</option>
+                    <?php foreach ([5,10,15] as $n): ?>
+                      <option value="<?= $n ?>" <?= (isset($_POST['channel_count']) && (int)$_POST['channel_count'] === $n) ? 'selected' : '' ?>><?= $n ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                  <div class="form-text">Only required for remote (‘kumanda’) products.</div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Birim Türü *</label>
