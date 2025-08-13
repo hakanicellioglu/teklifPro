@@ -163,10 +163,12 @@ $error   = $_SESSION['flash_error'] ?? null; unset($_SESSION['flash_error']);
   <div class="col-md-6">
     <input type="search" name="search" class="form-control" placeholder="Ara" value="<?= e($search) ?>">
   </div>
-  <div class="col-md-6 d-flex align-items-center gap-2">
-    <?php foreach ([""=>'Tümü','active'=>'Aktif','pending'=>'Beklemede','closed'=>'Kapalı'] as $code=>$label): ?>
-      <a href="quotations?<?= http_build_query(['status'=>$code===''?null:$code, 'search'=>$search]) ?>" class="badge rounded-pill <?= $status===$code?'text-bg-primary':'text-bg-light' ?>"><?= $label ?></a>
-    <?php endforeach; ?>
+  <div class="col-md-6">
+    <select name="status" class="form-select" onchange="this.form.submit()">
+      <?php foreach (array_merge(['' => 'Tümü'], $statusLabels) as $code => $label): ?>
+        <option value="<?= e($code) ?>" <?= $status === $code ? 'selected' : '' ?>><?= e($label) ?></option>
+      <?php endforeach; ?>
+    </select>
   </div>
 </form>
 <?php if ($success): ?><div class="alert alert-success" role="alert"><?= e($success) ?></div><?php endif; ?>
