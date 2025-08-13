@@ -6,7 +6,7 @@ if (empty($_SESSION['user_id'])) {
     header('Location: login');
     exit;
 }
-require __DIR__ . '/config.php';
+require_once __DIR__ . '/config.php';
 
 $stmt = $pdo->prepare('SELECT r.name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = :id');
 $stmt->execute(['id' => $_SESSION['user_id']]);
