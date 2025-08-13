@@ -20,6 +20,7 @@ $paymentLabels = [
     'bank_transfer' => 'Havale/EFT',
     'credit_card'   => 'Kredi Kartı',
     'installment'   => 'Taksitli',
+    'vadeli'        => 'Vadeli',
     'other'         => 'Diğer',
 ];
 $statusLabels = [
@@ -63,6 +64,8 @@ $createData = [
     'payment_method' => '',
     'validity_days' => '',
     'installment_term' => '',
+    'term_months' => '',
+    'interest_value' => '',
 ];
 
 $action = $_POST['action'] ?? '';
@@ -75,6 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
     $payment    = $_POST['payment_method'] ?? '';
     $validity   = trim($_POST['validity_days'] ?? '');
     $term       = trim($_POST['installment_term'] ?? '');
+    $termMonths = trim($_POST['term_months'] ?? '');
+    $interest   = trim($_POST['interest_value'] ?? '');
 
     $createData = [
         'customer_id'      => $customerId ? (string)$customerId : '',
@@ -83,6 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
         'payment_method'   => $payment,
         'validity_days'    => $validity,
         'installment_term' => $term,
+        'term_months'      => $termMonths,
+        'interest_value'   => $interest,
     ];
 
     if (!hash_equals($csrfToken, $token)) {
@@ -112,15 +119,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
         $createErrors['installment_term'] = 'Vade en fazla 100 karakter olabilir.';
     }
 
+    if ($payment === 'vadeli') {
+        if ($termMonths === '' || !ctype_digit($termMonths) || (int)$termMonths < 1) {
+            $createErrors['term_months'] = 'Vade süresi geçerli bir sayı olmalıdır.';
+        }
+        if ($interest === '' || !is_numeric($interest)) {
+            $createErrors['interest_value'] = 'Vade farkı geçerli bir sayı olmalıdır.';
+        }
+    } else {
+        $termMonths = '';
+        $interest = '';
+    }
+
     if (!$createErrors) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO generaloffers (customer_id, offer_date, assembly_type, payment_method, validity_days, installment_term) VALUES (:customer_id, :offer_date, :assembly_type, :payment_method, :validity_days, :installment_term)");
+            $stmt = $pdo->prepare("INSERT INTO generaloffers (customer_id, offer_date, assembly_type, payment_method, validity_days, installment_term, term_months, interest_value) VALUES (:customer_id, :offer_date, :assembly_type, :payment_method, :validity_days, :installment_term, :term_months, :interest_value)");
             $stmt->bindValue(':customer_id', $customerId, PDO::PARAM_INT);
             $stmt->bindValue(':offer_date', $offerDate);
             $stmt->bindValue(':assembly_type', $assembly);
             $stmt->bindValue(':payment_method', $payment);
             $stmt->bindValue(':validity_days', $validityInt, $validityInt === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmt->bindValue(':installment_term', $term !== '' ? $term : null, $term === '' ? PDO::PARAM_NULL : PDO::PARAM_STR);
+            $stmt->bindValue(':term_months', $termMonths !== '' ? (int)$termMonths : null, $termMonths === '' ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindValue(':interest_value', $interest !== '' ? $interest : null, $interest === '' ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->execute();
             $newId = (int)$pdo->lastInsertId();
             $_SESSION['flash_success'] = 'Teklif oluşturuldu.';
@@ -151,7 +172,7 @@ $conditions = [];
 $params = [];
 if ($search !== '') { $conditions[] = 'CONCAT(c.first_name, " ", c.last_name) LIKE :term'; $params['term'] = "%$search%"; }
 if ($status !== '') { $conditions[] = 'g.status = :status'; $params['status'] = $status; }
-$sql = 'SELECT g.id, g.offer_date, g.status, g.assembly_type, g.payment_method, g.validity_days, g.installment_term, CONCAT(c.first_name, " ", c.last_name) AS customer,
+$sql = 'SELECT g.id, g.offer_date, g.status, g.assembly_type, g.payment_method, g.validity_days, g.installment_term, g.term_months, g.interest_value, CONCAT(c.first_name, " ", c.last_name) AS customer,
         COALESCE(gs.sum_total,0)+COALESCE(ss.sum_total,0) AS total_amount
         FROM generaloffers g
         LEFT JOIN customers c ON g.customer_id=c.id
@@ -168,10 +189,13 @@ $error   = $_SESSION['flash_error'] ?? null; unset($_SESSION['flash_error']);
 ?>
 <?php page_header('Teklifler', '<a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal"><i class="bi bi-plus"></i> Yeni Teklif</a>'); ?>
 <form class="row g-2 mb-3" method="get">
-  <div class="col-md-6">
-    <input type="search" name="search" class="form-control" placeholder="Ara" value="<?= e($search) ?>">
+  <div class="col-md-9">
+    <div class="input-group">
+      <input type="search" name="search" class="form-control" placeholder="Ara" value="<?= e($search) ?>">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+    </div>
   </div>
-  <div class="col-md-6">
+  <div class="col-md-3">
     <select name="status" class="form-select" onchange="this.form.submit()">
       <?php foreach (array_merge(['' => 'Tümü'], $statusLabels) as $code => $label): ?>
         <option value="<?= e($code) ?>" <?= $status === $code ? 'selected' : '' ?>><?= e($label) ?></option>
@@ -189,7 +213,14 @@ $error   = $_SESSION['flash_error'] ?? null; unset($_SESSION['flash_error']);
   <td><?= e($assemblyLabels[$o['assembly_type']] ?? '') ?></td>
   <td><?= e($paymentLabels[$o['payment_method']] ?? '') ?></td>
   <td><?= $o['validity_days'] !== null ? (int)$o['validity_days'].' gün' : '' ?></td>
-  <td><?= e($o['installment_term'] ?? '') ?></td>
+  <td>
+    <?php if ($o['payment_method'] === 'vadeli'): ?>
+      <?= $o['term_months'] !== null ? (int)$o['term_months'].' ay' : '' ?>
+      <?= $o['interest_value'] !== null ? ' %'.e($o['interest_value']) : '' ?>
+    <?php else: ?>
+      <?= e($o['installment_term'] ?? '') ?>
+    <?php endif; ?>
+  </td>
   <td><time datetime="<?= e($o['offer_date']) ?>"><?= e($o['offer_date']) ?></time></td>
   <td><?= number_format((float)$o['total_amount'],2,',','.') ?> ₺</td>
   <td><?= e($statusLabels[$o['status']] ?? $o['status']) ?></td>
@@ -253,12 +284,22 @@ $customers = $pdo->query('SELECT id, first_name, last_name, company_name AS comp
             </select>
             <?php if(isset($createErrors['payment_method'])): ?><div class="invalid-feedback"><?= e($createErrors['payment_method']) ?></div><?php endif; ?>
           </div>
+          <div class="mb-3 vadeli-fields" style="display:none;">
+            <label class="form-label">Vade Süresi (ay)</label>
+            <input type="number" min="1" name="term_months" class="form-control <?= isset($createErrors['term_months'])?'is-invalid':'' ?>" value="<?= e($createData['term_months']) ?>">
+            <?php if(isset($createErrors['term_months'])): ?><div class="invalid-feedback"><?= e($createErrors['term_months']) ?></div><?php endif; ?>
+          </div>
+          <div class="mb-3 vadeli-fields" style="display:none;">
+            <label class="form-label">Vade Farkı (aylık)</label>
+            <input type="number" step="0.01" name="interest_value" class="form-control <?= isset($createErrors['interest_value'])?'is-invalid':'' ?>" value="<?= e($createData['interest_value']) ?>">
+            <?php if(isset($createErrors['interest_value'])): ?><div class="invalid-feedback"><?= e($createErrors['interest_value']) ?></div><?php endif; ?>
+          </div>
           <div class="mb-3">
             <label class="form-label">Teklif Süresi (gün)</label>
             <input type="number" min="1" max="365" name="validity_days" class="form-control <?= isset($createErrors['validity_days'])?'is-invalid':'' ?>" value="<?= e($createData['validity_days']) ?>" placeholder="örn. 15">
             <?php if(isset($createErrors['validity_days'])): ?><div class="invalid-feedback"><?= e($createErrors['validity_days']) ?></div><?php endif; ?>
           </div>
-          <div class="mb-3">
+          <div class="mb-3 installment-field">
             <label class="form-label">Vade</label>
             <input type="text" name="installment_term" class="form-control <?= isset($createErrors['installment_term'])?'is-invalid':'' ?>" value="<?= e($createData['installment_term']) ?>" placeholder="3 taksit (aylık)">
             <?php if(isset($createErrors['installment_term'])): ?><div class="invalid-feedback"><?= e($createErrors['installment_term']) ?></div><?php endif; ?>
@@ -277,11 +318,21 @@ $customers = $pdo->query('SELECT id, first_name, last_name, company_name AS comp
     </div>
   </div>
 </div>
-<?php if ($createErrors): ?>
 <script>
-  var createModal = new bootstrap.Modal(document.getElementById('createModal'));
-  createModal.show();
-</script>
+function toggleVadeliFields() {
+  var payment = document.querySelector('#createModal select[name="payment_method"]').value;
+  document.querySelectorAll('#createModal .vadeli-fields').forEach(function(el){
+    el.style.display = payment === 'vadeli' ? '' : 'none';
+  });
+  var inst = document.querySelector('#createModal .installment-field');
+  if (inst) inst.style.display = payment === 'vadeli' ? 'none' : '';
+}
+document.querySelector('#createModal select[name="payment_method"]').addEventListener('change', toggleVadeliFields);
+toggleVadeliFields();
+<?php if ($createErrors): ?>
+var createModal = new bootstrap.Modal(document.getElementById('createModal'));
+createModal.show();
 <?php endif; ?>
+</script>
 <?php require __DIR__ . '/footer.php'; ?>
 
