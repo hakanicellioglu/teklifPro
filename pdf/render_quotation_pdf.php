@@ -25,6 +25,7 @@ if (!$id) {
     exit('Not found');
 }
 
+
 $stmt = $pdo->prepare('SELECT q.*, c.first_name, c.last_name, c.company, c.email, c.phone, c.address FROM generaloffers q JOIN customers c ON q.customer_id = c.id WHERE q.id = :id');
 $stmt->execute([':id' => $id]);
 $quote = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -33,9 +34,41 @@ if (!$quote) {
     exit('Not found');
 }
 
-$iStmt = $pdo->prepare('SELECT code, name, description, unit, qty, unit_price, discount_rate, vat_rate FROM quote_items WHERE quote_id = :id ORDER BY id');
-$iStmt->execute([':id' => $id]);
-$items = $iStmt->fetchAll(PDO::FETCH_ASSOC);
+$items = [];
+$gStmt = $pdo->prepare('SELECT system_type, width, height, quantity, total_amount FROM guillotinesystems WHERE general_offer_id = :id');
+$gStmt->execute([':id' => $id]);
+foreach ($gStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+    $qty = (int)$row['quantity'];
+    $total = (float)$row['total_amount'];
+    $unitPrice = $qty ? $total / $qty : $total;
+    $items[] = [
+        'code' => 'GU',
+        'name' => $row['system_type'],
+        'description' => $row['width'] . ' x ' . $row['height'],
+        'unit' => 'adet',
+        'qty' => $qty,
+        'unit_price' => $unitPrice,
+        'discount_rate' => 0,
+        'vat_rate' => 0,
+    ];
+}
+$sStmt = $pdo->prepare('SELECT system_type, width, height, quantity, total_amount FROM slidingsystems WHERE general_offer_id = :id');
+$sStmt->execute([':id' => $id]);
+foreach ($sStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+    $qty = (int)$row['quantity'];
+    $total = (float)$row['total_amount'];
+    $unitPrice = $qty ? $total / $qty : $total;
+    $items[] = [
+        'code' => 'SL',
+        'name' => $row['system_type'],
+        'description' => $row['width'] . ' x ' . $row['height'],
+        'unit' => 'adet',
+        'qty' => $qty,
+        'unit_price' => $unitPrice,
+        'discount_rate' => 0,
+        'vat_rate' => 0,
+    ];
+}
 
 $approveUrl = null;
 if (!empty($quote['approve_token'])) {
