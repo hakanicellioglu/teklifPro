@@ -34,14 +34,12 @@ if (!$offer) {
 }
 
 $customers = $pdo->query('SELECT id, first_name, last_name, company_name AS company FROM customers ORDER BY first_name')->fetchAll();
-$companies = $pdo->query('SELECT id, name FROM company ORDER BY name')->fetchAll();
 
 $errors = [];
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $customerId      = (int)($_POST['customer_id'] ?? 0);
-    $companyId       = $_POST['company_id'] !== '' ? (int)$_POST['company_id'] : null;
     $offerDate       = trim($_POST['offer_date'] ?? '');
     $assemblyType    = $_POST['assembly_type'] ?? '';
     $paymentMethod   = $_POST['payment_method'] ?? '';
@@ -67,9 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         try {
-            $stmt = $pdo->prepare('UPDATE generaloffers SET customer_id=:customer_id, company_id=:company_id, offer_date=:offer_date, assembly_type=:assembly_type, payment_method=:payment_method, validity_days=:validity_days, installment_term=:installment_term WHERE id=:id');
+            $stmt = $pdo->prepare('UPDATE generaloffers SET customer_id=:customer_id, offer_date=:offer_date, assembly_type=:assembly_type, payment_method=:payment_method, validity_days=:validity_days, installment_term=:installment_term WHERE id=:id');
             $stmt->bindValue(':customer_id', $customerId, PDO::PARAM_INT);
-            $stmt->bindValue(':company_id', $companyId, $companyId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmt->bindValue(':offer_date', $offerDate);
             $stmt->bindValue(':assembly_type', $assemblyType);
             $stmt->bindValue(':payment_method', $paymentMethod);
@@ -80,7 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success = 'Teklif güncellendi.';
             $offer = array_merge($offer, [
                 'customer_id'      => $customerId,
-                'company_id'       => $companyId,
                 'offer_date'       => $offerDate,
                 'assembly_type'    => $assemblyType,
                 'payment_method'   => $paymentMethod,
@@ -107,13 +103,6 @@ foreach ($customers as $c) {
     $customerOptions .= '<option value="' . (int)$c['id'] . '"' . $selected . '>' . e($label) . '</option>';
 }
 form_group('customer_id', 'Müşteri', "<select name='customer_id' id='customer_id' class='form-select' required>$customerOptions</select>", '', $errors['customer_id'] ?? '');
-
-$companyOptions = '<option value="">Seçiniz</option>';
-foreach ($companies as $co) {
-    $selected = ((int)$offer['company_id'] === (int)$co['id']) ? ' selected' : '';
-    $companyOptions .= '<option value="' . (int)$co['id'] . '"' . $selected . '>' . e($co['name']) . '</option>';
-}
-form_group('company_id', 'Şirket', "<select name='company_id' id='company_id' class='form-select'>$companyOptions</select>");
 
 $assemblyOptions = '<option value="">Seçiniz</option>';
 foreach ($assemblyTypes as $key => $label) {
