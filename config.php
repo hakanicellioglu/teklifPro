@@ -1,4 +1,6 @@
 <?php
+require __DIR__ . '/bootstrap.php';
+
 // Database connection settings
 const DB_HOST = 'localhost';
 const DB_NAME = 'teklifpro';
@@ -18,6 +20,5 @@ try {
     );
     $pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_turkish_ci');
 } catch (PDOException $e) {
-    // In production, consider logging the error instead of displaying it
-    die('Database connection failed: ' . $e->getMessage());
+    throw $e;
 }
