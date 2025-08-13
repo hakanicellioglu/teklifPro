@@ -6,10 +6,6 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$base = rtrim(BASE_PATH, '/') . '/';
-if (strpos($uri, $base) === 0) {
-    $uri = substr($uri, strlen($base));
-}
 $uri = trim($uri, '/');
 
 if ($uri === '' || $uri === 'index.php') {
