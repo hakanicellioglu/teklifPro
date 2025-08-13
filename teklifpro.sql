@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Anamakine: 127.0.0.1
--- Üretim Zamanı: 12 Ağu 2025, 15:07:36
+-- Üretim Zamanı: 13 Ağu 2025, 16:47:28
 -- Sunucu sürümü: 10.4.32-MariaDB
 -- PHP Sürümü: 8.2.12
 
@@ -32,6 +32,15 @@ CREATE TABLE `categories` (
   `name` varchar(255) NOT NULL,
   `unit_type` enum('kg/m','adet','m','m²') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `categories`
+--
+
+INSERT INTO `categories` (`id`, `name`, `unit_type`) VALUES
+(1, 'Alüminyum', 'm'),
+(2, 'Aksesuar', 'adet'),
+(3, 'Fitil', 'm');
 
 -- --------------------------------------------------------
 
@@ -65,6 +74,13 @@ CREATE TABLE `customers` (
   `address` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
+--
+-- Tablo döküm verisi `customers`
+--
+
+INSERT INTO `customers` (`id`, `first_name`, `last_name`, `company_name`, `company`, `email`, `phone`, `address`) VALUES
+(1, 'Hakan Berke', 'İÇELLİOĞLU', 'Moza', NULL, 'hakanicellioglu@gmail.com', '05466017490', 'Mustafa Şimşek Bulvarı Alpaslan Mahallesi Esen Apartmanı 112/ 37');
+
 -- --------------------------------------------------------
 
 --
@@ -73,12 +89,23 @@ CREATE TABLE `customers` (
 
 CREATE TABLE `generaloffers` (
   `id` int(11) NOT NULL,
+  `quote_no` varchar(50) DEFAULT NULL,
   `customer_id` int(11) DEFAULT NULL,
   `company_id` int(11) DEFAULT NULL,
   `offer_date` date DEFAULT NULL,
   `assembly_type` varchar(100) DEFAULT NULL,
   `delivery_time` varchar(100) DEFAULT NULL,
   `payment_method` varchar(100) DEFAULT NULL,
+  `validity_days` int(11) DEFAULT NULL,
+  `installment_term` varchar(100) DEFAULT NULL,
+  `payment_type` enum('cash','installment') NOT NULL DEFAULT 'cash',
+  `term_months` int(11) DEFAULT NULL,
+  `interest_mode` enum('percent','fixed') DEFAULT NULL,
+  `interest_value` decimal(12,2) DEFAULT NULL,
+  `interest_amount` decimal(12,2) DEFAULT NULL,
+  `total_with_interest` decimal(12,2) DEFAULT NULL,
+  `monthly_installment` decimal(12,2) DEFAULT NULL,
+  `grace_days` int(11) DEFAULT 0,
   `payment_term` varchar(100) DEFAULT NULL,
   `offer_validity` varchar(100) DEFAULT NULL,
   `maturity_period` varchar(100) DEFAULT NULL,
@@ -86,8 +113,16 @@ CREATE TABLE `generaloffers` (
   `discount_amount` decimal(10,2) DEFAULT NULL,
   `vat_rate` decimal(5,2) DEFAULT NULL,
   `vat_amount` decimal(10,2) DEFAULT NULL,
-  `total_amount` decimal(15,2) DEFAULT NULL
+  `total_amount` decimal(15,2) DEFAULT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'pending'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `generaloffers`
+--
+
+INSERT INTO `generaloffers` (`id`, `quote_no`, `customer_id`, `company_id`, `offer_date`, `assembly_type`, `delivery_time`, `payment_method`, `validity_days`, `installment_term`, `payment_type`, `term_months`, `interest_mode`, `interest_value`, `interest_amount`, `total_with_interest`, `monthly_installment`, `grace_days`, `payment_term`, `offer_validity`, `maturity_period`, `discount_rate`, `discount_amount`, `vat_rate`, `vat_amount`, `total_amount`, `status`) VALUES
+(8, NULL, 1, NULL, '2025-08-13', 'demonte', NULL, 'vadeli', 15, NULL, 'installment', 1, 'percent', 5.00, 0.00, 0.00, 0.00, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'pending');
 
 -- --------------------------------------------------------
 
@@ -147,6 +182,14 @@ CREATE TABLE `roles` (
   `name` varchar(255) NOT NULL DEFAULT 'user'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
+--
+-- Tablo döküm verisi `roles`
+--
+
+INSERT INTO `roles` (`id`, `name`) VALUES
+(1, 'admin'),
+(2, 'user');
+
 -- --------------------------------------------------------
 
 --
@@ -203,6 +246,13 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
 --
+-- Tablo döküm verisi `users`
+--
+
+INSERT INTO `users` (`id`, `first_name`, `last_name`, `username`, `password`, `email`, `created_at`, `status`, `role_id`) VALUES
+(4, 'Hakan Berke', 'İÇELLİOĞLU', 'berkeicellioglu', '$2y$10$zVl/QQnU9tNHNYSg6vTFf.YOcoXaUzdsOMyi6xnCxs3h4gcMXijpa', 'hakanicellioglu@gmail.com', '2025-08-13 11:12:51', 'active', 1);
+
+--
 -- Dökümü yapılmış tablolar için indeksler
 --
 
@@ -230,7 +280,8 @@ ALTER TABLE `customers`
 ALTER TABLE `generaloffers`
   ADD PRIMARY KEY (`id`),
   ADD KEY `customer_id` (`customer_id`),
-  ADD KEY `company_id` (`company_id`);
+  ADD KEY `company_id` (`company_id`),
+  ADD KEY `idx_generaloffers_status` (`status`);
 
 --
 -- Tablo için indeksler `guillotinesystems`
@@ -282,7 +333,7 @@ ALTER TABLE `users`
 -- Tablo için AUTO_INCREMENT değeri `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `company`
@@ -294,19 +345,19 @@ ALTER TABLE `company`
 -- Tablo için AUTO_INCREMENT değeri `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `generaloffers`
 --
 ALTER TABLE `generaloffers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `guillotinesystems`
 --
 ALTER TABLE `guillotinesystems`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `products`
@@ -318,7 +369,7 @@ ALTER TABLE `products`
 -- Tablo için AUTO_INCREMENT değeri `roles`
 --
 ALTER TABLE `roles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `slidingsystems`
@@ -330,13 +381,13 @@ ALTER TABLE `slidingsystems`
 -- Tablo için AUTO_INCREMENT değeri `themes`
 --
 ALTER TABLE `themes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Dökümü yapılmış tablolar için kısıtlamalar
