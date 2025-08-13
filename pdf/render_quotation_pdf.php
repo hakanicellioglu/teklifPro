@@ -8,7 +8,13 @@ if (empty($_SESSION['user_id'])) {
 }
 
 require __DIR__ . '/../config.php';
-require __DIR__ . '/../vendor/autoload.php';
+
+$autoload = __DIR__ . '/../vendor/autoload.php';
+if (!file_exists($autoload)) {
+    http_response_code(500);
+    exit('Composer autoload file not found. Run "composer install".');
+}
+require $autoload;
 
 function e(?string $v): string { return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8'); }
 function money_tr(float $v): string { return number_format($v, 2, ',', '.') . ' ₺'; }
