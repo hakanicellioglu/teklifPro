@@ -1,5 +1,15 @@
 <?php
-require __DIR__ . '/header.php';
+require_once __DIR__ . '/config.php';
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
+if (empty($_SESSION['user_id'])) {
+  header('Location: login');
+  exit;
+}
+$stmt = $pdo->prepare('SELECT r.name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = :id');
+$stmt->execute(['id' => $_SESSION['user_id']]);
+$role = $stmt->fetchColumn() ?: 'user';
 
 function e(?string $v): string
 {
@@ -256,6 +266,7 @@ if ($hasDimensions) {
 }
 $stmt = $pdo->query("SELECT $fields FROM products ORDER BY id DESC");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+require __DIR__ . '/header.php';
 ?>
 <style>
   .image-upload-area {
@@ -614,7 +625,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
       area.classList.remove('dragover');
     });
 
-    area.addEventListener('drop', e => {
+  area.addEventListener('drop', e => {
       e.preventDefault();
       area.classList.remove('dragover');
       if (e.dataTransfer.files && e.dataTransfer.files.length) {
@@ -624,6 +635,4 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     });
   });
 </script>
-</body>
-
-</html>
+<?php require __DIR__ . '/footer.php'; ?>
