@@ -162,7 +162,7 @@ $error   = $_SESSION['flash_error'] ?? null; unset($_SESSION['flash_error']);
 <?php if ($error): ?><div class="alert alert-danger" role="alert"><?= e($error) ?></div><?php endif; ?>
 <?php data_table_start(['#','Müşteri','Montaj','Ödeme','Süre','Vade','Tarih','Tutar','Durum','İşlemler']); ?>
 <?php if ($offers): foreach ($offers as $o): ?>
-<tr>
+<tr class="text-center">
   <td><?= (int)$o['id'] ?></td>
   <td><?= e($o['customer']) ?></td>
   <td><?= e($assemblyLabels[$o['assembly_type']] ?? '') ?></td>
@@ -172,7 +172,7 @@ $error   = $_SESSION['flash_error'] ?? null; unset($_SESSION['flash_error']);
   <td><time datetime="<?= e($o['offer_date']) ?>"><?= e($o['offer_date']) ?></time></td>
   <td><?= number_format((float)$o['total_amount'],2,',','.') ?> ₺</td>
   <td><?= e($o['status']) ?></td>
-  <td class="text-end">
+  <td class="text-center">
     <a href="quotation_view.php?id=<?= (int)$o['id'] ?>" class="btn btn-sm btn-outline-secondary" title="Görüntüle"><i class="bi bi-eye"></i></a>
     <form method="post" class="d-inline">
       <input type="hidden" name="action" value="delete">
