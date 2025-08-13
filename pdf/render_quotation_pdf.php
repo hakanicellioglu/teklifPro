@@ -25,7 +25,7 @@ if (!$id) {
     exit('Not found');
 }
 
-$stmt = $pdo->prepare('SELECT q.*, c.first_name, c.last_name, c.company, c.email, c.phone, c.address FROM master_quotes q JOIN customers c ON q.customer_id = c.id WHERE q.id = :id');
+$stmt = $pdo->prepare('SELECT q.*, c.first_name, c.last_name, c.company, c.email, c.phone, c.address FROM generaloffers q JOIN customers c ON q.customer_id = c.id WHERE q.id = :id');
 $stmt->execute([':id' => $id]);
 $quote = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$quote) {
