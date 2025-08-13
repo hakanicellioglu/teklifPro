@@ -174,7 +174,6 @@ $error   = $_SESSION['flash_error'] ?? null; unset($_SESSION['flash_error']);
   <td><?= e($o['status']) ?></td>
   <td class="text-end">
     <a href="quotation_view.php?id=<?= (int)$o['id'] ?>" class="btn btn-sm btn-outline-secondary" title="Görüntüle"><i class="bi bi-eye"></i></a>
-    <a href="quotation_view.php?id=<?= (int)$o['id'] ?>&edit=1" class="btn btn-sm btn-outline-secondary" title="Düzenle"><i class="bi bi-pencil"></i></a>
     <form method="post" class="d-inline">
       <input type="hidden" name="action" value="delete">
       <input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
