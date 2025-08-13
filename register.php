@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 $pageTitle = "Kayıt Ol";
-require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/helpers/utils.php';
 require_once __DIR__ . '/helpers/auth.php';
 
