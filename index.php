@@ -1,8 +1,9 @@
 <?php
+
 declare(strict_types=1);
 
 $pageTitle = "Ana Sayfa";
-require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/helpers/utils.php';
 require_once __DIR__ . '/helpers/auth.php';
 require_login();
@@ -90,17 +91,17 @@ require_once __DIR__ . '/templates/header.php';
                 $recentQuotes = $stmt->fetchAll();
                 if ($recentQuotes):
                 ?>
-                <ul class="list-group list-group-flush">
-                    <?php foreach ($recentQuotes as $q): ?>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong><?= e($q['quote_no']); ?></strong>
-                                <div class="small text-muted"><?= e($q['customer_name'] ?? '—'); ?></div>
-                            </div>
-                            <span class="badge bg-secondary"><?= e($q['status'] ?? '—'); ?></span>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
+                    <ul class="list-group list-group-flush">
+                        <?php foreach ($recentQuotes as $q): ?>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong><?= e($q['quote_no']); ?></strong>
+                                    <div class="small text-muted"><?= e($q['customer_name'] ?? '—'); ?></div>
+                                </div>
+                                <span class="badge bg-secondary"><?= e($q['status'] ?? '—'); ?></span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
                 <?php else: ?>
                     <div class="text-muted">Henüz teklif yok.</div>
                 <?php endif; ?>
@@ -124,17 +125,17 @@ require_once __DIR__ . '/templates/header.php';
                 $recentProducts = $stmt->fetchAll();
                 if ($recentProducts):
                 ?>
-                <ul class="list-group list-group-flush">
-                    <?php foreach ($recentProducts as $p): ?>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong><?= e($p['code']); ?></strong>
-                                <div class="small text-muted"><?= e($p['name']); ?></div>
-                            </div>
-                            <small class="text-muted"><?= e(date('d.m.Y', strtotime($p['created_at']))); ?></small>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
+                    <ul class="list-group list-group-flush">
+                        <?php foreach ($recentProducts as $p): ?>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong><?= e($p['code']); ?></strong>
+                                    <div class="small text-muted"><?= e($p['name']); ?></div>
+                                </div>
+                                <small class="text-muted"><?= e(date('d.m.Y', strtotime($p['created_at']))); ?></small>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
                 <?php else: ?>
                     <div class="text-muted">Henüz ürün yok.</div>
                 <?php endif; ?>
