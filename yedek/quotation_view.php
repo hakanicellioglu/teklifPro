@@ -366,7 +366,11 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
     <li class="breadcrumb-item active" aria-current="page">#<?= e((string)$offer['id']) ?></li>
   </ol>
 </nav>
-<?php page_header('Teklif #' . e((string)$offer['id']), '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary btn-icon"><i class="bi bi-pencil"></i>Düzenle</a>'); ?>
+<?php
+$actions = '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary btn-icon"><i class="bi bi-pencil"></i>Düzenle</a>';
+$actions .= ' <a href="pdf/render_quotation_pdf.php?id=' . e((string)$offer['id']) . '" class="btn btn-secondary btn-icon"><i class="bi bi-file-earmark-pdf"></i>PDF İndir</a>';
+page_header('Teklif #' . e((string)$offer['id']), $actions);
+?>
 <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
 <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
 <div class="card mb-4">
