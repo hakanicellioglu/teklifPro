@@ -1,0 +1,95 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Image</title>
+<link type="text/css" rel="stylesheet" href="fpdf.css">
+</head>
+<body>
+<h1>Image</h1>
+<code>Image(<b>string</b> file [, <b>float</b> x [, <b>float</b> y [, <b>float</b> w [, <b>float</b> h [, <b>string</b> type [, <b>mixed</b> link]]]]]])</code>
+<h2>Açıklama</h2>
+Bir resim yerleştirir. Sayfa üzerinde alacağı boyut farklı şekillerde belirtilebilir:
+<ul>
+<li>açık genişlik ve yükseklik (kullanıcı biriminde veya dpi olarak ifade edilir)</li>
+<li>bir açık boyut, diğeri orijinal oranları korumak için otomatik olarak hesaplanır</li>
+<li>açık boyut yoksa, resim 96 dpi'de yerleştirili</li>
+</ul>
+Desteklenen formatlar JPEG, PNG ve GIF'dir. GIF için GD uzantısı gereklidir.
+<br>
+<br>
+JPEG'ler için tüm türler kabul edilir:
+<ul>
+<li>gri tonlar</li>
+<li>gerçek renkler (24 bit)</li>
+<li>CMYK (32 bit)</li>
+</ul>
+PNG'ler için aşağıdaki türler kabul edilir:
+<ul>
+<li>en fazla 8 bit gri tonlamalı (256 seviye)</li>
+<li>indeksli renkler</li>
+<li>gerçek renkler (24 bit)</li>
+</ul>
+GIF'ler için: bir animasyonlu GIF durumunda, sadece ilk çerçeve görüntülenir.<br>
+<br>Saydamlık desteklenir.<br>
+<br>
+Format açıkça belirtilebilir veya dosya uzantısından çıkarılabilir.<br>
+<br>
+Resim üzerine bir bağlantı yerleştirmek mümkündür.<br>
+<br>
+Not: Bir resim birden fazla kez kullanılıyorsa, yalnızca bir kopya dosyaya gömülür.
+<h2>Parametreler</h2>
+<dl class="param">
+<dt><code>file</code></dt>
+<dd>
+Resmin yolu veya URL'si.
+</dd>
+<dt><code>x</code></dt>
+<dd>
+Sol üst köşenin yatay koordinatı. Belirtilmemişse veya <code>null</code>'a eşitse, mevcut yatay koordinat kullanılır.
+</dd>
+<dt><code>y</code></dt>
+<dd>
+Sol üst köşenin dikey koordinatı. Belirtilmemişse veya <code>null</code>a eşitse, mevcut dikey koordinat kullanılır; üstelik gerekirse (otomatik sayfa sonlandırma etkinse) önce bir sayfa sonlandırması tetiklenir ve çağrıdan sonra mevcut dikey koordinat resmin altına taşınır.
+</dd>
+<dt><code>w</code></dt>
+<dd>
+Resmin sayfadaki genişliği. Üç durum vardır:
+<ul>
+<li>Değer pozitifse, kullanıcı biriminde genişliği temsil eder</li>
+<li>Değer negatifse, mutlak değer yatay çözünürlüğü dpi olarak temsil eder</li>
+<li>Değer belirtilmemişse veya sıfıra eşitse, otomatik olarak hesaplanır</li>
+</ul>
+</dd>
+<dt><code>h</code></dt>
+<dd>
+Resmin sayfadaki yüksekliği. Üç durum vardır:
+<ul>
+<li>Değer pozitifse, kullanıcı biriminde yüksekliği temsil eder</li>
+<li>Değer negatifse, mutlak değer dikey çözünürlüğü dpi olarak temsil eder</li>
+<li>Değer belirtilmemişse veya sıfıra eşitse, otomatik olarak hesaplanır</li>
+</ul>
+</dd>
+<dt><code>type</code></dt>
+<dd>
+Resim formatı. Olası değerler (büyük-küçük harf duyarsız): <code>JPG</code>, <code>JPEG</code>, <code>PNG</code> ve <code>GIF</code>.
+Belirtilmemişse, tür dosya uzantısından çıkarılır.
+</dd>
+<dt><code>link</code></dt>
+<dd>
+AddLink() tarafından döndürülen URL veya tanımlayıcı.
+</dd>
+</dl>
+<h2>Örnek</h2>
+<div class="doc-source">
+<pre><code>// Üst sol köşeye 300 dpi çözünürlükte bir logo yerleştir
+$pdf-&gt;Image('logo.png',10,10,-300);
+// URL'den dinamik bir resim yerleştir
+$pdf-&gt;Image('http://chart.googleapis.com/chart?cht=p3&amp;chd=t:60,40&amp;chs=250x100&amp;chl=Hello|World',60,30,90,0,'PNG');</code></pre>
+</div>
+<h2>Bunlara da bakın</h2>
+<a href="addlink.htm">AddLink()</a>.
+<hr style="margin-top:1.5em">
+<div style="text-align:center"><a href="index.htm">İçindekiler</a></div>
+</body>
+</html>

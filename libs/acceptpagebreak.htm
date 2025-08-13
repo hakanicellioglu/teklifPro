@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="tr">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>AcceptPageBreak</title>
+<link type="text/css" rel="stylesheet" href="fpdf.css">
+</head>
+<body>
+<h1>AcceptPageBreak</h1>
+<code><b>boolean</b> AcceptPageBreak()</code>
+<h2>Açıklama</h2>
+Herhangi bir sayfa sonu koşulu karşılandığında, yöntem çağrılır ve dönülen değere bağlı olarak kesme gerçekleştirilir veya gerçekleştirilmez. Varsayılan uygulama, SetAutoPageBreak() tarafından seçilen moda göre bir değer döndürür.
+<br>
+Bu yöntem otomatik olarak çağrılır ve uygulama tarafından doğrudan çağrılmamalıdır.
+<h2>Örnek</h2>
+Bu yöntem, 3 sütunlu bir düzen elde etmek amacıyla miras alınan bir sınıfta geçersiz kılınmıştır:
+<div class="doc-source">
+<pre><code>class PDF extends FPDF
+{
+    protected $col = 0;
+
+    function SetCol($col)
+    {
+        // Move position to a column
+        $this->col = $col;
+        $x = 10 + $col*65;
+        $this->SetLeftMargin($x);
+        $this->SetX($x);
+    }
+
+    function AcceptPageBreak()
+    {
+        if($this->col<2)
+        {
+            // Go to next column
+            $this->SetCol($this->col+1);
+            $this->SetY(10);
+            return false;
+        }
+        else
+        {
+            // Go back to first column and issue page break
+            $this->SetCol(0);
+            return true;
+        }
+    }
+}
+
+$pdf = new PDF();
+$pdf->AddPage();
+$pdf->SetFont('Arial', '', 12);
+for($i=1;$i<=300;$i++)
+    $pdf->Cell(0, 5, "Line $i", 0, 1);
+$pdf->Output();</code></pre>
+</div>
+<h2>Bunlara da bakın</h2>
+<a href="setautopagebreak.htm">SetAutoPageBreak()</a>.
+<hr style="margin-top:1.5em">
+<div style="text-align:center"><a href="index.htm">İçindekiler</a></div>
+</body>
+</html>

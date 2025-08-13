@@ -1,0 +1,76 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>SetFont</title>
+<link type="text/css" rel="stylesheet" href="fpdf.css">
+</head>
+<body>
+<h1>SetFont</h1>
+<code>SetFont(<b>string</b> family [, <b>string</b> style [, <b>float</b> size]])</code>
+<h2>Açıklama</h2>
+Karakter dizilerini yazdırmak için kullanılacak olan yazı tipini ayarlar. Metin yazdırmadan önce bu yöntemi en az bir kez çağırmak gereklidir.
+<br>
+<br>
+Yazı tipi standart bir yazı tipi veya AddFont() yöntemi ile eklenmiş bir yazı tipi olabilir. Standart yazı tipleri Windows kodlaması cp1252 (Batı Avrupa) kullanır.
+<br>
+<br>
+Bu yöntem, ilk sayfa oluşturulmadan önce çağrılabilir ve yazı tipi sayfadan sayfaya saklanır.
+<br>
+<br>
+Sadece mevcut yazı tipi boyutunu değiştirmek istiyorsanız, SetFontSize() yöntemini çağırmak daha basittir.
+<br>
+<h2>Parametreler</h2>
+<dl class="param">
+<dt><code>family</code></dt>
+<dd>
+Yazı tipi ailesi. AddFont() tarafından tanımlanan bir isim veya standart ailelerden biri (büyük küçük harfe duyarsız):
+<ul>
+<li><code>Courier</code> (sabit genişlik)
+<li><code>Helvetica</code> veya <code>Arial</code> (eş anlamlı; sans serif)
+<li><code>Times</code> (serif)
+<li><code>Symbol</code> (symbolic)
+<li><code>ZapfDingbats</code> (symbolic)
+</ul>
+Ayrıca boş bir dize geçmek de mümkündür. Bu durumda mevcut aile korunur.
+</dd>
+<dt><code>style</code></dt>
+<dd>
+Yazı tipi stili. Olası değerler (büyük küçük harfe duyarsız):
+<ul>
+<li>boş kelime: düzenli
+<li><code>B</code>: kalın
+<li><code>I</code>: italik
+<li><code>U</code>: altı çizili
+</ul>
+veya herhangi bir kombinasyon. Varsayılan değer düzenlidir.
+Kalın ve italik stilleri <code>Symbol</code> ve <code>ZapfDingbats</code> için uygulanmaz.
+</dd>
+<dt><code>size</code></dt>
+<dd>
+Punto cinsinden yazı tipi boyutu.
+<br>
+Varsayılan değer mevcut boyuttur. Belge başlangıcından bu yana hiçbir boyut belirtilmemişse, değer 12'dir.
+</dd>
+</dl>
+<h2>Örnek</h2>
+<div class="doc-source">
+<pre><code>// Times regular 12
+$pdf-&gt;SetFont('Times');
+// Arial bold 14
+$pdf-&gt;SetFont('Arial','B',14);
+// Kalın stilini kaldırır
+$pdf-&gt;SetFont('');
+// Times kalın, italik ve altı çizili 14
+$pdf-&gt;SetFont('Times','BIU');</code></pre>
+</div>
+<h2>Bunlara da bakın</h2>
+<a href="addfont.htm">AddFont()</a>,
+<a href="setfontsize.htm">SetFontSize()</a>,
+<a href="cell.htm">Cell()</a>,
+<a href="multicell.htm">MultiCell()</a>,
+<a href="write.htm">Write()</a>.
+<hr style="margin-top:1.5em">
+<div style="text-align:center"><a href="index.htm">İçindekiler</a></div>
+</body>
+</html>

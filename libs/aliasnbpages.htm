@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>AliasNbPages</title>
+<link type="text/css" rel="stylesheet" href="fpdf.css">
+</head>
+<body>
+<h1>AliasNbPages</h1>
+<code>AliasNbPages([<b>string</b> alias])</code>
+<h2>Açıklama</h2>
+Toplam sayfa sayısı için bir takma ad tanımlar. Belge kapatıldığında bu takma adın yerine geçirilecektir.
+<h2>Parametreler</h2>
+<dl class="param">
+<dt><code>alias</code></dt>
+<dd>
+Takma isim. Geçerli değer: <code>{nb}</code>.
+</dd>
+</dl>
+<h2>Örnek</h2>
+<div class="doc-source">
+<pre><code>class PDF extends FPDF
+{
+    function Footer()
+    {
+        // 1.5 cm alt kenardan başla
+        $this->SetY(-15);
+        // Arial italic 8'i seç
+        $this->SetFont('Arial', 'I', 8);
+        // Mevcut ve toplam sayfa numaralarını yazdır
+        $this->Cell(0, 10, 'Sayfa '.$this->PageNo().'/{nb}', 0, 0, 'C');
+    }
+}
+
+$pdf = new PDF();
+$pdf->AliasNbPages();
+</code></pre>
+</div>
+<h2>Bunlara da bakın</h2>
+<a href="pageno.htm">PageNo()</a>,
+<a href="footer.htm">Footer()</a>.
+<hr style="margin-top:1.5em">
+<div style="text-align:center"><a href="index.htm">İçindekiler</a></div>
+</body>
+</html>

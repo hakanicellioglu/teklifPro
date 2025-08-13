@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Output</title>
+<link type="text/css" rel="stylesheet" href="fpdf.css">
+</head>
+<body>
+<h1>Output</h1>
+<code><b>string</b> Output([<b>string</b> dest [, <b>string</b> name [, <b>boolean</b> isUTF8]]])</code>
+<h2>Açıklama</h2>
+Belgeyi belirtilen hedefe gönderir: tarayıcı, dosya veya dize. 
+Tarayıcı durumunda, PDF görüntüleyici kullanılabilir veya bir indirme zorlanabilir.
+<br>
+Yöntem önce Close() çağrısını gerektiği şekilde belgeyi sonlandırır.
+<h2>Parametreler</h2>
+<dl class="param">
+<dt><code>dest</code></dt>
+<dd>
+Belgeyi gönderilecek hedef. Aşağıdakilerden biri olabilir:
+<ul>
+<li><code>I</code>: dosyayı tarayıcıya içe gönder. PDF görüntüleyici kullanılır.
+<li><code>D</code>: tarayıcıya gönder ve <code>adı</code> ile belirtilen bir dosya indirmesini zorla.
+<li><code>F</code>: <code>adı</code> ile belirtilen bir dosyayı kaydet (yol da içerebilir).
+<li><code>S</code>: belgeyi bir dize olarak döndür.
+</ul>
+Varsayılan değer <code>I</code>’dir.
+</dd>
+<dt><code>name</code></dt>
+<dd>
+Dosyanın adı. Hedef <code>S</code> durumunda görmezden gelinir.
+Varsayılan değer <code>doc.pdf</code>'dir.
+</dd>
+<dt><code>isUTF8</code></dt>
+<dd>
+Adın ISO-8859-1 (false) veya UTF-8 (true) kodlamasına sahip olup olmadığını belirtir. Yalnızca I ve D hedefleri için kullanılır.
+Varsayılan değer false'dır.
+</dd>
+</dl>
+<h2>Örnek</h2>
+lokaldeki klasöre kaydetmek için:
+<div class="doc-source">
+<pre><code>$pdf->Output('F', 'reports/report.pdf');</code></pre>
+</div>
+İndirmeye zorlamak için:
+<div class="doc-source">
+<pre><code>$pdf->Output('D', 'report.pdf');</code></pre>
+</div>
+<h2>Bunlara da bakın</h2>
+<a href="close.htm">Close()</a>.
+<hr style="margin-top:1.5em">
+<div style="text-align:center"><a href="index.htm">İçindekiler</a></div>
+</body>
+</html>

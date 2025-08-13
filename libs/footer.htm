@@ -1,0 +1,34 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Footer</title>
+<link type="text/css" rel="stylesheet" href="fpdf.css">
+</head>
+<body>
+<h1>Footer</h1>
+<code>Footer()</code>
+<h2>Açıklama</h2>
+Bu yöntem sayfa alt bilgisini görüntülemek için kullanılır. Otomatik olarak AddPage() ve Close() tarafından çağrılır ve uygulama tarafından doğrudan çağrılmamalıdır. FPDF'deki uygulama boştur, bu nedenle belirli bir işlem yapmak istiyorsanız bunu alt sınıf olarak tanımlamalı ve yöntemi geçersiz kılmalısınız.
+<h2>Örnek</h2>
+<div class="doc-source">
+<pre><code>class PDF extends FPDF
+{
+    function Footer()
+    {
+        // 1.5 cm alt kenardan başla
+        $this->SetY(-15);
+        // Arial italic 8'i seç
+        $this->SetFont('Arial', 'I', 8);
+        // Ortalanmış sayfa numarasını yazdır
+        $this->Cell(0, 10, 'Sayfa '.$this->PageNo(), 0, 0, 'C');
+    }
+}
+</code></pre>
+</div>
+<h2>Bunlara da bakın</h2>
+<a href="header.htm">Header()</a>.
+<hr style="margin-top:1.5em">
+<div style="text-align:center"><a href="index.htm">İçindekiler</a></div>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Cell</title>
+<link type="text/css" rel="stylesheet" href="fpdf.css">
+</head>
+<body>
+<h1>Hücre</h1>
+<code>Cell(<b>float</b> w [, <b>float</b> h [, <b>string</b> txt [, <b>mixed</b> border [, <b>int</b> ln [, <b>string</b> align [, <b>boolean</b> fill [, <b>mixed</b> link]]]]]]])</code>
+<h2>Açıklama</h2>
+İsteğe bağlı sınırlar, arka plan rengi ve karakter dizisi ile bir hücre (dikdörtgen alan) yazdırır.
+Hücrenin sol üst köşesi mevcut konumu temsil eder. Metin hizalı veya ortalanmış olabilir.
+Çağrıdan sonra, mevcut konum sağa veya bir sonraki satıra taşınır. Metin üzerine bir bağlantı yerleştirmek mümkündür.
+<br>
+Otomatik sayfa sonlandırma etkinse ve hücre sınırı aşılırsa, çıktı verilmeden önce bir sayfa sonlandırılır.
+<h2>Parametreler</h2>
+<dl class="param">
+<dt><code>w</code></dt>
+<dd>
+Hücre genişliği. Eğer <code>0</code> ise, hücre sağ kenara kadar uzanır.
+</dd>
+<dt><code>h</code></dt>
+<dd>
+Hücre yüksekliği.
+Varsayılan değer: <code>0</code>.
+</dd>
+<dt><code>txt</code></dt>
+<dd>
+Yazdırılacak dize.
+Varsayılan değer: boş dize.
+</dd>
+<dt><code>border</code></dt>
+<dd>
+Hücre etrafında sınırların çizilip çizilmeyeceğini belirtir. Değer ya bir sayı olabilir:
+<ul>
+<li><code>0</code>: sınır yok</li>
+<li><code>1</code>: çerçeve</li>
+</ul>
+ya da aşağıdaki karakterlerin bazılarını veya tümünü içeren bir dize olabilir (herhangi bir sıra ile):
+<ul>
+<li><code>L</code>: sol</li>
+<li><code>T</code>: üst</li>
+<li><code>R</code>: sağ</li>
+<li><code>B</code>: alt</li>
+</ul>
+Varsayılan değer: <code>0</code>.
+</dd>
+<dt><code>ln</code></dt>
+<dd>
+Çağrıdan sonra mevcut konumun nereye gitmesi gerektiğini belirtir. Olası değerler:
+<ul>
+<li><code>0</code>: sağa</li>
+<li><code>1</code>: bir sonraki satırın başına</li>
+<li><code>2</code>: altına</li>
+</ul>
+<code>1</code> koymak, <code>0</code> koymak ve hemen ardından Ln() çağırmakla aynıdır.
+Varsayılan değer: <code>0</code>.
+</dd>
+<dt><code>align</code></dt>
+<dd>
+Metni ortalamak veya hizalamak için izin verir. Olası değerler:
+<ul>
+<li><code>L</code> veya boş dize: sola hizala (varsayılan değer)</li>
+<li><code>C</code>: ortala</li>
+<li><code>R</code>: sağa hizala</li>
+</ul>
+</dd>
+<dt><code>fill</code></dt>
+<dd>
+Hücre arka planının boyanıp boyanmayacağını belirtir (<code>true</code>) veya saydam olup olmadığını (<code>false</code>).
+Varsayılan değer: <code>false</code>.
+</dd>
+<dt><code>link</code></dt>
+<dd>
+AddLink() tarafından döndürülen URL veya tanımlayıcı.
+</dd>
+</dl>
+<h2>Örnek</h2>
+<div class="doc-source">
+<pre><code>// Yazı tipini ayarla
+$pdf-&gt;SetFont('Arial', 'B', 16);
+// Sağa 8 cm taşı
+$pdf-&gt;Cell(80);
+// Çerçeveli 20*10 mm hücrede ortalanmış metin ve satır sonu
+$pdf-&gt;Cell(20, 10, 'Başlık', 1, 1, 'C');</code></pre>
+</div>
+<h2>Ayrıca bakınız</h2>
+<a href="setfont.htm">SetFont()</a>,
+<a href="setdrawcolor.htm">SetDrawColor()</a>,
+<a href="setfillcolor.htm">SetFillColor()</a>,
+<a href="settextcolor.htm">SetTextColor()</a>,
+<a href="setlinewidth.htm">SetLineWidth()</a>,
+<a href="addlink.htm">AddLink()</a>,
+<a href="ln.htm">Ln()</a>,
+<a href="multicell.htm">MultiCell()</a>,
+<a href="write.htm">Write()</a>,
+<a href="setautopagebreak.htm">SetAutoPageBreak()</a>
+<hr style="margin-top:1.5em">
+<div style="text-align:center"><a href="index.htm">İçindekiler</a></div>
+</body>
+</html>

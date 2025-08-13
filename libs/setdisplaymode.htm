@@ -1,0 +1,41 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>SetDisplayMode</title>
+<link type="text/css" rel="stylesheet" href="fpdf.css">
+</head>
+<body>
+<h1>SetDisplayMode</h1>
+<code>SetDisplayMode(<b>mixed</b> zoom [, <b>string</b> layout])</code>
+<h2>Açıklama</h2>
+Belgenin görüntüleyici tarafından nasıl gösterileceğini tanımlar. Yakınlaştırma seviyesi ayarlanabilir: sayfalar tamamen ekranda görüntülenebilir, pencerenin tam genişliğini kaplayabilir, gerçek boyut kullanılabilir, belirli bir yakınlaştırma faktörü ile ölçeklenebilir veya görüntüleyici varsayılanı kullanılabilir (Adobe Reader'ın Tercihler menüsünde yapılandırılmıştır). Sayfa düzeni de belirtilebilir: tek tek, sürekli görüntü, iki sütun veya görüntüleyici varsayılanı.
+<h2>Parametreler</h2>
+<dl class="param">
+<dt><code>zoom</code></dt>
+<dd>
+Kullanılacak yakınlaştırma. Aşağıdaki dize değerlerinden biri olabilir:
+<ul>
+<li><code>fullpage</code>: tüm sayfayı ekranda görüntüler
+<li><code>fullwidth</code>: pencerenin maksimum genişliğini kullanır
+<li><code>real</code>: gerçek boyut kullanılır (100% yakınlaştırma ile eşdeğer)
+<li><code>default</code>: görüntüleyici varsayılan modu kullanır
+</ul>
+veya kullanılacak yakınlaştırma faktörünü belirten bir sayı.
+</dd>
+<dt><code>layout</code></dt>
+<dd>
+    Sayfa düzeni. Olası değerler:
+<ul>
+<li><code>single</code>: bir seferde bir sayfa görüntüler
+<li><code>continuous</code>: sayfaları sürekli görüntüler
+<li><code>two</code>: iki sayfayı iki sütunda görüntüler
+<li><code>default</code>: görüntüleyici varsayılan modu kullanır
+</ul>
+Varsayılan olan değer <code>default</code> tur.
+</dd>
+</dl>
+<hr style="margin-top:1.5em">
+<div style="text-align:center"><a href="index.htm">İçindekiler</a></div>
+</body>
+</html>

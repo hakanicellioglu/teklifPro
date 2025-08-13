@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>MultiCell</title>
+<link type="text/css" rel="stylesheet" href="fpdf.css">
+</head>
+<body>
+<h1>MultiCell</h1>
+<code>MultiCell(<b>float</b> w, <b>float</b> h, <b>string</b> txt [, <b>mixed</b> border [, <b>string</b> align [, <b>boolean</b> fill]]])</code>
+<h2>Açıklama</h2>
+Bu yöntem, metinleri satır sonlarıyla birlikte yazdırmak için kullanılır. Metinler otomatik olarak (metin hücrenin sağ kenarına ulaştığında) veya açık ( \n karakteri aracılığıyla) satır sonlandırabilir. Gerekli olduğu kadar çok hücre çıktısı üretilir, birbirinin altına konulur.
+<br>
+Metin hücresi hizalanabilir, ortalanabilir veya düzgün hizalanabilir. Hücre bloğu çerçevelenebilir ve arka plan boyanabilir.
+<h2>Parametreler</h2>
+<dl class="param">
+<dt><code>w</code></dt>
+<dd>
+Hücrelerin genişliği. Değer <code>0</code> ise, hücreler sayfanın sağ kenarına kadar uzanır.
+</dd>
+<dt><code>h</code></dt>
+<dd>
+Hücre yüksekliği.
+</dd>
+<dt><code>txt</code></dt>
+<dd>
+Yazdırılacak dize.
+</dd>
+<dt><code>border</code></dt>
+<dd>
+Hücre bloğunun etrafında sınırların çizilip çizilmeyeceğini belirtir. Değer şu olabilir:
+<ul>
+<li><code>0</code>: çerçevesiz
+<li><code>1</code>: çerçeveli
+</ul>
+yada hücrenin istenilen yerlerinde çizgi gösterilmesi sağlanabilir (sırası önemsiz):
+<ul>
+<li><code>L</code>: sol
+<li><code>T</code>: üst
+<li><code>R</code>: sağ
+<li><code>B</code>: alt
+</ul>
+Geçerli değer: <code>0</code>.
+</dd>
+<dt><code>align</code></dt>
+<dd>
+Metin hizalamasını ayarlar. Alabileceği değerler:
+<ul>
+<li><code>L</code>: sol hizalama
+<li><code>C</code>: ortalanmış
+<li><code>R</code>: sağa dayalı
+<li><code>J</code>: düzgün hizalama (varsayılan değer)
+</ul>
+</dd>
+<dt><code>fill</code></dt>
+<dd>
+Hücre arka planının boyanıp boyanmayacağını belirtir (<code>true</code>) veya saydam olup olmadığını (<code>false</code>) belirler.
+Geçerli değer: <code>false</code>.
+</dd>
+</dl>
+<h2>Bunlara da bakın</h2>
+<a href="setfont.htm">SetFont()</a>,
+<a href="setdrawcolor.htm">SetDrawColor()</a>,
+<a href="setfillcolor.htm">SetFillColor()</a>,
+<a href="settextcolor.htm">SetTextColor()</a>,
+<a href="setlinewidth.htm">SetLineWidth()</a>,
+<a href="cell.htm">Cell()</a>,
+<a href="write.htm">Write()</a>,
+<a href="setautopagebreak.htm">SetAutoPageBreak()</a>.
+<hr style="margin-top:1.5em">
+<div style="text-align:center"><a href="index.htm">İçindekiler</a></div>
+</body>
+</html>
