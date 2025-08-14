@@ -16,6 +16,13 @@ function enc(string $s): string {
     return $out !== false ? $out : $s;
 }
 
+/**
+ * Basic HTML escaper.
+ */
+function h(?string $v): string {
+    return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
+}
+
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
     http_response_code(400);
@@ -52,7 +59,7 @@ $rules = [
     'Kıl Fitil'            => fn($w, $h, $q) => [(($w - 183) * 4) + (($h - 166) * 8) + ((($h - 290) / 3) * 2), $q],
 ];
 
-$pStmt = $pdo->prepare('SELECT weight_per_meter FROM products WHERE LOWER(name) = LOWER(:name)');
+$pStmt = $pdo->prepare('SELECT weight_per_meter, image_url, image_data, image_mime FROM products WHERE LOWER(name) = LOWER(:name)');
 
 $aggregated = [];
 foreach ($systems as $sys) {
@@ -66,8 +73,16 @@ foreach ($systems as $sys) {
         }
         $totalLength = $measure * $qty;
         $pStmt->execute([':name' => $name]);
-        $prod = $pStmt->fetch(PDO::FETCH_ASSOC);
+        $prod = $pStmt->fetch(PDO::FETCH_ASSOC) ?: [];
         $wpm = (float)($prod['weight_per_meter'] ?? 0);
+
+        // Determine product image if available
+        $img = $prod['image_url'] ?? '';
+        if (!$img && !empty($prod['image_data'])) {
+            $mime = $prod['image_mime'] ?? 'image/png';
+            $img  = 'data:' . $mime . ';base64,' . base64_encode($prod['image_data']);
+        }
+
         $totalKg = $wpm * $totalLength / 1000;
         if (!isset($aggregated[$name])) {
             $aggregated[$name] = [
@@ -75,7 +90,11 @@ foreach ($systems as $sys) {
                 'length' => 0.0,
                 'qty'    => 0,
                 'kg'     => 0.0,
+                'image'  => '',
             ];
+        }
+        if ($img && !$aggregated[$name]['image']) {
+            $aggregated[$name]['image'] = $img;
         }
         $aggregated[$name]['length'] += $totalLength;
         $aggregated[$name]['qty'] += $qty;
@@ -83,30 +102,44 @@ foreach ($systems as $sys) {
     }
 }
 
-require __DIR__ . '/../libs/fpdf.php';
-
-$pdf = new FPDF();
-$pdf->AddPage();
-$pdf->SetAutoPageBreak(true, 15);
-$pdf->SetFont('Arial', 'B', 14);
-$pdf->Cell(0, 8, enc('Optimizasyon Sonucu'), 0, 1, 'C');
-$pdf->Ln(4);
-
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(60, 8, enc('Parça'), 1, 0);
-$pdf->Cell(30, 8, enc('Birim Uzunluk'), 1, 0, 'R');
-$pdf->Cell(30, 8, enc('Toplam Uzunluk'), 1, 0, 'R');
-$pdf->Cell(25, 8, enc('Adet'), 1, 0, 'R');
-$pdf->Cell(25, 8, enc('Toplam Kg'), 1, 1, 'R');
-
-$pdf->SetFont('Arial', '', 10);
-foreach ($aggregated as $row) {
-    $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
-    $pdf->Cell(60, 7, enc($row['name']), 1, 0);
-    $pdf->Cell(30, 7, (string)(int)round($unit), 1, 0, 'R');
-    $pdf->Cell(30, 7, (string)(int)round($row['length']), 1, 0, 'R');
-    $pdf->Cell(25, 7, (string)$row['qty'], 1, 0, 'R');
-    $pdf->Cell(25, 7, number_format($row['kg'], 3, ',', '.'), 1, 1, 'R');
-}
-
-$pdf->Output('I', 'optimizasyon.pdf');
+header('Content-Type: text/html; charset=UTF-8');
+?>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Optimizasyon Sonucu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWmvMRGsiE232zraFMvx6bMpiKFF9volG/Gp2gbf+5Q5e0siJY9hw3rrodpAtxE" crossorigin="anonymous">
+</head>
+<body class="p-4">
+<div class="container">
+    <h2 class="text-center mb-4">Optimizasyon Sonucu</h2>
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Parça</th>
+                    <th>Görsel</th>
+                    <th class="text-end">Birim Uzunluk</th>
+                    <th class="text-end">Toplam Uzunluk</th>
+                    <th class="text-end">Adet</th>
+                    <th class="text-end">Toplam Kg</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($aggregated as $row): $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0; ?>
+                <tr>
+                    <td><?= h($row['name']) ?></td>
+                    <td><?php if (!empty($row['image'])): ?><img src="<?= h($row['image']) ?>" alt="<?= h($row['name']) ?>" class="img-thumbnail" style="max-width:60px;" /><?php endif; ?></td>
+                    <td class="text-end"><?= (int)round($unit) ?></td>
+                    <td class="text-end"><?= (int)round($row['length']) ?></td>
+                    <td class="text-end"><?= (int)$row['qty'] ?></td>
+                    <td class="text-end"><?= number_format($row['kg'], 3, ',', '.') ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
