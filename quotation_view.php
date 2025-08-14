@@ -105,6 +105,8 @@ if (
     $gId   = filter_input(INPUT_POST, 'guillotine_id', FILTER_VALIDATE_INT);
     if (!hash_equals($csrfToken, $token) || !$gId) {
         $_SESSION['flash_error'] = 'Geçersiz CSRF tokenı.';
+        header('Location: quotation_view.php?id=' . $id);
+        exit;
     } else {
         $rules = require __DIR__ . '/rules.php';
         try {
@@ -170,16 +172,20 @@ if (
 
                 $pdo->commit();
                 $_SESSION['flash_success'] = 'Giyotin optimize edildi.';
+                header('Location: optimizasyon.php?id=' . $id . '&gid=' . $gId);
+                exit;
             } else {
                 throw new Exception('Giyotin satırı bulunamadı.');
             }
         } catch (Exception $e) {
-            $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             $_SESSION['flash_error'] = 'Optimize işleminde hata oluştu: ' . $e->getMessage();
+            header('Location: quotation_view.php?id=' . $id);
+            exit;
         }
     }
-    header('Location: quotation_view.php?id=' . $id);
-    exit;
 }
 
 try {
@@ -638,7 +644,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                             Düzenle
                                         </button>
                                         <?php if ($role === 'admin' && strtolower((string)$g['system_type']) === 'guillotine'): ?>
-                                            <form method="post" class="d-inline">
+                                            <form method="post" class="d-inline" target="_blank">
                                                 <input type="hidden" name="action" value="optimize_guillotine">
                                                 <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
                                                 <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
