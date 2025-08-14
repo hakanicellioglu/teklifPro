@@ -505,7 +505,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
 <?php
 $actions = '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary btn-icon"><i class="bi bi-pencil"></i>Düzenle</a>';
 $actions .= ' <a href="pdf/render_quotation_pdf.php?id=' . e((string)$offer['id']) . '" class="btn btn-secondary btn-icon"><i class="bi bi-file-earmark-pdf"></i>PDF İndir</a>';
-$actions .= ' <a href="optimizasyon.php" class="btn btn-secondary btn-icon"><i class="bi bi-gear"></i>Optimize Et</a>';
+$actions .= ' <a href="optimizasyon.php?id=' . e((string)$offer['id']) . '" class="btn btn-secondary btn-icon"><i class="bi bi-gear"></i>Optimize Et</a>';
 page_header('Teklif #' . e((string)$offer['id']), $actions);
 ?>
 <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
