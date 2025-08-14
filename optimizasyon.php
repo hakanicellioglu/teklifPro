@@ -86,8 +86,11 @@ foreach ($systems as $sys) {
 }
 ?>
 <div class="container py-4">
-    <h1 class="mb-4">Optimizasyon Sonucu</h1>
-    <button type="button" class="btn btn-secondary mb-3" onclick="window.close();">Geri Dön</button>
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="mb-0">Optimizasyon Sonucu</h1>
+        <button type="button" class="btn btn-secondary" onclick="window.close();">Geri Dön</button>
+    </div>
+
     <div class="row row-cols-1 row-cols-md-3 g-4">
         <?php foreach ($aggregated as $row):
             $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
