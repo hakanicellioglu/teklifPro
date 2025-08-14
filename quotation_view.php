@@ -480,49 +480,45 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
         <?php endif; ?>
     </div>
         <div class="card-body">
-            <div class="row mb-2">
-                <div class="col-md-6"><strong>Müşteri:</strong> <?= e(trim($offer['first_name'] . ' ' . $offer['last_name'])) ?></div>
-                <?php if (!empty($offer['company_name']) || !empty($offer['customer_company'])): ?>
-                    <div class="col-md-6"><strong>Firma:</strong> <?= e($offer['company_name'] ?? $offer['customer_company']) ?></div>
-                <?php endif; ?>
-            </div>
-            <div class="row mb-2">
-                <div class="col-md-6"><strong>Teklif Tarihi:</strong> <?= e(date('d.m.Y', strtotime($offer['offer_date']))) ?></div>
-                <div class="col-md-6"><strong>Montaj Tipi:</strong> <?= e($assemblyLabel) ?></div>
-            </div>
-            <div class="row mb-2">
-                <?php if (!empty($offer['payment_method'])): ?>
-                    <div class="col-md-4"><strong>Ödeme:</strong> <?= e($paymentLabels[$offer['payment_method']] ?? $offer['payment_method']) ?></div>
-                <?php endif; ?>
-                <?php if (!empty($offer['validity_days'])): ?>
-                    <div class="col-md-4"><strong>Geçerlilik:</strong> <?= (int)$offer['validity_days'] ?> gün</div>
-                <?php endif; ?>
-                <?php if (!empty($offer['installment_term'])): ?>
-                    <div class="col-md-4"><strong>Vade:</strong> <?= e($offer['installment_term']) ?></div>
-                <?php endif; ?>
-            </div>
-            <div class="row mb-2">
-                <div class="col-md-6">
-                    <?php if ($role === 'admin'): ?>
-                        <form method="post" class="d-flex align-items-center gap-2">
-                            <input type="hidden" name="action" value="update_status">
-                            <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
-                            <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                            <label class="form-label mb-0"><strong>Durum:</strong></label>
-                            <select name="status" class="form-select form-select-sm w-auto">
-                                <?php foreach ($statusLabels as $code => $label): ?>
-                                    <option value="<?= e($code) ?>" <?= $offer['status'] === $code ? 'selected' : '' ?>><?= e($label) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-primary">Kaydet</button>
-                        </form>
-                    <?php else: ?>
-                        <strong>Durum:</strong> <?= e($statusLabels[$offer['status']] ?? $offer['status']) ?>
-                    <?php endif; ?>
-                </div>
-            </div>
             <div class="row">
-                <div class="col-md-6"><strong>Toplam Tutar:</strong> <?= e($totalFormatted) ?></div>
+                <div class="col-md-6">
+                    <div class="mb-2"><strong>Müşteri:</strong> <?= e(trim($offer['first_name'] . ' ' . $offer['last_name'])) ?></div>
+                    <div class="mb-2"><strong>Teklif Tarihi:</strong> <?= e(date('d.m.Y', strtotime($offer['offer_date']))) ?></div>
+                    <?php if (!empty($offer['payment_method'])): ?>
+                        <div class="mb-2"><strong>Ödeme:</strong> <?= e($paymentLabels[$offer['payment_method']] ?? $offer['payment_method']) ?></div>
+                    <?php endif; ?>
+                    <div class="mb-2">
+                        <?php if ($role === 'admin'): ?>
+                            <form method="post" class="d-flex align-items-center gap-2">
+                                <input type="hidden" name="action" value="update_status">
+                                <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
+                                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                <label class="form-label mb-0"><strong>Durum:</strong></label>
+                                <select name="status" class="form-select form-select-sm w-auto">
+                                    <?php foreach ($statusLabels as $code => $label): ?>
+                                        <option value="<?= e($code) ?>" <?= $offer['status'] === $code ? 'selected' : '' ?>><?= e($label) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-primary">Kaydet</button>
+                            </form>
+                        <?php else: ?>
+                            <strong>Durum:</strong> <?= e($statusLabels[$offer['status']] ?? $offer['status']) ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <?php if (!empty($offer['company_name']) || !empty($offer['customer_company'])): ?>
+                        <div class="mb-2"><strong>Firma:</strong> <?= e($offer['company_name'] ?? $offer['customer_company']) ?></div>
+                    <?php endif; ?>
+                    <div class="mb-2"><strong>Montaj Tipi:</strong> <?= e($assemblyLabel) ?></div>
+                    <?php if (!empty($offer['validity_days'])): ?>
+                        <div class="mb-2"><strong>Geçerlilik:</strong> <?= (int)$offer['validity_days'] ?> gün</div>
+                    <?php endif; ?>
+                    <?php if (!empty($offer['installment_term'])): ?>
+                        <div class="mb-2"><strong>Vade:</strong> <?= e($offer['installment_term']) ?></div>
+                    <?php endif; ?>
+                    <div class="mb-2"><strong>Toplam Tutar:</strong> <?= e($totalFormatted) ?></div>
+                </div>
             </div>
         </div>
     </div>
