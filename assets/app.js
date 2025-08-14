@@ -50,10 +50,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.querySelectorAll('form').forEach(form => {
     form.addEventListener('submit', () => {
-      form.querySelectorAll('button[type=submit]').forEach(btn => {
+      const buttons = form.querySelectorAll('button[type=submit]');
+      buttons.forEach(btn => {
+        if (!btn.dataset.origHtml) {
+          btn.dataset.origHtml = btn.innerHTML;
+        }
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Kaydediliyor';
       });
-    }, { once: true });
+
+      // Re-enable and restore buttons if the page does not navigate
+      setTimeout(() => {
+        buttons.forEach(btn => {
+          if (btn.dataset.origHtml) {
+            btn.disabled = false;
+            btn.innerHTML = btn.dataset.origHtml;
+            delete btn.dataset.origHtml;
+          }
+        });
+      }, 5000);
+    });
   });
 });
