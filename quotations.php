@@ -184,8 +184,7 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $offers = $stmt->fetchAll();
 
-$success = $_SESSION['flash_success'] ?? null; unset($_SESSION['flash_success']);
-$error   = $_SESSION['flash_error'] ?? null; unset($_SESSION['flash_error']);
+unset($_SESSION['flash_error']);
 ?>
 <?php page_header('Teklifler', '<a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal"><i class="bi bi-plus"></i> Yeni Teklif</a>'); ?>
 <form class="row g-2 mb-3" method="get">
@@ -203,8 +202,6 @@ $error   = $_SESSION['flash_error'] ?? null; unset($_SESSION['flash_error']);
     </select>
   </div>
 </form>
-<?php if ($success): ?><div class="alert alert-success" role="alert"><?= e($success) ?></div><?php endif; ?>
-<?php if ($error): ?><div class="alert alert-danger" role="alert"><?= e($error) ?></div><?php endif; ?>
 <?php data_table_start(['#','Müşteri','Montaj','Ödeme','Süre','Vade','Tarih','Tutar','Durum','İşlemler'], 'text-center'); ?>
 <?php if ($offers): foreach ($offers as $o): ?>
 <tr class="text-center">
