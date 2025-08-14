@@ -102,6 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $motorKutuContasiMeasurement = $motorKutusuGasket + $altKasaGasket; // mm
         $kanatContasiMeasurement = $wingGasket; // mm
+        // Total hair gasket around the system perimeter
+        $kilFitilMeasurement = 2 * ($width + $height) * $quantity; // mm
 
         $partsDef = [
             ['Motor Kutusu', $motorKutusuMeasurement, $motorKutusuQty, $motorKutusuGasket],
@@ -123,6 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ['Motor Borusu', $motorBorusuMeasurement, $motorBorusuQty, null],
             ['Motor Kutu Contası', $motorKutuContasiMeasurement, 1, null],
             ['Kanat Contası', $kanatContasiMeasurement, 1, null],
+            ['Kıl Fitil', $kilFitilMeasurement, 1, null],
         ];
 
         foreach ($partsDef as $def) {
@@ -168,6 +171,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $extraInfo = 'Uzunluk: ' . number_format($motorKutuContasiMeasurement / 1000, 2, ',', '.') . ' m';
             } elseif ($name === 'Kanat Contası') {
                 $extraInfo = 'Uzunluk: ' . number_format($kanatContasiMeasurement / 1000, 2, ',', '.') . ' m';
+            } elseif ($name === 'Kıl Fitil') {
+                $extraInfo = 'Uzunluk: ' . number_format($kilFitilMeasurement / 1000, 2, ',', '.') . ' m';
             }
 
             $results[] = [
