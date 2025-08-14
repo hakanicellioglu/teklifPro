@@ -45,7 +45,7 @@ $rules = [
     'Motor Borusu'         => fn($w, $h, $q) => [$w - 59, $q],
     'Motor Kutu Contası'   => fn($w, $h, $q) => [$w * $q * 2, 1],
     'Kanat Contası'        => fn($w, $h, $q) => [(($h - 290) / 3) * 2, $q],
-    'Kıl Fitil'            => fn($w, $h, $q) => [(4 * $w) + (8 * $h), $q],
+    'Kıl Fitil'            => fn($w, $h, $q) => [(($w - 183) * 4) + (($h - 166) * 8) + ((($h - 290) / 3) * 2), $q],
 ];
 
 $pStmt = $pdo->prepare('SELECT weight_per_meter, image_url FROM products WHERE LOWER(name) = LOWER(:name)');
