@@ -20,7 +20,7 @@ $stmt->execute([':id' => $id]);
 $systems = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if (!$systems) {
-    echo '<div class="container py-4"><div class="alert alert-warning">Bu teklife ait giyotin sistemi bulunamadı.</div></div>';
+    echo '<div class="container py-4"><div class="alert alert-secondary">Bu teklife ait giyotin sistemi bulunamadı.</div></div>';
     require __DIR__ . '/footer.php';
     exit;
 }
@@ -86,23 +86,26 @@ foreach ($systems as $sys) {
 }
 ?>
 <div class="container py-4">
-    <h1 class="mb-4">Optimizasyon Sonucu</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-primary mb-0">Optimizasyon Sonucu</h1>
+        <a href="javascript:history.back()" class="btn btn-primary">Geri Dön</a>
+    </div>
     <div class="row row-cols-1 row-cols-md-3 g-4">
         <?php foreach ($aggregated as $row):
             $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
         ?>
             <div class="col">
-                <div class="card h-100">
+                <div class="card h-100 border-secondary">
                     <?php if (!empty($row['image'])): ?>
                         <img src="<?= e($row['image']) ?>" class="card-img-top" style="width: 150px; height: 150px; margin-left: auto; margin-right: auto; display: block;" alt="<?= e($row['name']) ?>">
                     <?php endif; ?>
                     <div class="card-body">
-                        <h5 class="card-title"><?= e($row['name']) ?></h5>
+                        <h5 class="card-title text-secondary"><?= e($row['name']) ?></h5>
                         <ul class="list-unstyled mb-0">
                             <li>Birim Uzunluk: <?= e((int)round($unit)) ?> mm</li>
                             <li>Toplam Uzunluk: <?= e((int)round($row['length'])) ?> mm</li>
                             <li>Adet: <?= e((string)$row['qty']) ?></li>
-                            <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
+                            <li class="text-danger fw-semibold">Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
                         </ul>
                     </div>
                 </div>
