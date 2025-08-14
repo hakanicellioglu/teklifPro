@@ -94,7 +94,7 @@ foreach ($systems as $sys) {
         <div class="col">
             <div class="card h-100">
                 <?php if (!empty($row['image'])): ?>
-                    <img src="<?= e($row['image']) ?>" class="card-img-top" alt="<?= e($row['name']) ?>">
+                    <img src="<?= e($row['image']) ?>" class="card-img-top w-50 h-50 mx-auto d-block" alt="<?= e($row['name']) ?>">
                 <?php endif; ?>
                 <div class="card-body">
                     <h5 class="card-title"><?= e($row['name']) ?></h5>
