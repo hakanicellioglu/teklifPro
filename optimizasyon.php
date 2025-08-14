@@ -85,24 +85,30 @@ foreach ($systems as $sys) {
     }
 }
 ?>
-<div class="container py-4">
-    <h1 class="mb-4">Optimizasyon Sonucu</h1>
+<div class="container py-4 bg-primary bg-opacity-10 rounded">
+    <h1 class="mb-4 text-primary">Optimizasyon Sonucu</h1>
+    <div class="mb-4">
+        <a href="quotation_view.php?id=<?= e((string)$id) ?>" class="btn btn-primary me-2">Teklife Dön</a>
+        <button onclick="window.print()" class="btn btn-success me-2">Yazdır</button>
+        <a href="#" class="btn btn-warning me-2" role="button">İndir</a>
+        <a href="#" class="btn btn-danger" role="button">Sil</a>
+    </div>
     <div class="row row-cols-1 row-cols-md-3 g-4">
         <?php foreach ($aggregated as $row):
             $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
         ?>
             <div class="col">
-                <div class="card h-100">
+                <div class="card h-100 border-info">
                     <?php if (!empty($row['image'])): ?>
                         <img src="<?= e($row['image']) ?>" class="card-img-top" style="width: 150px; height: 150px; margin-left: auto; margin-right: auto; display: block;" alt="<?= e($row['name']) ?>">
                     <?php endif; ?>
-                    <div class="card-body">
-                        <h5 class="card-title"><?= e($row['name']) ?></h5>
+                    <div class="card-body bg-info bg-opacity-10">
+                        <h5 class="card-title text-success"><?= e($row['name']) ?></h5>
                         <ul class="list-unstyled mb-0">
-                            <li>Birim Uzunluk: <?= e((int)round($unit)) ?> mm</li>
-                            <li>Toplam Uzunluk: <?= e((int)round($row['length'])) ?> mm</li>
-                            <li>Adet: <?= e((string)$row['qty']) ?></li>
-                            <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
+                            <li><span class="badge bg-secondary">Birim Uzunluk</span> <span class="badge bg-info text-dark"><?= e((int)round($unit)) ?> mm</span></li>
+                            <li><span class="badge bg-secondary">Toplam Uzunluk</span> <span class="badge bg-warning text-dark"><?= e((int)round($row['length'])) ?> mm</span></li>
+                            <li><span class="badge bg-secondary">Adet</span> <span class="badge bg-success"><?= e((string)$row['qty']) ?></span></li>
+                            <li><span class="badge bg-secondary">Toplam Kg</span> <span class="badge bg-danger"><?= e(number_format($row['kg'], 3, ',', '.')) ?></span></li>
                         </ul>
                     </div>
                 </div>
