@@ -686,6 +686,14 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                             data-profit="<?= e((string)$g['profit_margin']) ?>">
                                             Düzenle
                                         </button>
+                                        <?php if ($role === 'admin' && strtolower((string)$g['system_type']) === 'guillotine'): ?>
+                                            <form method="post" class="d-inline">
+                                                <input type="hidden" name="action" value="optimize">
+                                                <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
+                                                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                                <button type="submit" class="btn btn-sm btn-secondary"><i class="bi bi-gear"></i> Optimize</button>
+                                            </form>
+                                        <?php endif; ?>
                                         <?php if ($role === 'admin'): ?>
                                             <form method="post" class="d-inline" onsubmit="return confirm('Bu giyotin sistemini silmek istediğinize emin misiniz?');">
                                                 <input type="hidden" name="action" value="delete_guillotine">
