@@ -86,9 +86,13 @@ foreach ($systems as $sys) {
 }
 ?>
 <div class="container py-4">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <h1 class="mb-0">Optimizasyon Sonucu</h1>
-        <button type="button" class="btn btn-secondary" onclick="window.close();">Geri Dön</button>
+    <button type="button" class="btn btn-secondary my-3" onclick="window.close();">Geri Dön</button>
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <h1 class="mb-4">Optimizasyon Sonucu</h1>
+        <a href="pdf/render_optimization_pdf.php?id=<?= e((string)$id) ?>" class="btn btn-secondary ms-2" target="_blank">
+    
+            <i class="bi bi-file-earmark-pdf"></i> PDF İndir
+        </a>
     </div>
 
     <div class="row row-cols-1 row-cols-md-3 g-4">
