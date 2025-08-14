@@ -87,6 +87,10 @@ foreach ($systems as $sys) {
 ?>
 <div class="container py-4">
     <h1 class="mb-4">Optimizasyon Sonucu</h1>
+    <div class="d-flex justify-content-end mb-3 d-print-none">
+        <button class="btn btn-secondary" onclick="window.print()">Yazdır</button>
+        <a href="pdf/render_optimization_pdf.php?id=<?= e((string)$id) ?>" class="btn btn-secondary ms-2" target="_blank">PDF</a>
+    </div>
     <div class="row row-cols-1 row-cols-md-3 g-4">
         <?php foreach ($aggregated as $row):
             $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
