@@ -48,7 +48,7 @@ $rules = [
     'Kıl Fitil'            => fn($w, $h, $q) => [(($w - 183) * 4) + (($h - 166) * 8) + ((($h - 290) / 3) * 2), $q],
 ];
 
-$pStmt = $pdo->prepare('SELECT weight_per_meter, image_url FROM products WHERE LOWER(name) = LOWER(:name)');
+$pStmt = $pdo->prepare('SELECT p.weight_per_meter, p.image_url, c.name AS category_name FROM products p LEFT JOIN categories c ON p.category = c.id WHERE LOWER(p.name) = LOWER(:name)');
 
 $aggregated = [];
 foreach ($systems as $sys) {
@@ -65,18 +65,23 @@ foreach ($systems as $sys) {
         $prod = $pStmt->fetch(PDO::FETCH_ASSOC);
         $wpm = (float)($prod['weight_per_meter'] ?? 0);
         $imageUrl = $prod['image_url'] ?? null;
+        $category = strtolower($prod['category_name'] ?? '');
         $totalKg = $wpm * $totalLength / 1000; // convert mm to m
         if (!isset($aggregated[$name])) {
             $aggregated[$name] = [
-                'name'   => $name,
-                'length' => 0.0,
-                'qty'    => 0,
-                'kg'     => 0.0,
-                'image'  => $imageUrl,
+                'name'     => $name,
+                'length'   => 0.0,
+                'qty'      => 0,
+                'kg'       => 0.0,
+                'image'    => $imageUrl,
+                'category' => $category,
             ];
         } else {
             if (!$aggregated[$name]['image'] && $imageUrl) {
                 $aggregated[$name]['image'] = $imageUrl;
+            }
+            if (empty($aggregated[$name]['category']) && $category) {
+                $aggregated[$name]['category'] = $category;
             }
         }
         $aggregated[$name]['length'] += $totalLength;
@@ -103,7 +108,11 @@ foreach ($systems as $sys) {
                             <li>Birim Uzunluk: <?= e((int)round($unit)) ?> mm</li>
                             <li>Toplam Uzunluk: <?= e((int)round($row['length'])) ?> mm</li>
                             <li>Adet: <?= e((string)$row['qty']) ?></li>
-                            <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
+                            <?php if (($row['category'] ?? '') === 'aksesuar'): ?>
+                                <li>Toplam M: <?= e(number_format($row['length'] / 1000, 3, ',', '.')) ?></li>
+                            <?php else: ?>
+                                <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
+                            <?php endif; ?>
                         </ul>
                     </div>
                 </div>
