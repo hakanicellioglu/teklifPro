@@ -91,22 +91,22 @@ foreach ($systems as $sys) {
         <?php foreach ($aggregated as $row):
             $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
         ?>
-        <div class="col">
-            <div class="card h-100">
-                <?php if (!empty($row['image'])): ?>
-                    <img src="<?= e($row['image']) ?>" class="card-img-top w-50 h-50 mx-auto d-block" alt="<?= e($row['name']) ?>">
-                <?php endif; ?>
-                <div class="card-body">
-                    <h5 class="card-title"><?= e($row['name']) ?></h5>
-                    <ul class="list-unstyled mb-0">
-                        <li>Birim Uzunluk: <?= e((int)round($unit)) ?> mm</li>
-                        <li>Toplam Uzunluk: <?= e((int)round($row['length'])) ?> mm</li>
-                        <li>Adet: <?= e((string)$row['qty']) ?></li>
-                        <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
-                    </ul>
+            <div class="col">
+                <div class="card h-100">
+                    <?php if (!empty($row['image'])): ?>
+                        <img src="<?= e($row['image']) ?>" class="card-img-top" style="width: 150px; height: 150px; margin-left: auto; margin-right: auto; display: block;" alt="<?= e($row['name']) ?>">
+                    <?php endif; ?>
+                    <div class="card-body">
+                        <h5 class="card-title"><?= e($row['name']) ?></h5>
+                        <ul class="list-unstyled mb-0">
+                            <li>Birim Uzunluk: <?= e((int)round($unit)) ?> mm</li>
+                            <li>Toplam Uzunluk: <?= e((int)round($row['length'])) ?> mm</li>
+                            <li>Adet: <?= e((string)$row['qty']) ?></li>
+                            <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-        </div>
         <?php endforeach; ?>
     </div>
 </div>
