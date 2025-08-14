@@ -123,7 +123,7 @@ if (
                 $qty      = (int)$row['quantity'];
                 $remote   = $row['remote_quantity'] !== null ? (int)$row['remote_quantity'] : 0;
                 if ($width <= 0 || $height <= 0 || $qty <= 0 || $remote < 0) {
-                    throw new RuntimeException('Geçersiz giyotin verisi.');
+                    continue; // Skip invalid guillotine rows
                 }
 
                 $base = 0.0;
@@ -171,7 +171,7 @@ if (
                 $height = (float)$row['height'];
                 $qty    = (int)$row['quantity'];
                 if ($width <= 0 || $height <= 0 || $qty <= 0) {
-                    throw new RuntimeException('Geçersiz sürme verisi.');
+                    continue; // Skip invalid sliding rows
                 }
 
                 $base = 0.0;
@@ -223,7 +223,7 @@ if (
             $_SESSION['flash_success'] = 'Optimize işlemi tamamlandı.';
         } catch (Exception $e) {
             $pdo->rollBack();
-            $_SESSION['flash_error'] = 'Optimize işleminde hata oluştu.';
+            $_SESSION['flash_error'] = 'Optimize işleminde hata oluştu: ' . $e->getMessage();
         }
     }
     header('Location: quotation_view.php?id=' . $id);
