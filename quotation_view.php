@@ -482,7 +482,9 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
         <div class="card-body">
             <div class="row mb-2">
                 <div class="col-md-6"><strong>Müşteri:</strong> <?= e(trim($offer['first_name'] . ' ' . $offer['last_name'])) ?></div>
-                <div class="col-md-6"><strong>Firma:</strong> <?= e($offer['company_name'] ?? $offer['customer_company']) ?></div>
+                <?php if (!empty($offer['company_name']) || !empty($offer['customer_company'])): ?>
+                    <div class="col-md-6"><strong>Firma:</strong> <?= e($offer['company_name'] ?? $offer['customer_company']) ?></div>
+                <?php endif; ?>
             </div>
             <div class="row mb-2">
                 <div class="col-md-6"><strong>Teklif Tarihi:</strong> <?= e(date('d.m.Y', strtotime($offer['offer_date']))) ?></div>
