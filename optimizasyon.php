@@ -93,6 +93,7 @@ foreach ($systems as $sys) {
             <i class="bi bi-file-earmark-pdf"></i> PDF İndir
         </a>
     </div>
+
     <div class="row row-cols-1 row-cols-md-3 g-4">
         <?php foreach ($aggregated as $row):
             $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
