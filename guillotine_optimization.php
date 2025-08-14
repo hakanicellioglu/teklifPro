@@ -10,17 +10,15 @@ function fmtPrice(float $v): string {
 }
 
 function fetchProduct(PDO $pdo, string $name): array {
-    $stmt = $pdo->prepare('SELECT p.unit_price, p.weight_per_meter, p.width, p.height, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE p.name = :name');
+    $stmt = $pdo->prepare('SELECT p.unit_price, p.weight_per_meter, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE p.name = :name');
     $stmt->execute(['name' => $name]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
-        return ['unit_price' => 0, 'weight_per_meter' => 0, 'width' => 0, 'height' => 0, 'unit_type' => ''];
+        return ['unit_price' => 0, 'weight_per_meter' => 0, 'unit_type' => ''];
     }
     return [
         'unit_price' => (float)$row['unit_price'],
         'weight_per_meter' => (float)($row['weight_per_meter'] ?? 0),
-        'width' => (float)($row['width'] ?? 0),
-        'height' => (float)($row['height'] ?? 0),
         'unit_type' => $row['unit_type'] ?? '',
     ];
 }
@@ -143,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $totalPrice = $length * $unitPrice;
                     break;
                 case 'm²':
-                    $area = ($product['width'] * $product['height'] / 1000000) * $qtyPart;
+                    $area = ($width * $height / 1000000) * $qtyPart;
                     $totalPrice = $area * $unitPrice;
                     break;
                 default: // adet

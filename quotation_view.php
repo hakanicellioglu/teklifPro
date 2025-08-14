@@ -95,35 +95,33 @@ if (
     exit;
 }
 
-// Handle optimize action
+// Handle per-guillotine optimize action
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
-    ($_POST['action'] ?? '') === 'optimize' &&
+    ($_POST['action'] ?? '') === 'optimize_guillotine' &&
     $role === 'admin'
 ) {
-    $token  = $_POST['csrf_token'] ?? '';
-    $postId = (int)($_POST['id'] ?? 0);
-    if (!hash_equals($csrfToken, $token) || $postId !== $id) {
+    $token = $_POST['csrf_token'] ?? '';
+    $gId   = filter_input(INPUT_POST, 'guillotine_id', FILTER_VALIDATE_INT);
+    if (!hash_equals($csrfToken, $token) || !$gId) {
         $_SESSION['flash_error'] = 'Geçersiz CSRF tokenı.';
+        header('Location: quotation_view.php?id=' . $id);
+        exit;
     } else {
         $rules = require __DIR__ . '/rules.php';
         try {
             $pdo->beginTransaction();
+            $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE LOWER(p.name) = LOWER(:name)');
 
-            $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, p.width, p.height, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE LOWER(p.name) = LOWER(:name)');
-
-            // --- Guillotine systems ---
-            $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE general_offer_id = :id');
-            $gFetch->execute([':id' => $id]);
-            $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
-            $gTotal = 0.0;
-            foreach ($gFetch->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                $width    = (float)$row['width'];
-                $height   = (float)$row['height'];
-                $qty      = (int)$row['quantity'];
-                $remote   = $row['remote_quantity'] !== null ? (int)$row['remote_quantity'] : 0;
+            $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE id = :gid AND general_offer_id = :goid');
+            $gFetch->execute([':gid' => $gId, ':goid' => $id]);
+            if ($row = $gFetch->fetch(PDO::FETCH_ASSOC)) {
+                $width  = (float)$row['width'];
+                $height = (float)$row['height'];
+                $qty    = (int)$row['quantity'];
+                $remote = $row['remote_quantity'] !== null ? (int)$row['remote_quantity'] : 0;
                 if ($width <= 0 || $height <= 0 || $qty <= 0 || $remote < 0) {
-                    throw new RuntimeException('Geçersiz giyotin verisi.');
+                    throw new Exception('Geçersiz giyotin satırı.');
                 }
 
                 $base = 0.0;
@@ -150,84 +148,44 @@ if (
                         }
                     }
                 }
+
                 $rate = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
                 $profitAmount = $base * ($rate / 100);
                 $totalAmount  = $base + $profitAmount;
+                $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
                 $gUpd->execute([
                     ':pamount' => $profitAmount,
                     ':tamount' => $totalAmount,
-                    ':id'      => $row['id'],
+                    ':id'      => $gId,
                 ]);
-                $gTotal += $totalAmount;
+
+                // Recalculate overall totals
+                $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
+                $gSumStmt->execute([':id' => $id]);
+                $gSum = (float)$gSumStmt->fetchColumn();
+                $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
+                $sSumStmt->execute([':id' => $id]);
+                $sSum = (float)$sSumStmt->fetchColumn();
+                $overall = $gSum + $sSum;
+                $upd = $pdo->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id');
+                $upd->execute([':t' => $overall, ':id' => $id]);
+
+                $pdo->commit();
+                $_SESSION['flash_success'] = 'Giyotin optimize edildi.';
+                header('Location: optimizasyon.php?id=' . $id . '&gid=' . $gId);
+                exit;
+            } else {
+                throw new Exception('Giyotin satırı bulunamadı.');
             }
-
-            // --- Sliding systems ---
-            $sFetch = $pdo->prepare('SELECT * FROM slidingsystems WHERE general_offer_id = :id');
-            $sFetch->execute([':id' => $id]);
-            $sUpd = $pdo->prepare('UPDATE slidingsystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
-            $sTotal = 0.0;
-            foreach ($sFetch->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                $width  = (float)$row['width'];
-                $height = (float)$row['height'];
-                $qty    = (int)$row['quantity'];
-                if ($width <= 0 || $height <= 0 || $qty <= 0) {
-                    throw new RuntimeException('Geçersiz sürme verisi.');
-                }
-
-                $base = 0.0;
-                foreach ($rules['sliding'] ?? [] as $rule) {
-                    if (!is_callable($rule['match']) || !$rule['match']($row)) {
-                        continue;
-                    }
-                    foreach ($rule['products'] as $prod) {
-                        $calcQty = (float)$prod['qty']($row);
-                        if ($calcQty <= 0) {
-                            continue;
-                        }
-                        $pStmt->execute([':name' => $prod['name']]);
-                        if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
-                            $unit = (float)$p['unit_price'];
-                            $vat  = (float)$p['vat_rate'];
-                            $unitType = $p['unit_type'];
-                            if ($unitType === 'kg/m') {
-                                $weight = (float)$p['weight_per_meter'];
-                                $base += $calcQty * $weight * $unit * (1 + $vat / 100);
-                            } else {
-                                $base += $calcQty * $unit * (1 + $vat / 100);
-                            }
-                        }
-                    }
-                }
-
-                if ($base > 0) {
-                    $rate = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
-                    $profitAmount = $base * ($rate / 100);
-                    $totalAmount  = $base + $profitAmount;
-                    $sUpd->execute([
-                        ':pamount' => $profitAmount,
-                        ':tamount' => $totalAmount,
-                        ':id'      => $row['id'],
-                    ]);
-                    $sTotal += $totalAmount;
-                } else {
-                    $sTotal += (float)$row['total_amount'];
-                }
-            }
-
-            // Update general offer total
-            $overall = $gTotal + $sTotal;
-            $gUpdTotal = $pdo->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id');
-            $gUpdTotal->execute([':t' => $overall, ':id' => $id]);
-
-            $pdo->commit();
-            $_SESSION['flash_success'] = 'Optimize işlemi tamamlandı.';
         } catch (Exception $e) {
-            $pdo->rollBack();
-            $_SESSION['flash_error'] = 'Optimize işleminde hata oluştu.';
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $_SESSION['flash_error'] = 'Optimize işleminde hata oluştu: ' . $e->getMessage();
+            header('Location: quotation_view.php?id=' . $id);
+            exit;
         }
     }
-    header('Location: quotation_view.php?id=' . $id);
-    exit;
 }
 
 try {
@@ -505,7 +463,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
 <?php
 $actions = '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary btn-icon"><i class="bi bi-pencil"></i>Düzenle</a>';
 $actions .= ' <a href="pdf/render_quotation_pdf.php?id=' . e((string)$offer['id']) . '" class="btn btn-secondary btn-icon"><i class="bi bi-file-earmark-pdf"></i>PDF İndir</a>';
-$actions .= ' <a href="optimizasyon.php?id=' . e((string)$offer['id']) . '" class="btn btn-secondary btn-icon"><i class="bi bi-gear"></i>Optimize Et</a>';
 page_header('Teklif #' . e((string)$offer['id']), $actions);
 ?>
 <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
@@ -686,6 +643,14 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                             data-profit="<?= e((string)$g['profit_margin']) ?>">
                                             Düzenle
                                         </button>
+                                        <?php if ($role === 'admin' && strtolower((string)$g['system_type']) === 'guillotine'): ?>
+                                            <form method="post" class="d-inline" target="_blank">
+                                                <input type="hidden" name="action" value="optimize_guillotine">
+                                                <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
+                                                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                                <button type="submit" class="btn btn-sm btn-secondary"><i class="bi bi-gear"></i> Optimize</button>
+                                            </form>
+                                        <?php endif; ?>
                                         <?php if ($role === 'admin'): ?>
                                             <form method="post" class="d-inline" onsubmit="return confirm('Bu giyotin sistemini silmek istediğinize emin misiniz?');">
                                                 <input type="hidden" name="action" value="delete_guillotine">
