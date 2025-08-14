@@ -48,7 +48,7 @@ $rules = [
     'Kanat Contası'        => fn($w, $h, $q) => [(($h - 290) / 3) * 2, $q],
 ];
 
-$pStmt = $pdo->prepare('SELECT weight_per_meter FROM products WHERE LOWER(name) = LOWER(:name)');
+$pStmt = $pdo->prepare('SELECT weight_per_meter, image_url FROM products WHERE LOWER(name) = LOWER(:name)');
 
 $aggregated = [];
 foreach ($systems as $sys) {
@@ -62,43 +62,52 @@ foreach ($systems as $sys) {
         }
         $totalLength = $measure * $qty; // mm
         $pStmt->execute([':name' => $name]);
-        $wpm = (float)$pStmt->fetchColumn();
+        $prod = $pStmt->fetch(PDO::FETCH_ASSOC);
+        $wpm = (float)($prod['weight_per_meter'] ?? 0);
+        $imageUrl = $prod['image_url'] ?? null;
         $totalKg = $wpm * $totalLength / 1000; // convert mm to m
         if (!isset($aggregated[$name])) {
-            $aggregated[$name] = ['name' => $name, 'length' => 0.0, 'qty' => 0, 'kg' => 0.0];
+            $aggregated[$name] = [
+                'name'   => $name,
+                'length' => 0.0,
+                'qty'    => 0,
+                'kg'     => 0.0,
+                'image'  => $imageUrl,
+            ];
+        } else {
+            if (!$aggregated[$name]['image'] && $imageUrl) {
+                $aggregated[$name]['image'] = $imageUrl;
+            }
         }
         $aggregated[$name]['length'] += $totalLength;
         $aggregated[$name]['qty'] += $qty;
         $aggregated[$name]['kg'] += $totalKg;
     }
 }
-
 ?>
 <div class="container py-4">
-    <h1>Optimizasyon Sonucu</h1>
-    <table class="table table-bordered table-striped table-sm">
-        <thead>
-            <tr>
-                <th>Ürün</th>
-                <th>Birim Uzunluk (mm)</th>
-                <th>Toplam Uzunluk (mm)</th>
-                <th>Adet</th>
-                <th>Toplam Kg</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($aggregated as $row):
-                $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
-            ?>
-                <tr>
-                    <td><?= e($row['name']) ?></td>
-                    <td><?= e((int)round($unit)) ?></td>
-                    <td><?= e((int)round($row['length'])) ?></td>
-                    <td><?= e((string)$row['qty']) ?></td>
-                    <td><?= e(number_format($row['kg'], 3, ',', '.')) ?></td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+    <h1 class="mb-4">Optimizasyon Sonucu</h1>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        <?php foreach ($aggregated as $row):
+            $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
+        ?>
+        <div class="col">
+            <div class="card h-100">
+                <?php if (!empty($row['image'])): ?>
+                    <img src="<?= e($row['image']) ?>" class="card-img-top w-50 h-50 mx-auto d-block" alt="<?= e($row['name']) ?>">
+                <?php endif; ?>
+                <div class="card-body">
+                    <h5 class="card-title"><?= e($row['name']) ?></h5>
+                    <ul class="list-unstyled mb-0">
+                        <li>Birim Uzunluk: <?= e((int)round($unit)) ?> mm</li>
+                        <li>Toplam Uzunluk: <?= e((int)round($row['length'])) ?> mm</li>
+                        <li>Adet: <?= e((string)$row['qty']) ?></li>
+                        <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
 </div>
 <?php require __DIR__ . '/footer.php';
