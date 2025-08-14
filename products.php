@@ -407,6 +407,31 @@ require __DIR__ . '/header.php';
                       </div>
                       <div class="modal-body">
                         <div class="row g-3">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label for="product_image-<?= $p['id'] ?>" class="form-label">
+                                <i class="fas fa-image"></i>
+                                Ürün Görseli
+                              </label>
+                              <div class="image-upload-area" id="imageUploadArea-<?= $p['id'] ?>">
+                                <div class="image-preview" id="imagePreview-<?= $p['id'] ?>">
+                                  <?php if (!empty($p['image_url'])): ?>
+                                    <img src="<?= e($p['image_url']) ?>" alt="Preview">
+                                  <?php else: ?>
+                                    <div class="default-image">
+                                      <i class="fas fa-box"></i>
+                                      <span>Görsel Yükle</span>
+                                    </div>
+                                  <?php endif; ?>
+                                </div>
+                                <input type="file" id="product_image-<?= $p['id'] ?>" name="product_image" accept="image/*" class="image-input">
+                                <div class="upload-instructions">
+                                  <p>JPG, PNG, GIF or WebP format</p>
+                                  <p>Maximum 5MB</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                           <div class="col-md-6">
                             <label class="form-label">Ürün Kodu</label>
                             <input type="text" name="product_code" class="form-control" value="<?= e($p['product_code']) ?>">
@@ -428,7 +453,7 @@ require __DIR__ . '/header.php';
                             <label class="form-label" for="channel_count-<?= $p['id'] ?>">Kanal Adedi</label>
                             <select id="channel_count-<?= $p['id'] ?>" name="channel_count" class="form-select channel-count-field">
                               <option value="">Seçiniz</option>
-                              <?php foreach ([5,10,15] as $n): ?>
+                              <?php foreach ([5, 10, 15] as $n): ?>
                                 <option value="<?= $n ?>" <?= ((int)($p['channel_count'] ?? 0) === $n) ? 'selected' : '' ?>><?= $n ?></option>
                               <?php endforeach; ?>
                             </select>
@@ -467,32 +492,6 @@ require __DIR__ . '/header.php';
                                 <option value="<?= $vr ?>" <?= ($currentVat === (int)$vr) ? 'selected' : '' ?>>%<?= $vr ?></option>
                               <?php endforeach; ?>
                             </select>
-                          </div>
-
-                          <div class="col-md-6">
-                            <div class="form-group">
-                              <label for="product_image-<?= $p['id'] ?>" class="form-label">
-                                <i class="fas fa-image"></i>
-                                Ürün Görseli
-                              </label>
-                              <div class="image-upload-area" id="imageUploadArea-<?= $p['id'] ?>">
-                                <div class="image-preview" id="imagePreview-<?= $p['id'] ?>">
-                                  <?php if (!empty($p['image_url'])): ?>
-                                    <img src="<?= e($p['image_url']) ?>" alt="Preview">
-                                  <?php else: ?>
-                                    <div class="default-image">
-                                      <i class="fas fa-box"></i>
-                                      <span>Görsel Yükle</span>
-                                    </div>
-                                  <?php endif; ?>
-                                </div>
-                                <input type="file" id="product_image-<?= $p['id'] ?>" name="product_image" accept="image/*" class="image-input">
-                                <div class="upload-instructions">
-                                  <p>JPG, PNG, GIF or WebP format</p>
-                                  <p>Maximum 5MB</p>
-                                </div>
-                              </div>
-                            </div>
                           </div>
                           <div class="col-12">
                             <label class="form-label">Açıklama</label>
@@ -570,7 +569,7 @@ require __DIR__ . '/header.php';
                   <label class="form-label" for="channel_count-create">Kanal Adedi</label>
                   <select id="channel_count-create" name="channel_count" class="form-select channel-count-field">
                     <option value="">Seçiniz</option>
-                    <?php foreach ([5,10,15] as $n): ?>
+                    <?php foreach ([5, 10, 15] as $n): ?>
                       <option value="<?= $n ?>" <?= (isset($_POST['channel_count']) && (int)$_POST['channel_count'] === $n) ? 'selected' : '' ?>><?= $n ?></option>
                     <?php endforeach; ?>
                   </select>
@@ -673,7 +672,7 @@ require __DIR__ . '/header.php';
       area.classList.remove('dragover');
     });
 
-  area.addEventListener('drop', e => {
+    area.addEventListener('drop', e => {
       e.preventDefault();
       area.classList.remove('dragover');
       if (e.dataTransfer.files && e.dataTransfer.files.length) {
