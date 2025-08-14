@@ -293,6 +293,7 @@ if ($hasDimensions) {
 }
 $stmt = $pdo->query("SELECT $fields FROM products ORDER BY id DESC");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$productCount = count($products);
 require __DIR__ . '/header.php';
 ?>
 <style>
@@ -353,6 +354,8 @@ require __DIR__ . '/header.php';
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
   <?php endif; ?>
+
+  <p class="text-muted mb-3">Toplam <?= e($productCount) ?> ürün gösteriliyor.</p>
 
   <?php if (!$products): ?>
     <div class="alert alert-warning text-warning bg-warning bg-opacity-10 border-0" role="alert">
