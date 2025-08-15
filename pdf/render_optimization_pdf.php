@@ -4,27 +4,18 @@ declare(strict_types=1);
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+// --- GEÇİCİ: Hata yakalamayı aç (sorunu bulunca kapatın) ---
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
 if (empty($_SESSION['user_id'])) {
     http_response_code(403);
     exit('Forbidden');
 }
 
 require __DIR__ . '/../config.php';
-
-if (!function_exists('enc')) {
-    function enc(string $s): string {
-        if (function_exists('iconv')) {
-            $o = @iconv('UTF-8', 'Windows-1254//TRANSLIT', $s);
-            if ($o !== false) {
-                return $o;
-            }
-        }
-        if (function_exists('mb_convert_encoding')) {
-            return mb_convert_encoding($s, 'Windows-1254', 'UTF-8');
-        }
-        return $s;
-    }
-}
+require_once __DIR__ . '/helpers.php';
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
@@ -143,67 +134,80 @@ require __DIR__ . '/../libs/fpdf.php';
 // if (!file_exists(__DIR__.'/Roboto/Roboto-Regular.z'))  die('Roboto-Regular.z yok');
 
 $pdf = new FPDF();
-$pdf->AddFont('Roboto', '', 'Roboto-Regular.php');
+$fontFile = __DIR__ . '/Roboto/Roboto-Regular.php';
+if (is_file($fontFile)) {
+    $pdf->AddFont('Roboto', '', 'Roboto-Regular.php');
+    $fontName = 'Roboto';
+} else {
+    $fontName = 'Arial';
+}
 $pdf->SetTitle(enc('Optimizasyon Raporu'));
 $marginPx = 50;
 $pageMargin = $marginPx / 3.78; // approx. 50px
 $pdf->SetMargins($pageMargin, $pageMargin, $pageMargin);
 $pdf->SetAutoPageBreak(true, $pageMargin);
 $pdf->AddPage();
-$pdf->SetFont('Roboto', '', 12);
+$pageW = $pdf->GetPageWidth();
+$pageH = $pdf->GetPageHeight();
+$cardX = $pageMargin;
+
+$pdf->SetFont($fontName, '', 12);
 $pdf->Cell(0, 6, enc('Optimizasyon Raporu'), 0, 1, 'C');
 $pdf->Ln(2);
 
+// --- DİKKAT: Header kartı Y konumunu BAŞLIKTAN SONRA al ---
+$cardY = $pdf->GetY();
+
 $first = $systems[0];
-$pdf->SetFont('Roboto', '', 8);
+$pdf->SetFont($fontName, '', 8);
 $headerLines = [
     'Proje: ' . $projectName,
-    'Müşteri: ' . $customerName,
-    'Tarih: ' . $offerDate,
-    'Ödeme: ' . $paymentMethod,
-    'Durum: ' . $offerStatus,
+    'Motor Sistemi: ' . ($first['motor_system'] ?? ''),
+    'RAL Kodu: ' . ($first['ral_code'] ?? ''),
 ];
 $rightLines = [
     'Genişlik: ' . $first['width'] . ' mm',
     'Yükseklik: ' . $first['height'] . ' mm',
     'Adet: ' . $first['quantity'],
     'Kumanda Adedi: ' . ($first['remote_quantity'] ?? ''),
-    'Motor Sistemi: ' . ($first['motor_system'] ?? ''),
-    'RAL Kodu: ' . ($first['ral_code'] ?? ''),
 ];
 
-$xLeft = $cardX + 2;
-$yTop = $cardY + 2;
-$colW = ($cardW - 4) / 2;
-$pdf->SetXY($xLeft, $yTop);
-foreach ($leftLines as $line) {
-    $pdf->Cell($colW, 4, enc($line), 0, 2);
-}
-$xRight = $cardX + $cardW / 2 + 2;
-$pdf->SetXY($xRight, $yTop);
-foreach ($rightLines as $line) {
-    $pdf->Cell($colW, 4, enc($line), 0, 2);
-}
+$lineH = 4;
+$linesCnt = max(count($headerLines), count($rightLines));
+$cardW = $pageW - 2 * $pageMargin;
+$cardH = $linesCnt * $lineH + 4;
+$pdf->Rect($cardX, $cardY, $cardW, $cardH);
 
-$pdf->SetY($cardY + $cardH + 3);
+$leftX = $cardX + 2;
+$rightX = $cardX + $cardW / 2 + 2;
+$y = $cardY + 2;
+foreach ($headerLines as $line) {
+    $pdf->SetXY($leftX, $y);
+    $pdf->Cell($cardW / 2 - 4, $lineH, enc($line), 0, 2);
+    $y += $lineH;
+}
+$y = $cardY + 2;
+foreach ($rightLines as $line) {
+    $pdf->SetXY($rightX, $y);
+    $pdf->Cell($cardW / 2 - 4, $lineH, enc($line), 0, 2);
+    $y += $lineH;
+}
 
 $gap = 5;
+$yStart = $cardY + $cardH + $gap;
 $cols = 5;
 $rowsPerPage = 6;
 $xStart = $pageMargin;
-$yStart = $pdf->GetY();
 $col = 0;
 $row = 0;
 
-$pageW = $pdf->GetPageWidth();
-$cardW = ($pageW - 2 * $xStart - ($cols - 1) * $gap) / $cols;
-$pageH = $pdf->GetPageHeight();
 $availableH = $pageH - $yStart - $pageMargin - ($rowsPerPage - 1) * $gap;
+$cardW = ($pageW - 2 * $xStart - ($cols - 1) * $gap) / $cols;
 $cardH = $availableH / $rowsPerPage;
 $imgMaxW = $cardW - 4;
 $imgMaxH = $cardH - 15;
 
-$pdf->SetFont('Roboto', '', 7);
+$pdf->SetFont($fontName, '', 7);
 foreach ($aggregated as $rowData) {
     $x = $xStart + $col * ($cardW + $gap);
     $y = $yStart + $row * ($cardH + $gap);
@@ -240,14 +244,15 @@ foreach ($aggregated as $rowData) {
 
     $currentY = $imgY + $imgMaxH + 2;
     $pdf->SetXY($x + 2, $currentY);
-    $pdf->SetFont('Roboto', '', 7);
+    $pdf->SetFont($fontName, '', 7);
     $pdf->MultiCell($cardW - 4, 3, enc($rowData['name']), 0, 'C');
     $currentY = $pdf->GetY();
 
     $pdf->SetXY($x + 2, $currentY);
-    $pdf->SetFont('Roboto', '', 7);
+    $pdf->SetFont($fontName, '', 7);
     $unit = $rowData['qty'] ? $rowData['length'] / $rowData['qty'] : 0;
-    $cat = strtolower((string)($rowData['category'] ?? ''));
+    // Türkçe için daha güvenli küçük harf dönüşümü
+    $cat = mb_strtolower((string)($rowData['category'] ?? ''), 'UTF-8');
     $lines = [];
     if ($cat === 'alüminyum') {
         $lines[] = 'Adet: ' . $rowData['qty'];
@@ -271,11 +276,27 @@ foreach ($aggregated as $rowData) {
         $col = 0;
         $row++;
         if ($row >= $rowsPerPage) {
+            // --- Yeni sayfada ızgara ölçülerini YENİDEN hesapla ---
             $pdf->AddPage();
-            $yStart = $pdf->GetY();
+            $pageW = $pdf->GetPageWidth();
+            $pageH = $pdf->GetPageHeight();
+            $xStart = $pageMargin;
+            $yStart = $pageMargin;   // ikinci sayfadan itibaren header yok, direkt ızgara
+            $availableH = $pageH - $yStart - $pageMargin - ($rowsPerPage - 1) * $gap;
+            $cardW = ($pageW - 2 * $xStart - ($cols - 1) * $gap) / $cols;
+            $cardH = $availableH / $rowsPerPage;
+            $imgMaxW = $cardW - 4;
+            $imgMaxH = $cardH - 15;
             $row = 0;
         }
     }
 }
 
-$pdf->Output('I', 'optimizasyon_raporu.pdf');
+// --- Son anda çıkabilecek FPDF hatalarını yakalamak için sarmalayıcı ---
+try {
+    $pdf->Output('I', 'optimizasyon_raporu.pdf');
+} catch (Throwable $e) {
+    error_log('PDF Output error: ' . $e->getMessage());
+    http_response_code(500);
+    echo 'PDF oluşturulurken bir hata oluştu.';
+}
