@@ -311,6 +311,47 @@ if ($gPost) {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($params);
 
+                $gId = $gId ?: (int)$pdo->lastInsertId();
+                $rules = require __DIR__ . '/rules.php';
+                $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE LOWER(p.name) = LOWER(:name)');
+                $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE id = :gid AND general_offer_id = :goid');
+                $gFetch->execute([':gid' => $gId, ':goid' => $id]);
+                if ($row = $gFetch->fetch(PDO::FETCH_ASSOC)) {
+                    $base = 0.0;
+                    foreach ($rules['guillotine'] ?? [] as $rule) {
+                        if (!is_callable($rule['match']) || !$rule['match']($row)) {
+                            continue;
+                        }
+                        foreach ($rule['products'] as $prod) {
+                            $calcQty = (float)$prod['qty']($row);
+                            if ($calcQty <= 0) {
+                                continue;
+                            }
+                            $pStmt->execute([':name' => $prod['name']]);
+                            if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
+                                $unit = (float)$p['unit_price'];
+                                $vat = (float)$p['vat_rate'];
+                                $unitType = $p['unit_type'];
+                                if ($unitType === 'kg/m') {
+                                    $weight = (float)$p['weight_per_meter'];
+                                    $base += $calcQty * $weight * $unit * (1 + $vat / 100);
+                                } else {
+                                    $base += $calcQty * $unit * (1 + $vat / 100);
+                                }
+                            }
+                        }
+                    }
+                    $rate = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
+                    $profitAmount = $base * ($rate / 100);
+                    $totalAmount = $base + $profitAmount;
+                    $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
+                    $gUpd->execute([
+                        ':pamount' => $profitAmount,
+                        ':tamount' => $totalAmount,
+                        ':id' => $gId,
+                    ]);
+                }
+
                 $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
                 $gSumStmt->execute([':id' => $id]);
                 $gSum = (float)$gSumStmt->fetchColumn();
