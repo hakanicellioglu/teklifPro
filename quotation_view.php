@@ -7,6 +7,49 @@ function e(?string $v): string
     return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Calculate profit and total amount for a guillotine system using optimization rules.
+ *
+ * @param array $row Row data of the guillotine system.
+ * @param PDO   $pdo Database connection.
+ * @return array{profit:float,total:float}
+ */
+function calculateGuillotineTotals(array $row, PDO $pdo): array
+{
+    $rules = require __DIR__ . '/rules.php';
+    $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE LOWER(p.name) = LOWER(:name)');
+
+    $base = 0.0;
+    foreach ($rules['guillotine'] ?? [] as $rule) {
+        if (!is_callable($rule['match']) || !$rule['match']($row)) {
+            continue;
+        }
+        foreach ($rule['products'] as $prod) {
+            $calcQty = (float)$prod['qty']($row);
+            if ($calcQty <= 0) {
+                continue;
+            }
+            $pStmt->execute([':name' => $prod['name']]);
+            if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
+                $unit = (float)$p['unit_price'];
+                $vat  = (float)$p['vat_rate'];
+                $unitType = $p['unit_type'];
+                if ($unitType === 'kg/m') {
+                    $weight = (float)$p['weight_per_meter'];
+                    $base += $calcQty * $weight * $unit * (1 + $vat / 100);
+                } else {
+                    $base += $calcQty * $unit * (1 + $vat / 100);
+                }
+            }
+        }
+    }
+
+    $rate = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
+    $profit = $base * ($rate / 100);
+    $total  = $base + $profit;
+    return ['profit' => $profit, 'total' => $total];
+}
+
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -108,10 +151,8 @@ if (
         header('Location: quotation_view.php?id=' . $id);
         exit;
     } else {
-        $rules = require __DIR__ . '/rules.php';
         try {
             $pdo->beginTransaction();
-            $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE LOWER(p.name) = LOWER(:name)');
 
             $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE id = :gid AND general_offer_id = :goid');
             $gFetch->execute([':gid' => $gId, ':goid' => $id]);
@@ -124,38 +165,11 @@ if (
                     throw new Exception('Geçersiz giyotin satırı.');
                 }
 
-                $base = 0.0;
-                foreach ($rules['guillotine'] ?? [] as $rule) {
-                    if (!is_callable($rule['match']) || !$rule['match']($row)) {
-                        continue;
-                    }
-                    foreach ($rule['products'] as $prod) {
-                        $calcQty = (float)$prod['qty']($row);
-                        if ($calcQty <= 0) {
-                            continue;
-                        }
-                        $pStmt->execute([':name' => $prod['name']]);
-                        if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
-                            $unit = (float)$p['unit_price'];
-                            $vat  = (float)$p['vat_rate'];
-                            $unitType = $p['unit_type'];
-                            if ($unitType === 'kg/m') {
-                                $weight = (float)$p['weight_per_meter'];
-                                $base += $calcQty * $weight * $unit * (1 + $vat / 100);
-                            } else {
-                                $base += $calcQty * $unit * (1 + $vat / 100);
-                            }
-                        }
-                    }
-                }
-
-                $rate = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
-                $profitAmount = $base * ($rate / 100);
-                $totalAmount  = $base + $profitAmount;
+                $totals = calculateGuillotineTotals($row, $pdo);
                 $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
                 $gUpd->execute([
-                    ':pamount' => $profitAmount,
-                    ':tamount' => $totalAmount,
+                    ':pamount' => $totals['profit'],
+                    ':tamount' => $totals['total'],
                     ':id'      => $gId,
                 ]);
 
@@ -310,6 +324,22 @@ if ($gPost) {
                 }
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($params);
+                $sysId = $gId ?: (int)$pdo->lastInsertId();
+                $calcRow = [
+                    'system_type'     => 'Guillotine',
+                    'width'           => $width,
+                    'height'          => $height,
+                    'quantity'        => $quantity,
+                    'motor_system'    => $motor,
+                    'remote_quantity' => $remoteQty ?? 0,
+                    'ral_code'        => $ralCode,
+                    'glass_type'      => $glassType,
+                    'glass_color'     => $glassColor,
+                    'profit_margin'   => $profitMargin,
+                ];
+                $totals = calculateGuillotineTotals($calcRow, $pdo);
+                $updLine = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:p, total_amount=:t WHERE id=:id');
+                $updLine->execute([':p' => $totals['profit'], ':t' => $totals['total'], ':id' => $sysId]);
 
                 $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
                 $gSumStmt->execute([':id' => $id]);
