@@ -102,7 +102,7 @@ foreach ($systems as $sys) {
 require __DIR__ . '/../libs/fpdf.php';
 
 $pdf = new FPDF();
-$pdf->AddFont('Roboto', '', 'Roboto/Roboto-Regular.ttf', true);
+$pdf->AddFont('Roboto', '', 'Roboto-Regular.php', __DIR__ . '/Roboto/');
 $pdf->SetTitle(enc('Optimizasyon Raporu'));
 $marginPx = 50;
 $pageMargin = $marginPx / 3.78; // approx. 50px
