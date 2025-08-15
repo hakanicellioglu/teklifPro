@@ -30,10 +30,38 @@ if (!$systems) {
     exit('No systems found.');
 }
 
-$metaStmt = $pdo->prepare('SELECT quote_no AS project_name FROM generaloffers WHERE id = :id');
+$metaStmt = $pdo->prepare('SELECT g.quote_no AS project_name, g.offer_date, g.payment_method, g.status, c.first_name, c.last_name, c.company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id WHERE g.id = :id');
 $metaStmt->execute([':id' => $id]);
 $meta = $metaStmt->fetch(PDO::FETCH_ASSOC) ?: [];
 $projectName = (string)($meta['project_name'] ?? '');
+$customerName = trim(($meta['first_name'] ?? '') . ' ' . ($meta['last_name'] ?? ''));
+if (!empty($meta['company_name'])) {
+    $customerName .= ($customerName ? ' (' : '') . $meta['company_name'] . ($customerName ? ')' : '');
+}
+$offerDate = (string)($meta['offer_date'] ?? '');
+$paymentMethod = (string)($meta['payment_method'] ?? '');
+$offerStatus = (string)($meta['status'] ?? '');
+$paymentLabels = [
+    'cash'          => 'Peşin',
+    'bank_transfer' => 'Havale/EFT',
+    'credit_card'   => 'Kredi Kartı',
+    'installment'   => 'Taksitli',
+    'vadeli'        => 'Vadeli',
+    'other'         => 'Diğer',
+];
+$statusLabels = [
+    'active'    => 'Aktif',
+    'pending'   => 'Beklemede',
+    'closed'    => 'Kapalı',
+    'draft'     => 'Taslak',
+    'sent'      => 'Gönderildi',
+    'accepted'  => 'Onaylandı',
+    'rejected'  => 'Reddedildi',
+    'expired'   => 'Süresi doldu',
+    'cancelled' => 'İptal',
+];
+$paymentMethod = $paymentLabels[$paymentMethod] ?? $paymentMethod;
+$offerStatus   = $statusLabels[$offerStatus] ?? $offerStatus;
 
 $rules = [
     'Motor Kutusu'         => fn($w, $h, $q) => [$w - 14, $q],
@@ -114,8 +142,21 @@ $pdf->Ln(2);
 
 $first = $systems[0];
 $pdf->SetFont('Arial', '', 8);
-$headerLines = [
+
+$cardX = $pdf->GetX();
+$cardY = $pdf->GetY();
+$cardW = $pdf->GetPageWidth() - 2 * $pageMargin;
+$cardH = 30; // adjust as needed
+$pdf->Rect($cardX, $cardY, $cardW, $cardH);
+
+$leftLines = [
     'Proje: ' . $projectName,
+    'Müşteri: ' . $customerName,
+    'Tarih: ' . $offerDate,
+    'Ödeme: ' . $paymentMethod,
+    'Durum: ' . $offerStatus,
+];
+$rightLines = [
     'Genişlik: ' . $first['width'] . ' mm',
     'Yükseklik: ' . $first['height'] . ' mm',
     'Adet: ' . $first['quantity'],
@@ -123,10 +164,21 @@ $headerLines = [
     'Motor Sistemi: ' . ($first['motor_system'] ?? ''),
     'RAL Kodu: ' . ($first['ral_code'] ?? ''),
 ];
-foreach ($headerLines as $line) {
-    $pdf->Cell(0, 4, enc($line), 0, 1);
+
+$xLeft = $cardX + 2;
+$yTop = $cardY + 2;
+$colW = ($cardW - 4) / 2;
+$pdf->SetXY($xLeft, $yTop);
+foreach ($leftLines as $line) {
+    $pdf->Cell($colW, 4, enc($line), 0, 2);
 }
-$pdf->Ln(3);
+$xRight = $cardX + $cardW / 2 + 2;
+$pdf->SetXY($xRight, $yTop);
+foreach ($rightLines as $line) {
+    $pdf->Cell($colW, 4, enc($line), 0, 2);
+}
+
+$pdf->SetY($cardY + $cardH + 3);
 
 $gap = 5;
 $cols = 5;
