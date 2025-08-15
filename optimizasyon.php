@@ -115,12 +115,20 @@ foreach ($systems as $sys) {
                             <h5 class="card-title mb-1"><?= e($row['name']) ?></h5>
                             <li><span class="bg-primary px-2 py-1 text-white rounded small"><?= e($row['category'] ?? '') ?></span></li>
                         </div>
-
                         <ul class="list-unstyled mb-0">
-                            <li>Birim Uzunluk: <?= e((int)round($unit)) ?> mm</li>
-                            <li>Toplam Uzunluk: <?= e((int)round($row['length'])) ?> mm</li>
-                            <li>Adet: <?= e((string)$row['qty']) ?></li>
-                            <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
+                            <?php $cat = strtolower($row['category'] ?? ''); ?>
+                            <?php if ($cat === 'alüminyum'): ?>
+                                <li>Adet: <?= e((string)$row['qty']) ?></li>
+                                <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
+                            <?php elseif ($cat === 'aksesuar' || $cat === 'fitil'): ?>
+                                <li>Birim Uzunluk: <?= e(number_format($unit / 1000, 2, ',', '.')) ?> m</li>
+                                <li>Toplam Uzunluk: <?= e(number_format($row['length'] / 1000, 2, ',', '.')) ?> m</li>
+                            <?php else: ?>
+                                <li>Birim Uzunluk: <?= e((int)round($unit)) ?> mm</li>
+                                <li>Toplam Uzunluk: <?= e((int)round($row['length'])) ?> mm</li>
+                                <li>Adet: <?= e((string)$row['qty']) ?></li>
+                                <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
+                            <?php endif; ?>
                         </ul>
                     </div>
                 </div>
