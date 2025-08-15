@@ -254,18 +254,26 @@ foreach ($aggregated as $rowData) {
     // Türkçe için daha güvenli küçük harf dönüşümü
     $cat = mb_strtolower((string)($rowData['category'] ?? ''), 'UTF-8');
     $lines = [];
-    if ($cat === 'alüminyum') {
-        $lines[] = 'Birim Uzunluk: ' . (int)round($unit) . ' mm';
-        $lines[] = 'Toplam Uzunluk: ' . (int)round($rowData['length']) . ' mm';
-        $lines[] = 'Adet: ' . $rowData['qty'];
-    } elseif ($cat === 'aksesuar' || $cat === 'fitil') {
-        $lines[] = 'Birim Uzunluk: ' . number_format($unit / 1000, 2, ',', '.') . ' m';
-        $lines[] = 'Toplam Uzunluk: ' . number_format($rowData['length'] / 1000, 2, ',', '.') . ' m';
-    } else {
-        $lines[] = 'Birim Uzunluk: ' . (int)round($unit) . ' mm';
-        $lines[] = 'Toplam Uzunluk: ' . (int)round($rowData['length']) . ' mm';
-        $lines[] = 'Adet: ' . $rowData['qty'];
-        $lines[] = 'Toplam Kg: ' . number_format($rowData['kg'], 3, ',', '.');
+    switch ($cat) {
+        case 'alüminyum':
+            // Alüminyum ürünler ölçü (mm) ve adet cinsinden gösterilir
+            $lines[] = 'Birim Uzunluk: ' . (int)round($unit) . ' mm';
+            $lines[] = 'Toplam Uzunluk: ' . (int)round($rowData['length']) . ' mm';
+            $lines[] = 'Adet: ' . $rowData['qty'];
+            break;
+        case 'aksesuar':
+        case 'fitil':
+            // Aksesuar ve fitil ürünleri metre cinsinden gösterilir
+            $lines[] = 'Birim Uzunluk: ' . number_format($unit / 1000, 2, ',', '.') . ' m';
+            $lines[] = 'Toplam Uzunluk: ' . number_format($rowData['length'] / 1000, 2, ',', '.') . ' m';
+            break;
+        default:
+            // Diğer kategoriler varsayılan olarak mm ve adet cinsinden gösterilir
+            $lines[] = 'Birim Uzunluk: ' . (int)round($unit) . ' mm';
+            $lines[] = 'Toplam Uzunluk: ' . (int)round($rowData['length']) . ' mm';
+            $lines[] = 'Adet: ' . $rowData['qty'];
+            $lines[] = 'Toplam Kg: ' . number_format($rowData['kg'], 3, ',', '.');
+            break;
     }
     foreach ($lines as $line) {
         $pdf->SetX($x + 2);
