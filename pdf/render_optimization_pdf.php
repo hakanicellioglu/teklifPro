@@ -31,10 +31,38 @@ if (!$systems) {
     exit('No systems found.');
 }
 
-$metaStmt = $pdo->prepare('SELECT quote_no AS project_name FROM generaloffers WHERE id = :id');
+$metaStmt = $pdo->prepare('SELECT g.quote_no AS project_name, g.offer_date, g.payment_method, g.status, c.first_name, c.last_name, c.company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id WHERE g.id = :id');
 $metaStmt->execute([':id' => $id]);
 $meta = $metaStmt->fetch(PDO::FETCH_ASSOC) ?: [];
 $projectName = (string)($meta['project_name'] ?? '');
+$customerName = trim(($meta['first_name'] ?? '') . ' ' . ($meta['last_name'] ?? ''));
+if (!empty($meta['company_name'])) {
+    $customerName .= ($customerName ? ' (' : '') . $meta['company_name'] . ($customerName ? ')' : '');
+}
+$offerDate = (string)($meta['offer_date'] ?? '');
+$paymentMethod = (string)($meta['payment_method'] ?? '');
+$offerStatus = (string)($meta['status'] ?? '');
+$paymentLabels = [
+    'cash'          => 'Peşin',
+    'bank_transfer' => 'Havale/EFT',
+    'credit_card'   => 'Kredi Kartı',
+    'installment'   => 'Taksitli',
+    'vadeli'        => 'Vadeli',
+    'other'         => 'Diğer',
+];
+$statusLabels = [
+    'active'    => 'Aktif',
+    'pending'   => 'Beklemede',
+    'closed'    => 'Kapalı',
+    'draft'     => 'Taslak',
+    'sent'      => 'Gönderildi',
+    'accepted'  => 'Onaylandı',
+    'rejected'  => 'Reddedildi',
+    'expired'   => 'Süresi doldu',
+    'cancelled' => 'İptal',
+];
+$paymentMethod = $paymentLabels[$paymentMethod] ?? $paymentMethod;
+$offerStatus   = $statusLabels[$offerStatus] ?? $offerStatus;
 
 $rules = [
     'Motor Kutusu'         => fn($w, $h, $q) => [$w - 14, $q],
@@ -113,14 +141,12 @@ if (is_file($fontFile)) {
 } else {
     $fontName = 'Arial';
 }
-
 $pdf->SetTitle(enc('Optimizasyon Raporu'));
 $marginPx = 50;
 $pageMargin = $marginPx / 3.78; // approx. 50px
 $pdf->SetMargins($pageMargin, $pageMargin, $pageMargin);
 $pdf->SetAutoPageBreak(true, $pageMargin);
 $pdf->AddPage();
-
 $pageW = $pdf->GetPageWidth();
 $pageH = $pdf->GetPageHeight();
 $cardX = $pageMargin;
