@@ -141,8 +141,8 @@ $cardW = ($pageW - 2 * $xStart - ($cols - 1) * $gap) / $cols;
 $pageH = $pdf->GetPageHeight();
 $availableH = $pageH - $yStart - $pageMargin - ($rowsPerPage - 1) * $gap;
 $cardH = $availableH / $rowsPerPage;
-$imgMaxW = $cardW - 6;
-$imgMaxH = $cardH - 20;
+$imgMaxW = $cardW - 4;
+$imgMaxH = $cardH - 15;
 
 $pdf->SetFont('Arial', '', 7);
 foreach ($aggregated as $rowData) {
