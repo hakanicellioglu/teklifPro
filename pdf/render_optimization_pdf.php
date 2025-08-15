@@ -22,13 +22,18 @@ if (!$id) {
     exit('Missing or invalid id.');
 }
 
-$stmt = $pdo->prepare('SELECT id, width, height, quantity FROM guillotinesystems WHERE general_offer_id = :id');
+$stmt = $pdo->prepare('SELECT id, width, height, quantity, remote_quantity, motor_system, ral_code FROM guillotinesystems WHERE general_offer_id = :id');
 $stmt->execute([':id' => $id]);
 $systems = $stmt->fetchAll(PDO::FETCH_ASSOC);
 if (!$systems) {
     http_response_code(404);
     exit('No systems found.');
 }
+
+$metaStmt = $pdo->prepare('SELECT quote_no AS project_name FROM generaloffers WHERE id = :id');
+$metaStmt->execute([':id' => $id]);
+$meta = $metaStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+$projectName = (string)($meta['project_name'] ?? '');
 
 $rules = [
     'Motor Kutusu'         => fn($w, $h, $q) => [$w - 14, $q],
@@ -98,33 +103,51 @@ require __DIR__ . '/../libs/fpdf.php';
 
 $pdf = new FPDF();
 $pdf->SetTitle(enc('Optimizasyon Raporu'));
+$marginPx = 50;
+$pageMargin = $marginPx / 3.78; // approx. 50px
+$pdf->SetMargins($pageMargin, $pageMargin, $pageMargin);
+$pdf->SetAutoPageBreak(true, $pageMargin);
 $pdf->AddPage();
-$pdf->SetAutoPageBreak(true, 15);
-$pdf->SetFont('Arial', 'B', 14);
-$pdf->Cell(0, 8, enc('Optimizasyon Raporu'), 0, 1, 'C');
-$pdf->Ln(4);
+$pdf->SetFont('Arial', 'B', 12);
+$pdf->Cell(0, 6, enc('Optimizasyon Raporu'), 0, 1, 'C');
+$pdf->Ln(2);
 
-$margin = 5;
+$first = $systems[0];
+$pdf->SetFont('Arial', '', 8);
+$headerLines = [
+    'Proje: ' . $projectName,
+    'Genişlik: ' . $first['width'] . ' mm',
+    'Yükseklik: ' . $first['height'] . ' mm',
+    'Adet: ' . $first['quantity'],
+    'Kumanda Adedi: ' . ($first['remote_quantity'] ?? ''),
+    'Motor Sistemi: ' . ($first['motor_system'] ?? ''),
+    'RAL Kodu: ' . ($first['ral_code'] ?? ''),
+];
+foreach ($headerLines as $line) {
+    $pdf->Cell(0, 4, enc($line), 0, 1);
+}
+$pdf->Ln(3);
+
+$gap = 5;
 $cols = 4;
 $rowsPerPage = 5;
-$xStart = 10;
+$xStart = $pageMargin;
 $yStart = $pdf->GetY();
 $col = 0;
 $row = 0;
 
 $pageW = $pdf->GetPageWidth();
-$cardW = ($pageW - 2 * $xStart - ($cols - 1) * $margin) / $cols;
+$cardW = ($pageW - 2 * $xStart - ($cols - 1) * $gap) / $cols;
 $pageH = $pdf->GetPageHeight();
-$bottomMargin = 15;
-$availableH = $pageH - $yStart - $bottomMargin - ($rowsPerPage - 1) * $margin;
+$availableH = $pageH - $yStart - $pageMargin - ($rowsPerPage - 1) * $gap;
 $cardH = $availableH / $rowsPerPage;
-$imgMaxW = $cardW - 10;
-$imgMaxH = $cardH - 30;
+$imgMaxW = $cardW - 20;
+$imgMaxH = $cardH - 40;
 
-$pdf->SetFont('Arial', '', 9);
+$pdf->SetFont('Arial', '', 7);
 foreach ($aggregated as $rowData) {
-    $x = $xStart + $col * ($cardW + $margin);
-    $y = $yStart + $row * ($cardH + $margin);
+    $x = $xStart + $col * ($cardW + $gap);
+    $y = $yStart + $row * ($cardH + $gap);
 
     $pdf->Rect($x, $y, $cardW, $cardH);
 
@@ -152,18 +175,18 @@ foreach ($aggregated as $rowData) {
         }
     }
     if (!$drawn) {
-        $pdf->SetXY($x, $imgY + $imgMaxH / 2 - 2);
-        $pdf->Cell($cardW, 4, enc('Görsel Yok'), 0, 0, 'C');
+        $pdf->SetXY($x, $imgY + $imgMaxH / 2 - 1.5);
+        $pdf->Cell($cardW, 3, enc('Görsel Yok'), 0, 0, 'C');
     }
 
     $currentY = $imgY + $imgMaxH + 2;
     $pdf->SetXY($x + 2, $currentY);
-    $pdf->SetFont('Arial', 'B', 9);
-    $pdf->MultiCell($cardW - 4, 4, enc($rowData['name']), 0, 'C');
+    $pdf->SetFont('Arial', 'B', 7);
+    $pdf->MultiCell($cardW - 4, 3, enc($rowData['name']), 0, 'C');
     $currentY = $pdf->GetY();
 
     $pdf->SetXY($x + 2, $currentY);
-    $pdf->SetFont('Arial', '', 8);
+    $pdf->SetFont('Arial', '', 6);
     $unit = $rowData['qty'] ? $rowData['length'] / $rowData['qty'] : 0;
     $cat = strtolower((string)($rowData['category'] ?? ''));
     $lines = [];
@@ -181,7 +204,7 @@ foreach ($aggregated as $rowData) {
     }
     foreach ($lines as $line) {
         $pdf->SetX($x + 2);
-        $pdf->Cell($cardW - 4, 4, enc($line), 0, 2);
+        $pdf->Cell($cardW - 4, 3, enc($line), 0, 2);
     }
 
     $col++;
