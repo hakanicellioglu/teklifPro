@@ -97,10 +97,11 @@ foreach ($systems as $sys) {
 require __DIR__ . '/../libs/fpdf.php';
 
 $pdf = new FPDF();
+$pdf->SetTitle(enc('Optimizasyon Raporu'));
 $pdf->AddPage();
 $pdf->SetAutoPageBreak(true, 15);
 $pdf->SetFont('Arial', 'B', 14);
-$pdf->Cell(0, 8, enc('Optimizasyon Sonucu'), 0, 1, 'C');
+$pdf->Cell(0, 8, enc('Optimizasyon Raporu'), 0, 1, 'C');
 $pdf->Ln(4);
 
 $margin = 5;
@@ -195,4 +196,4 @@ foreach ($aggregated as $rowData) {
     }
 }
 
-$pdf->Output('I', 'optimizasyon.pdf');
+$pdf->Output('I', 'optimizasyon_raporu.pdf');
