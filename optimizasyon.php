@@ -95,6 +95,15 @@ foreach ($systems as $sys) {
     .no-print {
         display: none !important;
     }
+    .print-cols-3 {
+        column-count: 3;
+        column-gap: 1rem;
+        display: block;
+    }
+    .print-cols-3 .col {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
 }
 </style>
 <div class="container py-4">
@@ -109,7 +118,7 @@ foreach ($systems as $sys) {
         </div>
     </div>
 
-    <div class="row row-cols-1 row-cols-md-3 g-4">
+    <div class="row row-cols-1 row-cols-md-3 g-4 print-cols-3">
         <?php foreach ($aggregated as $row):
             $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
         ?>
