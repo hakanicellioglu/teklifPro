@@ -52,7 +52,7 @@ $rules = [
     'Kıl Fitil'            => fn($w, $h, $q) => [(($w - 183) * 4) + (($h - 166) * 8) + ((($h - 290) / 3) * 2), $q],
 ];
 
-$pStmt = $pdo->prepare('SELECT weight_per_meter FROM products WHERE LOWER(name) = LOWER(:name)');
+$pStmt = $pdo->prepare('SELECT weight_per_meter, image_url, category FROM products WHERE LOWER(name) = LOWER(:name)');
 
 $aggregated = [];
 foreach ($systems as $sys) {
@@ -68,14 +68,25 @@ foreach ($systems as $sys) {
         $pStmt->execute([':name' => $name]);
         $prod = $pStmt->fetch(PDO::FETCH_ASSOC);
         $wpm = (float)($prod['weight_per_meter'] ?? 0);
+        $imageUrl = $prod['image_url'] ?? null;
+        $category = $prod['category'] ?? null;
         $totalKg = $wpm * $totalLength / 1000;
         if (!isset($aggregated[$name])) {
             $aggregated[$name] = [
-                'name'   => $name,
-                'length' => 0.0,
-                'qty'    => 0,
-                'kg'     => 0.0,
+                'name'     => $name,
+                'length'   => 0.0,
+                'qty'      => 0,
+                'kg'       => 0.0,
+                'image'    => $imageUrl,
+                'category' => $category,
             ];
+        } else {
+            if (!$aggregated[$name]['image'] && $imageUrl) {
+                $aggregated[$name]['image'] = $imageUrl;
+            }
+            if (empty($aggregated[$name]['category']) && $category) {
+                $aggregated[$name]['category'] = $category;
+            }
         }
         $aggregated[$name]['length'] += $totalLength;
         $aggregated[$name]['qty'] += $qty;
@@ -92,21 +103,96 @@ $pdf->SetFont('Arial', 'B', 14);
 $pdf->Cell(0, 8, enc('Optimizasyon Sonucu'), 0, 1, 'C');
 $pdf->Ln(4);
 
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(60, 8, enc('Parça'), 1, 0);
-$pdf->Cell(30, 8, enc('Birim Uzunluk'), 1, 0, 'R');
-$pdf->Cell(30, 8, enc('Toplam Uzunluk'), 1, 0, 'R');
-$pdf->Cell(25, 8, enc('Adet'), 1, 0, 'R');
-$pdf->Cell(25, 8, enc('Toplam Kg'), 1, 1, 'R');
+$margin = 5;
+$cols = 4;
+$rowsPerPage = 5;
+$xStart = 10;
+$yStart = $pdf->GetY();
+$col = 0;
+$row = 0;
 
-$pdf->SetFont('Arial', '', 10);
-foreach ($aggregated as $row) {
-    $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
-    $pdf->Cell(60, 7, enc($row['name']), 1, 0);
-    $pdf->Cell(30, 7, (string)(int)round($unit), 1, 0, 'R');
-    $pdf->Cell(30, 7, (string)(int)round($row['length']), 1, 0, 'R');
-    $pdf->Cell(25, 7, (string)$row['qty'], 1, 0, 'R');
-    $pdf->Cell(25, 7, number_format($row['kg'], 3, ',', '.'), 1, 1, 'R');
+$pageW = $pdf->GetPageWidth();
+$cardW = ($pageW - 2 * $xStart - ($cols - 1) * $margin) / $cols;
+$pageH = $pdf->GetPageHeight();
+$bottomMargin = 15;
+$availableH = $pageH - $yStart - $bottomMargin - ($rowsPerPage - 1) * $margin;
+$cardH = $availableH / $rowsPerPage;
+$imgMaxW = $cardW - 10;
+$imgMaxH = $cardH - 30;
+
+$pdf->SetFont('Arial', '', 9);
+foreach ($aggregated as $rowData) {
+    $x = $xStart + $col * ($cardW + $margin);
+    $y = $yStart + $row * ($cardH + $margin);
+
+    $pdf->Rect($x, $y, $cardW, $cardH);
+
+    $imagePath = $rowData['image'] ?? null;
+    $imgY = $y + 4;
+    $drawn = false;
+    if ($imagePath) {
+        $abs = __DIR__ . '/../' . ltrim($imagePath, '/');
+        if (is_file($abs)) {
+            $info = @getimagesize($abs);
+            if ($info) {
+                [$iw, $ih] = $info;
+                if ($iw > 0 && $ih > 0) {
+                    $ratio = $iw / $ih;
+                    $w = $imgMaxW;
+                    $h = $w / $ratio;
+                    if ($h > $imgMaxH) {
+                        $h = $imgMaxH;
+                        $w = $h * $ratio;
+                    }
+                    $pdf->Image($abs, $x + ($cardW - $w) / 2, $imgY, $w, $h);
+                    $drawn = true;
+                }
+            }
+        }
+    }
+    if (!$drawn) {
+        $pdf->SetXY($x, $imgY + $imgMaxH / 2 - 2);
+        $pdf->Cell($cardW, 4, enc('Görsel Yok'), 0, 0, 'C');
+    }
+
+    $currentY = $imgY + $imgMaxH + 2;
+    $pdf->SetXY($x + 2, $currentY);
+    $pdf->SetFont('Arial', 'B', 9);
+    $pdf->MultiCell($cardW - 4, 4, enc($rowData['name']), 0, 'C');
+    $currentY = $pdf->GetY();
+
+    $pdf->SetXY($x + 2, $currentY);
+    $pdf->SetFont('Arial', '', 8);
+    $unit = $rowData['qty'] ? $rowData['length'] / $rowData['qty'] : 0;
+    $cat = strtolower((string)($rowData['category'] ?? ''));
+    $lines = [];
+    if ($cat === 'alüminyum') {
+        $lines[] = 'Adet: ' . $rowData['qty'];
+        $lines[] = 'Toplam Kg: ' . number_format($rowData['kg'], 3, ',', '.');
+    } elseif ($cat === 'aksesuar' || $cat === 'fitil') {
+        $lines[] = 'Birim Uzunluk: ' . number_format($unit / 1000, 2, ',', '.') . ' m';
+        $lines[] = 'Toplam Uzunluk: ' . number_format($rowData['length'] / 1000, 2, ',', '.') . ' m';
+    } else {
+        $lines[] = 'Birim Uzunluk: ' . (int)round($unit) . ' mm';
+        $lines[] = 'Toplam Uzunluk: ' . (int)round($rowData['length']) . ' mm';
+        $lines[] = 'Adet: ' . $rowData['qty'];
+        $lines[] = 'Toplam Kg: ' . number_format($rowData['kg'], 3, ',', '.');
+    }
+    foreach ($lines as $line) {
+        $pdf->SetX($x + 2);
+        $pdf->Cell($cardW - 4, 4, enc($line), 0, 2);
+    }
+
+    $col++;
+    if ($col >= $cols) {
+        $col = 0;
+        $row++;
+        if ($row >= $rowsPerPage) {
+            $pdf->AddPage();
+            $yStart = $pdf->GetY();
+            $row = 0;
+        }
+    }
 }
 
 $pdf->Output('I', 'optimizasyon.pdf');
