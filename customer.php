@@ -1,8 +1,13 @@
-<?php
+<?php declare(strict_types=1);
 require __DIR__ . '/header.php';
 require __DIR__ . '/components/page_header.php';
 require __DIR__ . '/components/data_table.php';
 $pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_turkish_ci');
+
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION['csrf_token'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     $deleteId = (int)($_POST['delete_id'] ?? 0);
@@ -51,7 +56,7 @@ $totalPages = (int)ceil($totalCustomers / $limit);
 $success = filter_input(INPUT_GET, 'success', FILTER_SANITIZE_SPECIAL_CHARS);
 $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHARS);
 ?>
-<?php page_header('Müşteriler', '<a href="customers/add" class="btn btn-primary btn-icon"><i class="bi bi-person-plus"></i>Yeni Müşteri</a>'); ?>
+<?php page_header('Müşteriler', '<button type="button" id="addCustomerBtn" class="btn btn-primary btn-icon"><i class="bi bi-person-plus"></i>Müşteri Ekle</button>'); ?>
 <?php if ($success): ?><div class="alert alert-success" role="alert"><?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?></div><?php endif; ?>
 <?php if ($error): ?><div class="alert alert-danger" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div><?php endif; ?>
 <form class="mb-3" method="get" role="search">
@@ -62,14 +67,14 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
 </form>
 <?php data_table_start(['İsim','Şirket','Email','Telefon','Kayıt Tarihi','İşlemler'], 'text-center'); ?>
 <?php if ($customers): foreach ($customers as $cust): ?>
-<tr class="text-center">
-  <td><?= htmlspecialchars(trim(($cust['first_name'] ?? '') . ' ' . ($cust['last_name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
-  <td><?= htmlspecialchars($cust['company_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-  <td><?= htmlspecialchars($cust['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-  <td><?= htmlspecialchars($cust['phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+<tr class="text-center" data-id="<?= (int)$cust['id']; ?>">
+  <td class="col-name"><?= htmlspecialchars(trim(($cust['first_name'] ?? '') . ' ' . ($cust['last_name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
+  <td class="col-company"><?= htmlspecialchars($cust['company_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+  <td class="col-email"><?= htmlspecialchars($cust['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+  <td class="col-phone"><?= htmlspecialchars($cust['phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
   <td><?= htmlspecialchars($cust['registration_date'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
   <td class="text-center">
-    <a href="customers/edit?id=<?= (int)$cust['id']; ?>" class="btn btn-sm btn-outline-secondary" title="Düzenle"><i class="bi bi-pencil"></i></a>
+    <button type="button" class="btn btn-sm btn-outline-secondary editCustomerBtn" data-id="<?= (int)$cust['id']; ?>" title="Düzenle"><i class="bi bi-pencil"></i></button>
     <form method="post" class="d-inline">
       <input type="hidden" name="delete_id" value="<?= (int)$cust['id']; ?>">
       <button type="submit" class="btn btn-sm btn-outline-danger" data-confirm="Bu müşteri silinsin mi?" title="Sil"><i class="bi bi-trash"></i></button>
@@ -89,4 +94,103 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
   </ul>
 </nav>
 <?php endif; ?>
+<div class="modal fade" id="customerModal" tabindex="-1" aria-labelledby="customerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <form id="customerForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="customerModalLabel">Müşteri Ekle</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id" id="customer_id">
+          <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="first_name" name="first_name" placeholder="İsim">
+                <label for="first_name">İsim</label>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Soyisim">
+                <label for="last_name">Soyisim</label>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="company_name" name="company_name" placeholder="Şirket">
+                <label for="company_name">Şirket</label>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="email" class="form-control" id="email" name="email" placeholder="E-posta">
+                <label for="email">E-posta</label>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="tel" class="form-control" id="phone" name="phone" placeholder="Telefon" pattern="^[0-9\s\+\-]{10,}$">
+                <label for="phone">Telefon</label>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="tax_number" name="tax_number" placeholder="Vergi No">
+                <label for="tax_number">Vergi No</label>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="tax_office" name="tax_office" placeholder="Vergi Dairesi">
+                <label for="tax_office">Vergi Dairesi</label>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="form-floating">
+                <textarea class="form-control" id="address" name="address" placeholder="Adres" style="height:100px"></textarea>
+                <label for="address">Adres</label>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="city" name="city" placeholder="Şehir">
+                <label for="city">Şehir</label>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="country" name="country" placeholder="Ülke">
+                <label for="country">Ülke</label>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="form-floating">
+                <textarea class="form-control" id="notes" name="notes" placeholder="Notlar" style="height:100px"></textarea>
+                <label for="notes">Notlar</label>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+          <button type="submit" id="saveCustomerBtn" class="btn btn-primary">Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 <?php require __DIR__ . '/footer.php'; ?>
