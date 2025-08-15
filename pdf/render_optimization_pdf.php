@@ -11,9 +11,19 @@ if (empty($_SESSION['user_id'])) {
 
 require __DIR__ . '/../config.php';
 
-function enc(string $s): string {
-    $out = @iconv('UTF-8', 'Windows-1254//TRANSLIT', $s);
-    return $out !== false ? $out : $s;
+if (!function_exists('enc')) {
+    function enc(string $s): string {
+        if (function_exists('iconv')) {
+            $o = @iconv('UTF-8', 'Windows-1254//TRANSLIT', $s);
+            if ($o !== false) {
+                return $o;
+            }
+        }
+        if (function_exists('mb_convert_encoding')) {
+            return mb_convert_encoding($s, 'Windows-1254', 'UTF-8');
+        }
+        return $s;
+    }
 }
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
@@ -127,10 +137,13 @@ foreach ($systems as $sys) {
     }
 }
 
+define('FPDF_FONTPATH', __DIR__ . '/Roboto/');
 require __DIR__ . '/../libs/fpdf.php';
+// if (!file_exists(__DIR__.'/Roboto/Roboto-Regular.php')) die('Roboto-Regular.php yok');
+// if (!file_exists(__DIR__.'/Roboto/Roboto-Regular.z'))  die('Roboto-Regular.z yok');
 
 $pdf = new FPDF();
-$pdf->AddFont('Roboto', '', 'Roboto-Regular.php', __DIR__ . '/Roboto/');
+$pdf->AddFont('Roboto', '', 'Roboto-Regular.php');
 $pdf->SetTitle(enc('Optimizasyon Raporu'));
 $marginPx = 50;
 $pageMargin = $marginPx / 3.78; // approx. 50px
@@ -232,7 +245,7 @@ foreach ($aggregated as $rowData) {
     $currentY = $pdf->GetY();
 
     $pdf->SetXY($x + 2, $currentY);
-    $pdf->SetFont('Roboto', '', 6);
+    $pdf->SetFont('Roboto', '', 7);
     $unit = $rowData['qty'] ? $rowData['length'] / $rowData['qty'] : 0;
     $cat = strtolower((string)($rowData['category'] ?? ''));
     $lines = [];

@@ -20,7 +20,7 @@ $cw = array(
 $enc = 'cp1254';
 $diff = '142 /.notdef 158 /.notdef 208 /Gbreve 221 /Idotaccent /Scedilla 240 /gbreve 253 /dotlessi /scedilla';
 $uv = array(0=>array(0,128),128=>8364,130=>8218,131=>402,132=>8222,133=>8230,134=>array(8224,2),136=>710,137=>8240,138=>352,139=>8249,140=>338,145=>array(8216,2),147=>array(8220,2),149=>8226,150=>array(8211,2),152=>732,153=>8482,154=>353,155=>8250,156=>339,159=>376,160=>array(160,48),208=>286,209=>array(209,12),221=>304,222=>350,223=>array(223,17),240=>287,241=>array(241,12),253=>305,254=>351,255=>255);
-$file = 'Roboto-Regular.z';
-$originalsize = 30332;
-$subsetted = true;
+$file = 'Roboto-Regular.ttf';
+$originalsize = 146004;
+$subsetted = false;
 ?>
