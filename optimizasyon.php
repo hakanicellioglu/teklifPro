@@ -89,51 +89,122 @@ foreach ($systems as $sys) {
         $aggregated[$name]['kg'] += $totalKg;
     }
 }
+$currentDate = date('d.m.Y');
 ?>
-<div class="container py-4">
-    <button type="button" class="btn btn-secondary my-3" onclick="window.close();">Geri Dön</button>
-    <div class="mb-3 d-flex justify-content-between align-items-center">
-        <h1 class="mb-4">Optimizasyon Sonucu</h1>
-        <a href="pdf/render_optimization_pdf.php?id=<?= e((string)$id) ?>" class="btn btn-secondary ms-2" target="_blank">
-
-            <i class="bi bi-file-earmark-pdf"></i> PDF İndir
-        </a>
+<style>
+    @media print {
+        body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        nav, footer.container, .btn, .navbar, .modal, #toastContainer { display: none !important; }
+        main.container { margin: 0; padding: 0; max-width: none; }
+        .print-header, .print-footer {
+            position: fixed;
+            left: 0;
+            right: 0;
+            background: #fff;
+            color: #000;
+        }
+        .print-header {
+            top: 0;
+            text-align: center;
+            padding: 10px 0;
+            font-weight: bold;
+        }
+        .print-footer {
+            bottom: 0;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+        .print-footer .page-info:after {
+            content: "Sayfa " counter(page) " / " counter(pages);
+        }
+        .product-page {
+            break-after: page;
+            display: flex;
+            align-items: center;
+            min-height: calc(100vh - 120px);
+            padding: 80px 40px 60px;
+            box-sizing: border-box;
+        }
+        .product-image {
+            flex: 0 0 40%;
+            text-align: center;
+        }
+        .product-image img {
+            max-width: 100%;
+            max-height: 400px;
+        }
+        .product-info {
+            flex: 1;
+            padding-left: 20px;
+        }
+    }
+    @media screen {
+        .print-header, .print-footer { display: none; }
+        .product-page {
+            display: flex;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 400px;
+        }
+        .product-image {
+            width: 40%;
+            text-align: center;
+        }
+        .product-image img {
+            max-width: 100%;
+            max-height: 300px;
+        }
+        .product-info {
+            flex: 1;
+            padding-left: 20px;
+        }
+    }
+</style>
+<div class="print-header">
+    TeklifPro – Optimizasyon Çıktısı - <?= e($currentDate) ?>
+</div>
+<div class="print-footer">
+    <span>© 2025 TeklifPro</span>
+    <span class="page-info"></span>
+</div>
+<?php foreach ($aggregated as $row):
+    $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
+    $cat = strtolower($row['category'] ?? '');
+?>
+<div class="product-page">
+    <div class="product-image">
+        <?php if (!empty($row['image'])): ?>
+            <img src="<?= e($row['image']) ?>" alt="<?= e($row['name']) ?>">
+        <?php else: ?>
+            <div>Görsel Yok</div>
+        <?php endif; ?>
     </div>
-
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-        <?php foreach ($aggregated as $row):
-            $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
-        ?>
-            <div class="col">
-                <div class="card h-100">
-                    <?php if (!empty($row['image'])): ?>
-                        <img src="<?= e($row['image']) ?>" class="card-img-top" style="width: 150px; height: 150px; margin-left: auto; margin-right: auto; display: block;" alt="<?= e($row['name']) ?>">
-                    <?php endif; ?>
-                    <div class="card-body">
-
-                        <div class="d-flex justify-content-between align-items-center list-unstyled">
-                            <h5 class="card-title mb-1"><?= e($row['name']) ?></h5>
-                            <li><span class="bg-primary px-2 py-1 text-white rounded small"><?= e($row['category'] ?? '') ?></span></li>
-                        </div>
-                        <ul class="list-unstyled mb-0">
-                            <?php $cat = strtolower($row['category'] ?? ''); ?>
-                            <?php if ($cat === 'alüminyum'): ?>
-                                <li>Adet: <?= e((string)$row['qty']) ?></li>
-                                <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
-                            <?php elseif ($cat === 'aksesuar' || $cat === 'fitil'): ?>
-                                <li>Birim Uzunluk: <?= e(number_format($unit / 1000, 2, ',', '.')) ?> m</li>
-                                <li>Toplam Uzunluk: <?= e(number_format($row['length'] / 1000, 2, ',', '.')) ?> m</li>
-                            <?php else: ?>
-                                <li>Birim Uzunluk: <?= e((int)round($unit)) ?> mm</li>
-                                <li>Toplam Uzunluk: <?= e((int)round($row['length'])) ?> mm</li>
-                                <li>Adet: <?= e((string)$row['qty']) ?></li>
-                                <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
-                            <?php endif; ?>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        <?php endforeach; ?>
+    <div class="product-info">
+        <h2><?= e($row['name']) ?></h2>
+        <?php if (!empty($row['category'])): ?>
+            <h4><?= e($row['category']) ?></h4>
+        <?php endif; ?>
+        <ul class="list-unstyled mb-0">
+            <?php if ($cat === 'alüminyum'): ?>
+                <li>Adet: <?= e((string)$row['qty']) ?></li>
+                <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
+            <?php elseif ($cat === 'aksesuar' || $cat === 'fitil'): ?>
+                <li>Birim Uzunluk: <?= e(number_format($unit / 1000, 2, ',', '.')) ?> m</li>
+                <li>Toplam Uzunluk: <?= e(number_format($row['length'] / 1000, 2, ',', '.')) ?> m</li>
+            <?php else: ?>
+                <li>Birim Uzunluk: <?= e((int)round($unit)) ?> mm</li>
+                <li>Toplam Uzunluk: <?= e((int)round($row['length'])) ?> mm</li>
+                <li>Adet: <?= e((string)$row['qty']) ?></li>
+                <li>Toplam Kg: <?= e(number_format($row['kg'], 3, ',', '.')) ?></li>
+            <?php endif; ?>
+        </ul>
     </div>
 </div>
+<?php endforeach; ?>
 <?php require __DIR__ . '/footer.php';
