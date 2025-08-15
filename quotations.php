@@ -172,7 +172,7 @@ $conditions = [];
 $params = [];
 if ($search !== '') { $conditions[] = 'CONCAT(c.first_name, " ", c.last_name) LIKE :term'; $params['term'] = "%$search%"; }
 if ($status !== '') { $conditions[] = 'g.status = :status'; $params['status'] = $status; }
-$sql = 'SELECT g.id, g.offer_date, g.status, g.assembly_type, g.payment_method, g.validity_days, g.installment_term, g.term_months, g.interest_value, CONCAT(c.first_name, " ", c.last_name) AS customer,
+$sql = 'SELECT g.id, g.offer_date, g.status, g.assembly_type, g.payment_method, g.validity_days, g.installment_term, g.term_months, g.interest_value, CONCAT(c.first_name, " ", c.last_name) AS customer, c.company_name AS company,
         COALESCE(gs.sum_total,0)+COALESCE(ss.sum_total,0) AS total_amount
         FROM generaloffers g
         LEFT JOIN customers c ON g.customer_id=c.id
@@ -206,7 +206,12 @@ unset($_SESSION['flash_error']);
 <?php if ($offers): foreach ($offers as $o): ?>
 <tr class="text-center">
   <td><?= (int)$o['id'] ?></td>
-  <td><?= e($o['customer']) ?></td>
+  <td>
+    <?= e($o['customer']) ?>
+    <?php if (!empty($o['company'])): ?>
+      (<?= e($o['company']) ?>)
+    <?php endif; ?>
+  </td>
   <td><?= e($assemblyLabels[$o['assembly_type']] ?? '') ?></td>
   <td><?= e($paymentLabels[$o['payment_method']] ?? '') ?></td>
   <td><?= $o['validity_days'] !== null ? (int)$o['validity_days'].' gün' : '' ?></td>
