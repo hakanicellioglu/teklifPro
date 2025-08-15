@@ -12,7 +12,7 @@ if (empty($_SESSION['user_id'])) {
 require __DIR__ . '/../config.php';
 
 function enc(string $s): string {
-    $out = @iconv('UTF-8', 'ISO-8859-9//TRANSLIT', $s);
+    $out = @iconv('UTF-8', 'Windows-1254//TRANSLIT', $s);
     return $out !== false ? $out : $s;
 }
 
@@ -130,26 +130,20 @@ foreach ($systems as $sys) {
 require __DIR__ . '/../libs/fpdf.php';
 
 $pdf = new FPDF();
+$pdf->AddFont('Roboto', '', 'Roboto-Regular.php', __DIR__ . '/Roboto/');
 $pdf->SetTitle(enc('Optimizasyon Raporu'));
 $marginPx = 50;
 $pageMargin = $marginPx / 3.78; // approx. 50px
 $pdf->SetMargins($pageMargin, $pageMargin, $pageMargin);
 $pdf->SetAutoPageBreak(true, $pageMargin);
 $pdf->AddPage();
-$pdf->SetFont('Arial', 'B', 12);
+$pdf->SetFont('Roboto', '', 12);
 $pdf->Cell(0, 6, enc('Optimizasyon Raporu'), 0, 1, 'C');
 $pdf->Ln(2);
 
 $first = $systems[0];
-$pdf->SetFont('Arial', '', 8);
-
-$cardX = $pdf->GetX();
-$cardY = $pdf->GetY();
-$cardW = $pdf->GetPageWidth() - 2 * $pageMargin;
-$cardH = 30; // adjust as needed
-$pdf->Rect($cardX, $cardY, $cardW, $cardH);
-
-$leftLines = [
+$pdf->SetFont('Roboto', '', 8);
+$headerLines = [
     'Proje: ' . $projectName,
     'Müşteri: ' . $customerName,
     'Tarih: ' . $offerDate,
@@ -196,7 +190,7 @@ $cardH = $availableH / $rowsPerPage;
 $imgMaxW = $cardW - 4;
 $imgMaxH = $cardH - 15;
 
-$pdf->SetFont('Arial', '', 7);
+$pdf->SetFont('Roboto', '', 7);
 foreach ($aggregated as $rowData) {
     $x = $xStart + $col * ($cardW + $gap);
     $y = $yStart + $row * ($cardH + $gap);
@@ -233,12 +227,12 @@ foreach ($aggregated as $rowData) {
 
     $currentY = $imgY + $imgMaxH + 2;
     $pdf->SetXY($x + 2, $currentY);
-    $pdf->SetFont('Arial', 'B', 7);
+    $pdf->SetFont('Roboto', '', 7);
     $pdf->MultiCell($cardW - 4, 3, enc($rowData['name']), 0, 'C');
     $currentY = $pdf->GetY();
 
     $pdf->SetXY($x + 2, $currentY);
-    $pdf->SetFont('Arial', '', 6);
+    $pdf->SetFont('Roboto', '', 6);
     $unit = $rowData['qty'] ? $rowData['length'] / $rowData['qty'] : 0;
     $cat = strtolower((string)($rowData['category'] ?? ''));
     $lines = [];
