@@ -103,35 +103,32 @@ $pdf->SetFont('Arial', 'B', 14);
 $pdf->Cell(0, 8, enc('Optimizasyon Sonucu'), 0, 1, 'C');
 $pdf->Ln(4);
 
-$cardW = 60;
-$cardH = 60;
-$imgMaxW = 40;
-$imgMaxH = 30;
 $margin = 5;
-$cols = 3;
+$cols = 4;
+$rowsPerPage = 5;
 $xStart = 10;
 $yStart = $pdf->GetY();
 $col = 0;
 $row = 0;
 
+$pageW = $pdf->GetPageWidth();
+$cardW = ($pageW - 2 * $xStart - ($cols - 1) * $margin) / $cols;
+$pageH = $pdf->GetPageHeight();
+$bottomMargin = 15;
+$availableH = $pageH - $yStart - $bottomMargin - ($rowsPerPage - 1) * $margin;
+$cardH = $availableH / $rowsPerPage;
+$imgMaxW = $cardW - 10;
+$imgMaxH = $cardH - 30;
+
 $pdf->SetFont('Arial', '', 9);
 foreach ($aggregated as $rowData) {
     $x = $xStart + $col * ($cardW + $margin);
     $y = $yStart + $row * ($cardH + $margin);
-    if ($y + $cardH > ($pdf->GetPageHeight() - 15)) {
-        $pdf->AddPage();
-        $yStart = $pdf->GetY();
-        $x = $xStart;
-        $y = $yStart;
-        $col = 0;
-        $row = 0;
-    }
 
     $pdf->Rect($x, $y, $cardW, $cardH);
 
     $imagePath = $rowData['image'] ?? null;
-    $imgX = $x + ($cardW - $imgMaxW) / 2;
-    $imgY = $y + 5;
+    $imgY = $y + 4;
     $drawn = false;
     if ($imagePath) {
         $abs = __DIR__ . '/../' . ltrim($imagePath, '/');
@@ -166,11 +163,6 @@ foreach ($aggregated as $rowData) {
 
     $pdf->SetXY($x + 2, $currentY);
     $pdf->SetFont('Arial', '', 8);
-    $pdf->MultiCell($cardW - 4, 4, enc((string)($rowData['category'] ?? '')), 0, 'C');
-    $currentY = $pdf->GetY();
-
-    $pdf->SetXY($x + 2, $currentY);
-    $pdf->SetFont('Arial', '', 8);
     $unit = $rowData['qty'] ? $rowData['length'] / $rowData['qty'] : 0;
     $cat = strtolower((string)($rowData['category'] ?? ''));
     $lines = [];
@@ -195,6 +187,11 @@ foreach ($aggregated as $rowData) {
     if ($col >= $cols) {
         $col = 0;
         $row++;
+        if ($row >= $rowsPerPage) {
+            $pdf->AddPage();
+            $yStart = $pdf->GetY();
+            $row = 0;
+        }
     }
 }
 
