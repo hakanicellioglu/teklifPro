@@ -48,7 +48,7 @@ $rules = [
     'Kıl Fitil'            => fn($w, $h, $q) => [(($w - 183) * 4) + (($h - 166) * 8) + ((($h - 290) / 3) * 2), $q],
 ];
 
-$pStmt = $pdo->prepare('SELECT weight_per_meter, image_url FROM products WHERE LOWER(name) = LOWER(:name)');
+$pStmt = $pdo->prepare('SELECT weight_per_meter, image_url, category FROM products WHERE LOWER(name) = LOWER(:name)');
 
 $aggregated = [];
 foreach ($systems as $sys) {
@@ -65,6 +65,7 @@ foreach ($systems as $sys) {
         $prod = $pStmt->fetch(PDO::FETCH_ASSOC);
         $wpm = (float)($prod['weight_per_meter'] ?? 0);
         $imageUrl = $prod['image_url'] ?? null;
+        $category = $prod['category'] ?? null;
         $totalKg = $wpm * $totalLength / 1000; // convert mm to m
         if (!isset($aggregated[$name])) {
             $aggregated[$name] = [
@@ -73,10 +74,14 @@ foreach ($systems as $sys) {
                 'qty'    => 0,
                 'kg'     => 0.0,
                 'image'  => $imageUrl,
+                'category' => $category,
             ];
         } else {
             if (!$aggregated[$name]['image'] && $imageUrl) {
                 $aggregated[$name]['image'] = $imageUrl;
+            }
+            if (empty($aggregated[$name]['category']) && $category) {
+                $aggregated[$name]['category'] = $category;
             }
         }
         $aggregated[$name]['length'] += $totalLength;
@@ -85,7 +90,7 @@ foreach ($systems as $sys) {
     }
 }
 ?>
-<div class="container py-4">
+<div class="container py-4 bg-primary text-primary">
     <button type="button" class="btn btn-secondary my-3" onclick="window.close();">Geri Dön</button>
     <div class="mb-3 d-flex justify-content-between align-items-center">
         <h1 class="mb-4">Optimizasyon Sonucu</h1>
@@ -107,6 +112,7 @@ foreach ($systems as $sys) {
                     <div class="card-body">
                         <h5 class="card-title"><?= e($row['name']) ?></h5>
                         <ul class="list-unstyled mb-0">
+                            <li>Kategori: <?= e($row['category'] ?? '') ?></li>
                             <li>Birim Uzunluk: <?= e((int)round($unit)) ?> mm</li>
                             <li>Toplam Uzunluk: <?= e((int)round($row['length'])) ?> mm</li>
                             <li>Adet: <?= e((string)$row['qty']) ?></li>
