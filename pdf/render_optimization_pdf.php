@@ -129,8 +129,8 @@ foreach ($headerLines as $line) {
 $pdf->Ln(3);
 
 $gap = 5;
-$cols = 4;
-$rowsPerPage = 5;
+$cols = 5;
+$rowsPerPage = 6;
 $xStart = $pageMargin;
 $yStart = $pdf->GetY();
 $col = 0;
@@ -141,8 +141,8 @@ $cardW = ($pageW - 2 * $xStart - ($cols - 1) * $gap) / $cols;
 $pageH = $pdf->GetPageHeight();
 $availableH = $pageH - $yStart - $pageMargin - ($rowsPerPage - 1) * $gap;
 $cardH = $availableH / $rowsPerPage;
-$imgMaxW = $cardW - 20;
-$imgMaxH = $cardH - 40;
+$imgMaxW = $cardW - 10;
+$imgMaxH = $cardH - 25;
 
 $pdf->SetFont('Arial', '', 7);
 foreach ($aggregated as $rowData) {
