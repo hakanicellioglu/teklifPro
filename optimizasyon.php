@@ -48,7 +48,7 @@ $rules = [
     'Kıl Fitil'            => fn($w, $h, $q) => [(($w - 183) * 4) + (($h - 166) * 8) + ((($h - 290) / 3) * 2), $q],
 ];
 
-$pStmt = $pdo->prepare('SELECT weight_per_meter, image_url FROM products WHERE LOWER(name) = LOWER(:name)');
+$pStmt = $pdo->prepare('SELECT weight_per_meter, image_url, category FROM products WHERE LOWER(name) = LOWER(:name)');
 
 $aggregated = [];
 foreach ($systems as $sys) {
@@ -65,6 +65,7 @@ foreach ($systems as $sys) {
         $prod = $pStmt->fetch(PDO::FETCH_ASSOC);
         $wpm = (float)($prod['weight_per_meter'] ?? 0);
         $imageUrl = $prod['image_url'] ?? null;
+        $category = $prod['category'] ?? null;
         $totalKg = $wpm * $totalLength / 1000; // convert mm to m
         if (!isset($aggregated[$name])) {
             $aggregated[$name] = [
@@ -73,10 +74,14 @@ foreach ($systems as $sys) {
                 'qty'    => 0,
                 'kg'     => 0.0,
                 'image'  => $imageUrl,
+                'category' => $category,
             ];
         } else {
             if (!$aggregated[$name]['image'] && $imageUrl) {
                 $aggregated[$name]['image'] = $imageUrl;
+            }
+            if (empty($aggregated[$name]['category']) && $category) {
+                $aggregated[$name]['category'] = $category;
             }
         }
         $aggregated[$name]['length'] += $totalLength;
@@ -90,7 +95,7 @@ foreach ($systems as $sys) {
     <div class="mb-3 d-flex justify-content-between align-items-center">
         <h1 class="mb-4">Optimizasyon Sonucu</h1>
         <a href="pdf/render_optimization_pdf.php?id=<?= e((string)$id) ?>" class="btn btn-secondary ms-2" target="_blank">
-    
+
             <i class="bi bi-file-earmark-pdf"></i> PDF İndir
         </a>
     </div>
@@ -105,7 +110,12 @@ foreach ($systems as $sys) {
                         <img src="<?= e($row['image']) ?>" class="card-img-top" style="width: 150px; height: 150px; margin-left: auto; margin-right: auto; display: block;" alt="<?= e($row['name']) ?>">
                     <?php endif; ?>
                     <div class="card-body">
-                        <h5 class="card-title"><?= e($row['name']) ?></h5>
+
+                        <div class="d-flex justify-content-between align-items-center list-unstyled">
+                            <h5 class="card-title mb-1"><?= e($row['name']) ?></h5>
+                            <li><span class="bg-primary px-2 py-1 text-white rounded small"><?= e($row['category'] ?? '') ?></span></li>
+                        </div>
+
                         <ul class="list-unstyled mb-0">
                             <li>Birim Uzunluk: <?= e((int)round($unit)) ?> mm</li>
                             <li>Toplam Uzunluk: <?= e((int)round($row['length'])) ?> mm</li>
