@@ -4,6 +4,85 @@ require __DIR__ . '/components/page_header.php';
 
 function e(?string $v): string { return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8'); }
 
+function log_message(string $msg): void {
+    $file = __DIR__ . '/errors/app.log';
+    error_log('[' . date('Y-m-d H:i:s') . "] $msg\n", 3, $file);
+}
+
+function recalculateOfferProfit(PDO $pdo, int $offerId): void {
+    // ensure columns exist
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS profit_percent DECIMAL(5,2) NULL, ADD COLUMN IF NOT EXISTS profit_amount DECIMAL(15,2) NULL");
+
+    $rules = require __DIR__ . '/rules.php';
+    $prodStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE LOWER(p.name) = LOWER(:name)');
+    $lineStmt = $pdo->prepare('SELECT * FROM guillotinesystems WHERE general_offer_id = :id');
+
+    $pdo->beginTransaction();
+    try {
+        $lineStmt->execute([':id' => $offerId]);
+        $rows = $lineStmt->fetchAll(PDO::FETCH_ASSOC);
+        $sellTotal = 0.0;
+        $costTotal = 0.0;
+        foreach ($rows as $row) {
+            $lineSell = (float)($row['total_amount'] ?? 0);
+            $baseCost = 0.0;
+            foreach ($rules['guillotine'] ?? [] as $rule) {
+                if (!is_callable($rule['match']) || !$rule['match']($row)) {
+                    continue;
+                }
+                foreach ($rule['products'] as $prod) {
+                    $qty = (float)$prod['qty']($row);
+                    if ($qty <= 0) { continue; }
+                    $prodStmt->execute([':name' => $prod['name']]);
+                    if ($p = $prodStmt->fetch(PDO::FETCH_ASSOC)) {
+                        $unit = (float)$p['unit_price'];
+                        $vat  = (float)$p['vat_rate'];
+                        $unitType = $p['unit_type'];
+                        $weight = (float)($p['weight_per_meter'] ?? 0);
+                        $price = 0.0;
+                        if ($unitType === 'kg/m') {
+                            $price = $qty * $weight * $unit;
+                        } else {
+                            $price = $qty * $unit;
+                        }
+                        $price *= (1 + $vat / 100);
+                        $baseCost += $price;
+                    }
+                }
+            }
+            if ($lineSell <= 0 && $baseCost > 0) {
+                $rate = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
+                $lineSell = $baseCost * (1 + $rate / 100);
+            }
+            $lineCost = $baseCost;
+            if ($lineCost <= 0) {
+                if ($lineSell > 0 && $row['profit_amount'] !== null) {
+                    $lineCost = $lineSell - (float)$row['profit_amount'];
+                } else {
+                    $lineCost = 0.0;
+                    log_message('Maliyet hesaplanamadı. Giyotin ID ' . $row['id']);
+                }
+            }
+            $sellTotal += $lineSell;
+            $costTotal += $lineCost;
+        }
+        $profitAmount = $sellTotal - $costTotal;
+        $profitPercent = $sellTotal > 0 ? ($profitAmount / $sellTotal) * 100 : 0;
+        $upd = $pdo->prepare('UPDATE generaloffers SET total_amount=:total, profit_amount=:pamount, profit_percent=:ppct WHERE id=:id');
+        $upd->execute([
+            ':total'  => round($sellTotal, 2),
+            ':pamount' => round($profitAmount, 2),
+            ':ppct' => round($profitPercent, 2),
+            ':id'    => $offerId,
+        ]);
+        $pdo->commit();
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) { $pdo->rollBack(); }
+        log_message('Kâr hesaplama hatası: ' . $e->getMessage());
+        throw $e;
+    }
+}
+
 $assemblyTypes = [
     'demonte' => 'Demonte',
     'musteri' => 'Müşteri Montajlı',
@@ -19,6 +98,12 @@ $paymentLabels = [
     'other'         => 'Diğer',
 ];
 
+try {
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS profit_percent DECIMAL(5,2) NULL, ADD COLUMN IF NOT EXISTS profit_amount DECIMAL(15,2) NULL");
+} catch (Exception $e) {
+    // migration errors ignored
+}
+
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
     header('Location: quotations.php?error=' . urlencode('Teklif bulunamadı.'));
@@ -33,12 +118,34 @@ if (!$offer) {
     exit;
 }
 
-$customers = $pdo->query('SELECT id, first_name, last_name, company_name AS company FROM customers ORDER BY first_name')->fetchAll();
-
 $errors = [];
 $success = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['recalculate_profit'])) {
+    $token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+        $errors['form'] = 'Geçersiz CSRF tokenı.';
+    } else {
+        try {
+            recalculateOfferProfit($pdo, $id);
+            if (!empty($_POST['redirect'])) {
+                $_SESSION['flash_success'] = 'Kâr hesaplandı.';
+                header('Location: quotations.php');
+                exit;
+            }
+            $success = 'Kâr hesaplandı.';
+            $stmt = $pdo->prepare('SELECT * FROM generaloffers WHERE id = :id');
+            $stmt->execute([':id' => $id]);
+            $offer = $stmt->fetch();
+        } catch (Exception $e) {
+            $errors['form'] = 'Kâr hesaplanamadı.';
+        }
+    }
+}
+
+$customers = $pdo->query('SELECT id, first_name, last_name, company_name AS company FROM customers ORDER BY first_name')->fetchAll();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['recalculate_profit'])) {
     $customerId      = (int)($_POST['customer_id'] ?? 0);
     $offerDate       = trim($_POST['offer_date'] ?? '');
     $assemblyType    = $_POST['assembly_type'] ?? '';
@@ -90,6 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bindValue(':interest_value', $interestValue !== '' ? $interestValue : null, $interestValue === '' ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->bindValue(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
+            recalculateOfferProfit($pdo, $id);
             $success = 'Teklif güncellendi.';
             $offer = array_merge($offer, [
                 'customer_id'      => $customerId,

@@ -49,6 +49,7 @@ try {
     $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS total_with_interest DECIMAL(12,2) NULL AFTER interest_amount");
     $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS monthly_installment DECIMAL(12,2) NULL AFTER total_with_interest");
     $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS grace_days INT NULL DEFAULT 0 AFTER monthly_installment");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS profit_percent DECIMAL(5,2) NULL AFTER total_amount, ADD COLUMN IF NOT EXISTS profit_amount DECIMAL(15,2) NULL AFTER profit_percent");
 } catch (Exception $e) {
     // ignore migration errors
 }
@@ -172,12 +173,9 @@ $conditions = [];
 $params = [];
 if ($search !== '') { $conditions[] = 'CONCAT(c.first_name, " ", c.last_name) LIKE :term'; $params['term'] = "%$search%"; }
 if ($status !== '') { $conditions[] = 'g.status = :status'; $params['status'] = $status; }
-$sql = 'SELECT g.id, g.offer_date, g.status, g.assembly_type, g.payment_method, g.validity_days, g.installment_term, g.term_months, g.interest_value, CONCAT(c.first_name, " ", c.last_name) AS customer, c.company_name AS company,
-        COALESCE(gs.sum_total,0)+COALESCE(ss.sum_total,0) AS total_amount
+$sql = 'SELECT g.id, g.offer_date, g.status, g.assembly_type, g.payment_method, g.validity_days, g.installment_term, g.term_months, g.interest_value, g.total_amount, g.profit_percent, g.profit_amount, CONCAT(c.first_name, " ", c.last_name) AS customer, c.company_name AS company
         FROM generaloffers g
-        LEFT JOIN customers c ON g.customer_id=c.id
-        LEFT JOIN (SELECT general_offer_id, SUM(total_amount) AS sum_total FROM guillotinesystems GROUP BY general_offer_id) gs ON gs.general_offer_id=g.id
-        LEFT JOIN (SELECT general_offer_id, SUM(total_amount) AS sum_total FROM slidingsystems GROUP BY general_offer_id) ss ON ss.general_offer_id=g.id';
+        LEFT JOIN customers c ON g.customer_id=c.id';
 if ($conditions) { $sql .= ' WHERE '.implode(' AND ', $conditions); }
 $sql .= ' ORDER BY g.offer_date DESC';
 $stmt = $pdo->prepare($sql);
@@ -202,7 +200,7 @@ unset($_SESSION['flash_error']);
     </select>
   </div>
 </form>
-<?php data_table_start(['#','Müşteri','Montaj','Ödeme','Süre','Vade','Tarih','Tutar','Durum','İşlemler'], 'text-center'); ?>
+<?php data_table_start(['#','Müşteri','Montaj','Ödeme','Süre','Vade','Tarih','Satış Tutarı','Kâr %','Kâr Tutarı','Durum','İşlemler'], 'text-center'); ?>
 <?php if ($offers): foreach ($offers as $o): ?>
 <tr class="text-center">
   <td><?= (int)$o['id'] ?></td>
@@ -224,9 +222,19 @@ unset($_SESSION['flash_error']);
     <?php endif; ?>
   </td>
   <td><time datetime="<?= e($o['offer_date']) ?>"><?= e($o['offer_date']) ?></time></td>
-  <td><?= number_format((float)$o['total_amount'],2,',','.') ?> ₺</td>
+  <td><?= $o['total_amount'] !== null ? number_format((float)$o['total_amount'],2,',','.') : '-' ?> ₺</td>
+  <td><?= $o['profit_percent'] !== null ? number_format((float)$o['profit_percent'],2,',','.') : '-' ?> %</td>
+  <td><?= $o['profit_amount'] !== null ? number_format((float)$o['profit_amount'],2,',','.') : '-' ?> ₺</td>
   <td><?= e($statusLabels[$o['status']] ?? $o['status']) ?></td>
   <td class="text-center">
+    <?php if ($o['total_amount'] === null || $o['profit_percent'] === null || $o['profit_amount'] === null): ?>
+    <form method="post" action="quotation_edit.php?id=<?= (int)$o['id'] ?>" class="d-inline">
+      <input type="hidden" name="recalculate_profit" value="1">
+      <input type="hidden" name="redirect" value="1">
+      <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+      <button type="submit" class="btn btn-sm btn-outline-warning" title="Kârı Yeniden Hesapla">Kârı Yeniden Hesapla</button>
+    </form>
+    <?php endif; ?>
     <a href="quotation_view.php?id=<?= (int)$o['id'] ?>" class="btn btn-sm btn-outline-secondary" title="Görüntüle"><i class="bi bi-eye"></i></a>
     <form method="post" class="d-inline">
       <input type="hidden" name="action" value="delete">
