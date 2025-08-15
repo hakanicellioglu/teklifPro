@@ -11,6 +11,8 @@ if (empty($_SESSION['user_id'])) {
 
 require __DIR__ . '/../config.php';
 
+require_once __DIR__ . '/helpers.php';
+
 /**
  * Composer is OPTIONAL. If present and mPDF is installed, we will render HTML template.
  * Otherwise we fall back to FPDF and draw a clean, data-driven layout.
@@ -22,12 +24,6 @@ if (file_exists($autoload)) {
 
 function h(?string $v): string {
     return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-function enc(string $s): string {
-    // FPDF uses ISO-8859-1 by default; convert Turkish UTF-8 safely.
-    $out = @iconv('UTF-8', 'ISO-8859-9//TRANSLIT', $s);
-    return $out !== false ? $out : $s;
 }
 
 // ---- Fetch data ----
