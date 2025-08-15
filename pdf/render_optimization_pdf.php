@@ -141,8 +141,8 @@ $cardW = ($pageW - 2 * $xStart - ($cols - 1) * $gap) / $cols;
 $pageH = $pdf->GetPageHeight();
 $availableH = $pageH - $yStart - $pageMargin - ($rowsPerPage - 1) * $gap;
 $cardH = $availableH / $rowsPerPage;
-$imgMaxW = $cardW - 10;
-$imgMaxH = $cardH - 25;
+$imgMaxW = $cardW - 6;
+$imgMaxH = $cardH - 20;
 
 $pdf->SetFont('Arial', '', 7);
 foreach ($aggregated as $rowData) {
@@ -152,7 +152,7 @@ foreach ($aggregated as $rowData) {
     $pdf->Rect($x, $y, $cardW, $cardH);
 
     $imagePath = $rowData['image'] ?? null;
-    $imgY = $y + 4;
+    $imgY = $y + 2;
     $drawn = false;
     if ($imagePath) {
         $abs = __DIR__ . '/../' . ltrim($imagePath, '/');
