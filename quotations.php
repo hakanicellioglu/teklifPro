@@ -173,11 +173,9 @@ $params = [];
 if ($search !== '') { $conditions[] = 'CONCAT(c.first_name, " ", c.last_name) LIKE :term'; $params['term'] = "%$search%"; }
 if ($status !== '') { $conditions[] = 'g.status = :status'; $params['status'] = $status; }
 $sql = 'SELECT g.id, g.offer_date, g.status, g.assembly_type, g.payment_method, g.validity_days, g.installment_term, g.term_months, g.interest_value, CONCAT(c.first_name, " ", c.last_name) AS customer, c.company_name AS company,
-        COALESCE(gs.sum_total,0)+COALESCE(ss.sum_total,0) AS total_amount
+        g.total_amount
         FROM generaloffers g
-        LEFT JOIN customers c ON g.customer_id=c.id
-        LEFT JOIN (SELECT general_offer_id, SUM(total_amount) AS sum_total FROM guillotinesystems GROUP BY general_offer_id) gs ON gs.general_offer_id=g.id
-        LEFT JOIN (SELECT general_offer_id, SUM(total_amount) AS sum_total FROM slidingsystems GROUP BY general_offer_id) ss ON ss.general_offer_id=g.id';
+        LEFT JOIN customers c ON g.customer_id=c.id';
 if ($conditions) { $sql .= ' WHERE '.implode(' AND ', $conditions); }
 $sql .= ' ORDER BY g.offer_date DESC';
 $stmt = $pdo->prepare($sql);

@@ -7,6 +7,30 @@ function e(?string $v): string
     return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+function recalc_offer_totals(PDO $pdo, int $offerId): void
+{
+    $sumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) AS gross FROM guillotinesystems WHERE general_offer_id = :id');
+    $sumStmt->execute([':id' => $offerId]);
+    $gross = (float)$sumStmt->fetchColumn();
+
+    $offerStmt = $pdo->prepare('SELECT COALESCE(discount_rate,0) AS discount_rate, COALESCE(vat_rate,0) AS vat_rate FROM generaloffers WHERE id = :id');
+    $offerStmt->execute([':id' => $offerId]);
+    $offer = $offerStmt->fetch(PDO::FETCH_ASSOC) ?: ['discount_rate' => 0, 'vat_rate' => 0];
+
+    $discountAmount = round($gross * ((float)$offer['discount_rate']) / 100, 2);
+    $net           = $gross - $discountAmount;
+    $vatAmount     = round($net * ((float)$offer['vat_rate']) / 100, 2);
+    $total         = $net + $vatAmount;
+
+    $updStmt = $pdo->prepare('UPDATE generaloffers SET total_amount = :total, discount_amount = :discount, vat_amount = :vat WHERE id = :id');
+    $updStmt->execute([
+        ':total'    => $total,
+        ':discount' => $discountAmount,
+        ':vat'      => $vatAmount,
+        ':id'       => $offerId,
+    ]);
+}
+
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -149,26 +173,18 @@ if (
                     }
                 }
 
-                $rate = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
-                $profitAmount = $base * ($rate / 100);
-                $totalAmount  = $base + $profitAmount;
-                $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
+                $rate        = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
+                $profitAmount = round($base * ($rate / 100), 2);
+                $totalAmount  = round($base + $profitAmount, 2);
+                $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_rate=:rate, profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
                 $gUpd->execute([
+                    ':rate'    => $rate,
                     ':pamount' => $profitAmount,
                     ':tamount' => $totalAmount,
                     ':id'      => $gId,
                 ]);
 
-                // Recalculate overall totals
-                $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
-                $gSumStmt->execute([':id' => $id]);
-                $gSum = (float)$gSumStmt->fetchColumn();
-                $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
-                $sSumStmt->execute([':id' => $id]);
-                $sSum = (float)$sSumStmt->fetchColumn();
-                $overall = $gSum + $sSum;
-                $upd = $pdo->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id');
-                $upd->execute([':t' => $overall, ':id' => $id]);
+                recalc_offer_totals($pdo, $id);
 
                 $pdo->commit();
                 $_SESSION['flash_success'] = 'Giyotin optimize edildi.';
@@ -220,23 +236,21 @@ if ($gDel) {
         $_SESSION['flash_error'] = 'Geçersiz CSRF tokenı.';
     } else {
         try {
+            $pdo->beginTransaction();
             $del = $pdo->prepare('DELETE FROM guillotinesystems WHERE id = :gid AND general_offer_id = :goid');
             $del->execute([':gid' => $gId, ':goid' => $id]);
             if ($del->rowCount()) {
-                $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
-                $gSumStmt->execute([':id' => $id]);
-                $gSum = (float)$gSumStmt->fetchColumn();
-                $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
-                $sSumStmt->execute([':id' => $id]);
-                $sSum = (float)$sSumStmt->fetchColumn();
-                $overall = $gSum + $sSum;
-                $upd = $pdo->prepare('UPDATE generaloffers SET total_amount = :total WHERE id = :id');
-                $upd->execute([':total' => $overall, ':id' => $id]);
+                recalc_offer_totals($pdo, $id);
+                $pdo->commit();
                 $_SESSION['flash_success'] = 'Giyotin sistemi silindi.';
             } else {
+                $pdo->rollBack();
                 $_SESSION['flash_error'] = 'Giyotin sistemi silinemedi.';
             }
         } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             $_SESSION['flash_error'] = 'Giyotin sistemi silinemedi.';
         }
     }
@@ -277,6 +291,7 @@ if ($gPost) {
             if (!$validNumbers) {
                 $error = 'Tüm sayısal alanlar pozitif olmalıdır.';
             } else {
+                $pdo->beginTransaction();
                 if ($gId) {
                     $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin WHERE id=:id AND general_offer_id=:goid';
                     $params = [
@@ -310,19 +325,65 @@ if ($gPost) {
                 }
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($params);
+                $lineId = $gId ?: (int)$pdo->lastInsertId();
 
-                $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
-                $gSumStmt->execute([':id' => $id]);
-                $gSum = (float)$gSumStmt->fetchColumn();
-                $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
-                $sSumStmt->execute([':id' => $id]);
-                $sSum = (float)$sSumStmt->fetchColumn();
-                $overall = $gSum + $sSum;
-                $updStmt = $pdo->prepare('UPDATE generaloffers SET total_amount = :total WHERE id = :id');
-                $updStmt->execute([':total' => $overall, ':id' => $id]);
+                $rules = require __DIR__ . '/rules.php';
+                $pStmt = $pdo->prepare('SELECT p.unit_price, p.vat_rate, p.weight_per_meter, c.unit_type FROM products p LEFT JOIN categories c ON p.category = c.id WHERE LOWER(p.name) = LOWER(:name)');
+                $rowData = [
+                    'system_type'    => 'Guillotine',
+                    'width'          => $width,
+                    'height'         => $height,
+                    'quantity'       => $quantity,
+                    'motor_system'   => $motor,
+                    'remote_quantity'=> $remoteQty,
+                    'ral_code'       => $ralCode,
+                    'glass_type'     => $glassType,
+                    'glass_color'    => $glassColor,
+                ];
+                $base = 0.0;
+                foreach ($rules['guillotine'] ?? [] as $rule) {
+                    if (!is_callable($rule['match']) || !$rule['match']($rowData)) {
+                        continue;
+                    }
+                    foreach ($rule['products'] as $prod) {
+                        $calcQty = (float)$prod['qty']($rowData);
+                        if ($calcQty <= 0) {
+                            continue;
+                        }
+                        $pStmt->execute([':name' => $prod['name']]);
+                        if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
+                            $unit     = (float)$p['unit_price'];
+                            $vat      = (float)$p['vat_rate'];
+                            $unitType = $p['unit_type'];
+                            if ($unitType === 'kg/m') {
+                                $weight = (float)$p['weight_per_meter'];
+                                $base += $calcQty * $weight * $unit * (1 + $vat / 100);
+                            } else {
+                                $base += $calcQty * $unit * (1 + $vat / 100);
+                            }
+                        }
+                    }
+                }
+
+                $rate        = (float)$profitMargin;
+                $profitAmount = round($base * ($rate / 100), 2);
+                $totalAmount  = round($base + $profitAmount, 2);
+                $updLine = $pdo->prepare('UPDATE guillotinesystems SET profit_rate=:rate, profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
+                $updLine->execute([
+                    ':rate'    => $rate,
+                    ':pamount' => $profitAmount,
+                    ':tamount' => $totalAmount,
+                    ':id'      => $lineId,
+                ]);
+
+                recalc_offer_totals($pdo, $id);
+                $pdo->commit();
                 $success = $gId ? 'Giyotin sistemi güncellendi.' : 'Giyotin sistemi eklendi.';
             }
         } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             $error = 'Giyotin sistemi kaydedilemedi.';
         }
     }

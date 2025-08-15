@@ -15,6 +15,29 @@ function formatCurrency(float $v): string {
     return number_format($v, 2, ',', '.') . ' ₺';
 }
 
+function recalc_offer_totals(PDO $pdo, int $offerId): void {
+    $sumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) AS gross FROM guillotinesystems WHERE general_offer_id = :id');
+    $sumStmt->execute([':id' => $offerId]);
+    $gross = (float)$sumStmt->fetchColumn();
+
+    $offerStmt = $pdo->prepare('SELECT COALESCE(discount_rate,0) AS discount_rate, COALESCE(vat_rate,0) AS vat_rate FROM generaloffers WHERE id = :id');
+    $offerStmt->execute([':id' => $offerId]);
+    $offer = $offerStmt->fetch(PDO::FETCH_ASSOC) ?: ['discount_rate' => 0, 'vat_rate' => 0];
+
+    $discountAmount = round($gross * ((float)$offer['discount_rate']) / 100, 2);
+    $net           = $gross - $discountAmount;
+    $vatAmount     = round($net * ((float)$offer['vat_rate']) / 100, 2);
+    $total         = $net + $vatAmount;
+
+    $updStmt = $pdo->prepare('UPDATE generaloffers SET total_amount = :total, discount_amount = :discount, vat_amount = :vat WHERE id = :id');
+    $updStmt->execute([
+        ':total'    => $total,
+        ':discount' => $discountAmount,
+        ':vat'      => $vatAmount,
+        ':id'       => $offerId,
+    ]);
+}
+
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -182,20 +205,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($role === 'admin') && ($_POST['act
     } else {
         try {
             $pdo->beginTransaction();
-            $upd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount = :p, total_amount = :t WHERE id = :id');
+            $upd = $pdo->prepare('UPDATE guillotinesystems SET profit_rate = :r, profit_amount = :p, total_amount = :t WHERE id = :id');
             foreach ($systems as $sys) {
                 $tmp = [];
                 $res = computeSystem($sys, $pdo, $tmp);
-                $upd->execute([':p' => $res['profit'], ':t' => $res['total'], ':id' => $sys['id']]);
+                $upd->execute([':r' => $res['profitRate'], ':p' => $res['profit'], ':t' => $res['total'], ':id' => $sys['id']]);
             }
-            $sumG = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
-            $sumG->execute([':id' => $id]);
-            $gTotal = (float)$sumG->fetchColumn();
-            $sumS = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
-            $sumS->execute([':id' => $id]);
-            $sTotal = (float)$sumS->fetchColumn();
-            $overall = $gTotal + $sTotal;
-            $pdo->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id')->execute([':t' => $overall, ':id' => $id]);
+            recalc_offer_totals($pdo, $id);
             $pdo->commit();
             $_SESSION['flash_success'] = 'Toplamlar uygulandı.';
             header('Location: quotation_view.php?id=' . $id . '&success=1');
