@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Anamakine: 127.0.0.1
--- Üretim Zamanı: 13 Ağu 2025, 16:47:28
+-- Üretim Zamanı: 15 Ağu 2025, 16:24:57
 -- Sunucu sürümü: 10.4.32-MariaDB
 -- PHP Sürümü: 8.2.12
 
@@ -66,20 +66,26 @@ CREATE TABLE `company` (
 CREATE TABLE `customers` (
   `id` int(11) NOT NULL,
   `first_name` varchar(255) NOT NULL,
-  `last_name` varchar(255) NOT NULL,
+  `last_name` varchar(255) DEFAULT NULL,
   `company_name` varchar(255) DEFAULT NULL,
   `company` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `phone` varchar(50) DEFAULT NULL,
-  `address` text DEFAULT NULL
+  `address` text DEFAULT NULL,
+  `tax_number` varchar(255) DEFAULT NULL,
+  `tax_office` varchar(255) DEFAULT NULL,
+  `city` varchar(255) DEFAULT NULL,
+  `country` varchar(255) DEFAULT NULL,
+  `notes` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
 --
 -- Tablo döküm verisi `customers`
 --
 
-INSERT INTO `customers` (`id`, `first_name`, `last_name`, `company_name`, `company`, `email`, `phone`, `address`) VALUES
-(1, 'Hakan Berke', 'İÇELLİOĞLU', 'Moza', NULL, 'hakanicellioglu@gmail.com', '05466017490', 'Mustafa Şimşek Bulvarı Alpaslan Mahallesi Esen Apartmanı 112/ 37');
+INSERT INTO `customers` (`id`, `first_name`, `last_name`, `company_name`, `company`, `email`, `phone`, `address`, `tax_number`, `tax_office`, `city`, `country`, `notes`) VALUES
+(1, 'Hakan Berke', 'İÇELLİOĞLU', 'Moza', NULL, 'hakanicellioglu@gmail.com', '05466017490', 'Mustafa Şimşek Bulvarı Alpaslan Mahallesi Esen Apartmanı 112/ 37', NULL, NULL, NULL, NULL, NULL),
+(3, 'Hakan Berke', 'İÇELLİOĞLU', '', NULL, 'berkeicellioglu@gmail.com', '', 'Mustafa Şimşek Bulvarı Alpaslan Mahallesi Esen Apartmanı 112/ 37', '', '', 'MELİKGAZİ', 'Türkiye', '');
 
 -- --------------------------------------------------------
 
@@ -114,6 +120,8 @@ CREATE TABLE `generaloffers` (
   `vat_rate` decimal(5,2) DEFAULT NULL,
   `vat_amount` decimal(10,2) DEFAULT NULL,
   `total_amount` decimal(15,2) DEFAULT NULL,
+  `profit_percent` decimal(5,2) DEFAULT NULL,
+  `profit_amount` decimal(15,2) DEFAULT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'pending'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
@@ -121,8 +129,9 @@ CREATE TABLE `generaloffers` (
 -- Tablo döküm verisi `generaloffers`
 --
 
-INSERT INTO `generaloffers` (`id`, `quote_no`, `customer_id`, `company_id`, `offer_date`, `assembly_type`, `delivery_time`, `payment_method`, `validity_days`, `installment_term`, `payment_type`, `term_months`, `interest_mode`, `interest_value`, `interest_amount`, `total_with_interest`, `monthly_installment`, `grace_days`, `payment_term`, `offer_validity`, `maturity_period`, `discount_rate`, `discount_amount`, `vat_rate`, `vat_amount`, `total_amount`, `status`) VALUES
-(8, NULL, 1, NULL, '2025-08-13', 'demonte', NULL, 'vadeli', 15, NULL, 'installment', 1, 'percent', 5.00, 0.00, 0.00, 0.00, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'pending');
+INSERT INTO `generaloffers` (`id`, `quote_no`, `customer_id`, `company_id`, `offer_date`, `assembly_type`, `delivery_time`, `payment_method`, `validity_days`, `installment_term`, `payment_type`, `term_months`, `interest_mode`, `interest_value`, `interest_amount`, `total_with_interest`, `monthly_installment`, `grace_days`, `payment_term`, `offer_validity`, `maturity_period`, `discount_rate`, `discount_amount`, `vat_rate`, `vat_amount`, `total_amount`, `profit_percent`, `profit_amount`, `status`) VALUES
+(9, NULL, 1, NULL, '2025-08-14', 'demonte', NULL, 'cash', 10, '0', 'installment', 10, 'percent', 10.00, 0.00, 0.00, 0.00, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 'pending'),
+(10, NULL, 1, NULL, '2025-08-15', 'demonte', NULL, 'cash', 10, '3', 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, 0.00, NULL, 0.00, 0.00, NULL, NULL, 'pending');
 
 -- --------------------------------------------------------
 
@@ -148,6 +157,13 @@ CREATE TABLE `guillotinesystems` (
   `total_amount` decimal(15,2) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
+--
+-- Tablo döküm verisi `guillotinesystems`
+--
+
+INSERT INTO `guillotinesystems` (`id`, `general_offer_id`, `system_type`, `width`, `height`, `quantity`, `motor_system`, `remote_quantity`, `ral_code`, `glass_type`, `glass_color`, `profit_margin`, `profit_rate`, `profit_amount`, `total_amount`) VALUES
+(15, 9, 'Guillotine', 5000.00, 1000.00, 5, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 30.00, NULL, 0.00, 0.00);
+
 -- --------------------------------------------------------
 
 --
@@ -160,6 +176,7 @@ CREATE TABLE `products` (
   `name` varchar(255) NOT NULL,
   `category` varchar(100) DEFAULT NULL,
   `unit` varchar(50) DEFAULT NULL,
+  `channel_count` tinyint(3) UNSIGNED DEFAULT NULL,
   `color` varchar(50) DEFAULT NULL,
   `image_data` longblob DEFAULT NULL,
   `image_mime` varchar(100) DEFAULT NULL,
@@ -170,6 +187,31 @@ CREATE TABLE `products` (
   `vat_rate` decimal(5,2) DEFAULT NULL,
   `category_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `products`
+--
+
+INSERT INTO `products` (`id`, `product_code`, `name`, `category`, `unit`, `channel_count`, `color`, `image_data`, `image_mime`, `image_url`, `description`, `unit_price`, `weight_per_meter`, `vat_rate`, `category_id`) VALUES
+(1, 'ALU-001', 'Motor Kutusu', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d81d38629d6.14295177.png', NULL, 200.00, 2.400, 20.00, 1),
+(2, 'ALU-002', 'Motor Kapak', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d83510c2a44.96354635.png', NULL, 200.00, 0.761, 20.00, 1),
+(3, 'ALU-003', 'Alt Kasa', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d85047bba91.68459718.png', NULL, 200.00, 1.216, 20.00, 1),
+(4, 'ALU-004', 'Tutamak', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d884a53bad5.13649486.png', NULL, 200.00, 0.880, 20.00, 1),
+(5, 'ALU-005', 'Kenetli Baza', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d8990be6917.46468808.png', NULL, 200.00, 0.617, 20.00, 1),
+(6, 'ALU-006', 'Küpeşte Bazası', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d8a28b1e5c6.80846706.png', NULL, 200.00, 0.491, 20.00, 1),
+(7, 'ALU-007', 'Küpeşte', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d8be7c30299.00007194.png', NULL, 200.00, 0.399, 20.00, 1),
+(8, 'ALU-008', 'Yatay Tek Cam Çıtası', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d8c5daf3dc7.71006811.png', NULL, 200.00, 0.240, 20.00, 1),
+(9, 'ALU-009', 'Dikey Tek Cam Çıtası', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d8c6315c9c9.78615292.png', NULL, 200.00, 0.240, 20.00, 1),
+(10, 'ALU-010', 'Dikme', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d8d1a3f97f6.66118957.png', NULL, 200.00, 1.692, 20.00, 1),
+(11, 'ALU-011', 'Orta Dikme', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d8ddde19423.72245843.png', NULL, 200.00, 0.589, 20.00, 1),
+(12, 'ALU-012', 'Son Kapatma', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d8e53630e23.99446192.png', NULL, 200.00, 0.980, 20.00, 1),
+(13, 'ALU-013', 'Kanat', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d979f9d9095.83107493.png', NULL, 200.00, 1.499, 20.00, 1),
+(14, 'ALU-014', 'Dikey Baza', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d98fb17a318.00944727.png', NULL, 200.00, 0.627, 20.00, 1),
+(15, 'AKS-001', 'Zincir', 'Aksesuar', 'adet', NULL, NULL, NULL, NULL, 'uploads/prod_689daf670db319.58780229.png', NULL, 900.00, 1.000, 20.00, 2),
+(17, 'ALU-015', 'Motor Borusu', 'Aksesuar', 'adet', NULL, NULL, NULL, NULL, 'uploads/prod_689dba8ccbd6a4.05135182.png', NULL, 190.00, 1.000, 20.00, 1),
+(18, 'FIT-001', 'Motor Kutu Contası', 'Fitil', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbaa5c1c036.57568229.png', NULL, 30.00, 1.000, 20.00, 3),
+(19, 'FIT-002', 'Kanat Contası', 'Fitil', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbabf730f57.59776694.png', NULL, 30.00, 1.000, 20.00, 3),
+(20, 'PRD-01', 'Kıl Fitil', 'Fitil', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbad192dca3.02797000.jpg', NULL, 25.00, 1.000, 20.00, NULL);
 
 -- --------------------------------------------------------
 
@@ -345,25 +387,25 @@ ALTER TABLE `company`
 -- Tablo için AUTO_INCREMENT değeri `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `generaloffers`
 --
 ALTER TABLE `generaloffers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `guillotinesystems`
 --
 ALTER TABLE `guillotinesystems`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `roles`
