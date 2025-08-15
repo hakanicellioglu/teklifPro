@@ -92,9 +92,6 @@ foreach ($systems as $sys) {
 ?>
 <style>
 @media print {
-    .no-print {
-        display: none !important;
-    }
     .print-cols-3 {
         column-count: 3;
         column-gap: 1rem;
@@ -123,7 +120,7 @@ foreach ($systems as $sys) {
             $unit = $row['qty'] ? $row['length'] / $row['qty'] : 0;
         ?>
             <div class="col">
-                <div class="card h-100">
+                <div class="card h-100 d-flex flex-column">
                     <?php if (!empty($row['image'])): ?>
                         <img src="<?= e($row['image']) ?>" class="card-img-top" style="width: 150px; height: 150px; margin-left: auto; margin-right: auto; display: block;" alt="<?= e($row['name']) ?>">
                     <?php endif; ?>

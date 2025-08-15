@@ -29,7 +29,7 @@ $userName = $u['full_name'] ?: ($u['username'] ?? 'User');
 </head>
 <body>
 <a class="visually-hidden-focusable" href="#content">İçeriğe geç</a>
-<nav class="navbar navbar-expand-lg bg-body-secondary shadow-sm" role="navigation">
+<nav class="navbar navbar-expand-lg bg-body-secondary shadow-sm no-print" role="navigation">
   <div class="container">
     <a class="navbar-brand" href="dashboard">TeklifPro</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Menüyü Aç">

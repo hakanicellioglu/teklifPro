@@ -62,3 +62,9 @@ input[type=number],
 .form-control[type=number] {
   text-align: left !important;
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
