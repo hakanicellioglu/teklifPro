@@ -10,11 +10,7 @@ if (empty($_SESSION['user_id'])) {
 }
 
 require __DIR__ . '/../config.php';
-
-function enc(string $s): string {
-    $out = @iconv('UTF-8', 'ISO-8859-9//TRANSLIT', $s);
-    return $out !== false ? $out : $s;
-}
+require_once __DIR__ . '/helpers.php';
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
@@ -99,52 +95,86 @@ foreach ($systems as $sys) {
     }
 }
 
+define('FPDF_FONTPATH', __DIR__ . '/Roboto/');
 require __DIR__ . '/../libs/fpdf.php';
+// if (!file_exists(__DIR__.'/Roboto/Roboto-Regular.php')) die('Roboto-Regular.php yok');
+// if (!file_exists(__DIR__.'/Roboto/Roboto-Regular.z'))  die('Roboto-Regular.z yok');
 
 $pdf = new FPDF();
+$fontFile = __DIR__ . '/Roboto/Roboto-Regular.php';
+if (is_file($fontFile)) {
+    $pdf->AddFont('Roboto', '', 'Roboto-Regular.php');
+    $fontName = 'Roboto';
+} else {
+    $fontName = 'Arial';
+}
+
 $pdf->SetTitle(enc('Optimizasyon Raporu'));
 $marginPx = 50;
 $pageMargin = $marginPx / 3.78; // approx. 50px
 $pdf->SetMargins($pageMargin, $pageMargin, $pageMargin);
 $pdf->SetAutoPageBreak(true, $pageMargin);
 $pdf->AddPage();
-$pdf->SetFont('Arial', 'B', 12);
+
+$pageW = $pdf->GetPageWidth();
+$cardX = $pageMargin;
+$cardY = $pdf->GetY();
+
+$pdf->SetFont($fontName, '', 12);
 $pdf->Cell(0, 6, enc('Optimizasyon Raporu'), 0, 1, 'C');
 $pdf->Ln(2);
 
 $first = $systems[0];
-$pdf->SetFont('Arial', '', 8);
+$pdf->SetFont($fontName, '', 8);
 $headerLines = [
     'Proje: ' . $projectName,
+    'Motor Sistemi: ' . ($first['motor_system'] ?? ''),
+    'RAL Kodu: ' . ($first['ral_code'] ?? ''),
+];
+$rightLines = [
     'Genişlik: ' . $first['width'] . ' mm',
     'Yükseklik: ' . $first['height'] . ' mm',
     'Adet: ' . $first['quantity'],
     'Kumanda Adedi: ' . ($first['remote_quantity'] ?? ''),
-    'Motor Sistemi: ' . ($first['motor_system'] ?? ''),
-    'RAL Kodu: ' . ($first['ral_code'] ?? ''),
 ];
+
+$lineH = 4;
+$linesCnt = max(count($headerLines), count($rightLines));
+$cardW = $pageW - 2 * $pageMargin;
+$cardH = $linesCnt * $lineH + 4;
+$pdf->Rect($cardX, $cardY, $cardW, $cardH);
+
+$leftX = $cardX + 2;
+$rightX = $cardX + $cardW / 2 + 2;
+$y = $cardY + 2;
 foreach ($headerLines as $line) {
-    $pdf->Cell(0, 4, enc($line), 0, 1);
+    $pdf->SetXY($leftX, $y);
+    $pdf->Cell($cardW / 2 - 4, $lineH, enc($line), 0, 2);
+    $y += $lineH;
 }
-$pdf->Ln(3);
+$y = $cardY + 2;
+foreach ($rightLines as $line) {
+    $pdf->SetXY($rightX, $y);
+    $pdf->Cell($cardW / 2 - 4, $lineH, enc($line), 0, 2);
+    $y += $lineH;
+}
 
 $gap = 5;
+$yStart = $cardY + $cardH + $gap;
 $cols = 5;
 $rowsPerPage = 6;
 $xStart = $pageMargin;
-$yStart = $pdf->GetY();
 $col = 0;
 $row = 0;
 
-$pageW = $pdf->GetPageWidth();
-$cardW = ($pageW - 2 * $xStart - ($cols - 1) * $gap) / $cols;
 $pageH = $pdf->GetPageHeight();
 $availableH = $pageH - $yStart - $pageMargin - ($rowsPerPage - 1) * $gap;
+$cardW = ($pageW - 2 * $xStart - ($cols - 1) * $gap) / $cols;
 $cardH = $availableH / $rowsPerPage;
 $imgMaxW = $cardW - 4;
 $imgMaxH = $cardH - 15;
 
-$pdf->SetFont('Arial', '', 7);
+$pdf->SetFont($fontName, '', 7);
 foreach ($aggregated as $rowData) {
     $x = $xStart + $col * ($cardW + $gap);
     $y = $yStart + $row * ($cardH + $gap);
@@ -181,12 +211,12 @@ foreach ($aggregated as $rowData) {
 
     $currentY = $imgY + $imgMaxH + 2;
     $pdf->SetXY($x + 2, $currentY);
-    $pdf->SetFont('Arial', 'B', 7);
+    $pdf->SetFont($fontName, '', 7);
     $pdf->MultiCell($cardW - 4, 3, enc($rowData['name']), 0, 'C');
     $currentY = $pdf->GetY();
 
     $pdf->SetXY($x + 2, $currentY);
-    $pdf->SetFont('Arial', '', 6);
+    $pdf->SetFont($fontName, '', 7);
     $unit = $rowData['qty'] ? $rowData['length'] / $rowData['qty'] : 0;
     $cat = strtolower((string)($rowData['category'] ?? ''));
     $lines = [];
