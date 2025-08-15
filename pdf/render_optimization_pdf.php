@@ -10,6 +10,7 @@ if (empty($_SESSION['user_id'])) {
 }
 
 require __DIR__ . '/../config.php';
+<<<<<<< HEAD
 
 if (!function_exists('enc')) {
     function enc(string $s): string {
@@ -25,6 +26,9 @@ if (!function_exists('enc')) {
         return $s;
     }
 }
+=======
+require_once __DIR__ . '/helpers.php';
+>>>>>>> fcdf3f2cf04b23c1e5754be9570706ae9fa88854
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
@@ -143,18 +147,39 @@ require __DIR__ . '/../libs/fpdf.php';
 // if (!file_exists(__DIR__.'/Roboto/Roboto-Regular.z'))  die('Roboto-Regular.z yok');
 
 $pdf = new FPDF();
+<<<<<<< HEAD
 $pdf->AddFont('Roboto', '', 'Roboto-Regular.php');
+=======
+$fontFile = __DIR__ . '/Roboto/Roboto-Regular.php';
+if (is_file($fontFile)) {
+    $pdf->AddFont('Roboto', '', 'Roboto-Regular.php');
+    $fontName = 'Roboto';
+} else {
+    $fontName = 'Arial';
+}
+
+>>>>>>> fcdf3f2cf04b23c1e5754be9570706ae9fa88854
 $pdf->SetTitle(enc('Optimizasyon Raporu'));
 $marginPx = 50;
 $pageMargin = $marginPx / 3.78; // approx. 50px
 $pdf->SetMargins($pageMargin, $pageMargin, $pageMargin);
 $pdf->SetAutoPageBreak(true, $pageMargin);
 $pdf->AddPage();
+<<<<<<< HEAD
 $pdf->SetFont('Roboto', '', 12);
+=======
+
+$pageW = $pdf->GetPageWidth();
+$cardX = $pageMargin;
+$cardY = $pdf->GetY();
+
+$pdf->SetFont($fontName, '', 12);
+>>>>>>> fcdf3f2cf04b23c1e5754be9570706ae9fa88854
 $pdf->Cell(0, 6, enc('Optimizasyon Raporu'), 0, 1, 'C');
 $pdf->Ln(2);
 
 $first = $systems[0];
+<<<<<<< HEAD
 $pdf->SetFont('Roboto', '', 8);
 $headerLines = [
     'Proje: ' . $projectName,
@@ -162,16 +187,22 @@ $headerLines = [
     'Tarih: ' . $offerDate,
     'Ödeme: ' . $paymentMethod,
     'Durum: ' . $offerStatus,
+=======
+$pdf->SetFont($fontName, '', 8);
+$headerLines = [
+    'Proje: ' . $projectName,
+    'Motor Sistemi: ' . ($first['motor_system'] ?? ''),
+    'RAL Kodu: ' . ($first['ral_code'] ?? ''),
+>>>>>>> fcdf3f2cf04b23c1e5754be9570706ae9fa88854
 ];
 $rightLines = [
     'Genişlik: ' . $first['width'] . ' mm',
     'Yükseklik: ' . $first['height'] . ' mm',
     'Adet: ' . $first['quantity'],
     'Kumanda Adedi: ' . ($first['remote_quantity'] ?? ''),
-    'Motor Sistemi: ' . ($first['motor_system'] ?? ''),
-    'RAL Kodu: ' . ($first['ral_code'] ?? ''),
 ];
 
+<<<<<<< HEAD
 $xLeft = $cardX + 2;
 $yTop = $cardY + 2;
 $colW = ($cardW - 4) / 2;
@@ -186,24 +217,49 @@ foreach ($rightLines as $line) {
 }
 
 $pdf->SetY($cardY + $cardH + 3);
+=======
+$lineH = 4;
+$linesCnt = max(count($headerLines), count($rightLines));
+$cardW = $pageW - 2 * $pageMargin;
+$cardH = $linesCnt * $lineH + 4;
+$pdf->Rect($cardX, $cardY, $cardW, $cardH);
+
+$leftX = $cardX + 2;
+$rightX = $cardX + $cardW / 2 + 2;
+$y = $cardY + 2;
+foreach ($headerLines as $line) {
+    $pdf->SetXY($leftX, $y);
+    $pdf->Cell($cardW / 2 - 4, $lineH, enc($line), 0, 2);
+    $y += $lineH;
+}
+$y = $cardY + 2;
+foreach ($rightLines as $line) {
+    $pdf->SetXY($rightX, $y);
+    $pdf->Cell($cardW / 2 - 4, $lineH, enc($line), 0, 2);
+    $y += $lineH;
+}
+>>>>>>> fcdf3f2cf04b23c1e5754be9570706ae9fa88854
 
 $gap = 5;
+$yStart = $cardY + $cardH + $gap;
 $cols = 5;
 $rowsPerPage = 6;
 $xStart = $pageMargin;
-$yStart = $pdf->GetY();
 $col = 0;
 $row = 0;
 
-$pageW = $pdf->GetPageWidth();
-$cardW = ($pageW - 2 * $xStart - ($cols - 1) * $gap) / $cols;
 $pageH = $pdf->GetPageHeight();
 $availableH = $pageH - $yStart - $pageMargin - ($rowsPerPage - 1) * $gap;
+$cardW = ($pageW - 2 * $xStart - ($cols - 1) * $gap) / $cols;
 $cardH = $availableH / $rowsPerPage;
 $imgMaxW = $cardW - 4;
 $imgMaxH = $cardH - 15;
 
+<<<<<<< HEAD
 $pdf->SetFont('Roboto', '', 7);
+=======
+$pdf->SetFont($fontName, '', 7);
+>>>>>>> fcdf3f2cf04b23c1e5754be9570706ae9fa88854
 foreach ($aggregated as $rowData) {
     $x = $xStart + $col * ($cardW + $gap);
     $y = $yStart + $row * ($cardH + $gap);
@@ -240,12 +296,20 @@ foreach ($aggregated as $rowData) {
 
     $currentY = $imgY + $imgMaxH + 2;
     $pdf->SetXY($x + 2, $currentY);
+<<<<<<< HEAD
     $pdf->SetFont('Roboto', '', 7);
+=======
+    $pdf->SetFont($fontName, '', 7);
+>>>>>>> fcdf3f2cf04b23c1e5754be9570706ae9fa88854
     $pdf->MultiCell($cardW - 4, 3, enc($rowData['name']), 0, 'C');
     $currentY = $pdf->GetY();
 
     $pdf->SetXY($x + 2, $currentY);
+<<<<<<< HEAD
     $pdf->SetFont('Roboto', '', 7);
+=======
+    $pdf->SetFont($fontName, '', 7);
+>>>>>>> fcdf3f2cf04b23c1e5754be9570706ae9fa88854
     $unit = $rowData['qty'] ? $rowData['length'] / $rowData['qty'] : 0;
     $cat = strtolower((string)($rowData['category'] ?? ''));
     $lines = [];
