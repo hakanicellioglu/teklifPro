@@ -90,14 +90,23 @@ foreach ($systems as $sys) {
     }
 }
 ?>
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+</style>
 <div class="container py-4">
-    <button type="button" class="btn btn-secondary my-3" onclick="window.close();">Geri Dön</button>
+    <button type="button" class="btn btn-secondary my-3 no-print" onclick="window.close();">Geri Dön</button>
     <div class="mb-3 d-flex justify-content-between align-items-center">
         <h1 class="mb-4">Optimizasyon Sonucu</h1>
-        <a href="pdf/render_optimization_pdf.php?id=<?= e((string)$id) ?>" class="btn btn-secondary ms-2" target="_blank">
-
-            <i class="bi bi-file-earmark-pdf"></i> PDF İndir
-        </a>
+        <div class="no-print">
+            <button type="button" class="btn btn-primary ms-2" onclick="window.print();">Yazdır</button>
+            <a href="pdf/render_optimization_pdf.php?id=<?= e((string)$id) ?>" class="btn btn-secondary ms-2" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> PDF İndir
+            </a>
+        </div>
     </div>
 
     <div class="row row-cols-1 row-cols-md-3 g-4">
