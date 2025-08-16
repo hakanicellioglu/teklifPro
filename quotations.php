@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 require __DIR__ . '/header.php';
 require __DIR__ . '/components/page_header.php';
 require __DIR__ . '/components/data_table.php';
@@ -55,6 +56,24 @@ try {
 
 $search = trim($_GET['search'] ?? '');
 $status = $_GET['status'] ?? '';
+
+$validPerPages = [10, 25, 50, 100];
+$perPage = isset($_SESSION['per_page']) ? (int)$_SESSION['per_page'] : 10;
+if (isset($_GET['per_page'])) {
+    $pp = (int)$_GET['per_page'];
+    if (!in_array($pp, $validPerPages, true)) {
+        $pp = 10;
+    }
+    $_SESSION['per_page'] = $pp;
+    $perPage = $pp;
+} elseif (!in_array($perPage, $validPerPages, true)) {
+    $perPage = 10;
+    $_SESSION['per_page'] = 10;
+}
+$page = isset($_GET['page']) && ctype_digit((string)$_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) {
+    $page = 1;
+}
 
 $createErrors = [];
 $createData = [
@@ -172,16 +191,24 @@ $conditions = [];
 $params = [];
 if ($search !== '') { $conditions[] = 'CONCAT(c.first_name, " ", c.last_name) LIKE :term'; $params['term'] = "%$search%"; }
 if ($status !== '') { $conditions[] = 'g.status = :status'; $params['status'] = $status; }
-$sql = 'SELECT g.id, g.offer_date, g.status, g.assembly_type, g.payment_method, g.validity_days, g.installment_term, g.term_months, g.interest_value, CONCAT(c.first_name, " ", c.last_name) AS customer, c.company_name AS company,
-        COALESCE(gs.sum_total,0)+COALESCE(ss.sum_total,0) AS total_amount
-        FROM generaloffers g
+$baseSql = 'FROM generaloffers g
         LEFT JOIN customers c ON g.customer_id=c.id
         LEFT JOIN (SELECT general_offer_id, SUM(total_amount) AS sum_total FROM guillotinesystems GROUP BY general_offer_id) gs ON gs.general_offer_id=g.id
         LEFT JOIN (SELECT general_offer_id, SUM(total_amount) AS sum_total FROM slidingsystems GROUP BY general_offer_id) ss ON ss.general_offer_id=g.id';
-if ($conditions) { $sql .= ' WHERE '.implode(' AND ', $conditions); }
-$sql .= ' ORDER BY g.offer_date DESC';
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
+if ($conditions) { $baseSql .= ' WHERE ' . implode(' AND ', $conditions); }
+$countStmt = $pdo->prepare('SELECT COUNT(*) ' . $baseSql);
+$countStmt->execute($params);
+$totalRows = (int)$countStmt->fetchColumn();
+$totalPages = (int)max(1, ceil($totalRows / $perPage));
+if ($page > $totalPages) { $page = $totalPages; }
+$offset = ($page - 1) * $perPage;
+$selectSql = 'SELECT g.id, g.offer_date, g.status, g.assembly_type, g.payment_method, g.validity_days, g.installment_term, g.term_months, g.interest_value, CONCAT(c.first_name, " ", c.last_name) AS customer, c.company_name AS company,
+        COALESCE(gs.sum_total,0)+COALESCE(ss.sum_total,0) AS total_amount ' . $baseSql . ' ORDER BY g.offer_date DESC LIMIT :limit OFFSET :offset';
+$stmt = $pdo->prepare($selectSql);
+foreach ($params as $k => $v) { $stmt->bindValue(':' . $k, $v); }
+$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
 $offers = $stmt->fetchAll();
 
 unset($_SESSION['flash_error']);
@@ -201,6 +228,20 @@ unset($_SESSION['flash_error']);
       <?php endforeach; ?>
     </select>
   </div>
+</form>
+<form method="get" class="mb-3 text-end">
+  <?php if ($search !== ''): ?>
+    <input type="hidden" name="search" value="<?= e($search) ?>">
+  <?php endif; ?>
+  <?php if ($status !== ''): ?>
+    <input type="hidden" name="status" value="<?= e($status) ?>">
+  <?php endif; ?>
+  <select name="per_page" class="form-select d-inline-block w-auto">
+    <?php foreach ($validPerPages as $pp): ?>
+      <option value="<?= $pp ?>" <?= $perPage === $pp ? 'selected' : '' ?>><?= $pp ?></option>
+    <?php endforeach; ?>
+  </select>
+  <button type="submit" class="btn btn-outline-secondary ms-2">Uygula</button>
 </form>
 <?php data_table_start(['#','Müşteri','Montaj','Ödeme','Süre','Vade','Tarih','Tutar','Durum','İşlemler'], 'text-center'); ?>
 <?php if ($offers): foreach ($offers as $o): ?>
@@ -240,6 +281,51 @@ unset($_SESSION['flash_error']);
 <tr><td colspan="10" class="text-center text-muted">Teklif bulunamadı.</td></tr>
 <?php endif; ?>
 <?php data_table_end(); ?>
+
+<?php
+$baseParams = $_GET;
+unset($baseParams['page']);
+$baseParams['per_page'] = $perPage;
+?>
+<nav aria-label="Sayfalama">
+  <ul class="pagination justify-content-center">
+    <?php $isFirst = $page <= 1; ?>
+    <li class="page-item <?= $isFirst ? 'disabled' : '' ?>">
+      <?php if ($isFirst): ?>
+        <span class="page-link">İlk</span>
+      <?php else: ?>
+        <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => 1])) ?>">İlk</a>
+      <?php endif; ?>
+    </li>
+    <li class="page-item <?= $isFirst ? 'disabled' : '' ?>">
+      <?php if ($isFirst): ?>
+        <span class="page-link">Önceki</span>
+      <?php else: ?>
+        <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => $page - 1])) ?>">Önceki</a>
+      <?php endif; ?>
+    </li>
+    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+      <li class="page-item <?= $page === $i ? 'active' : '' ?>">
+        <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => $i])) ?>"><?= $i ?></a>
+      </li>
+    <?php endfor; ?>
+    <?php $isLast = $page >= $totalPages; ?>
+    <li class="page-item <?= $isLast ? 'disabled' : '' ?>">
+      <?php if ($isLast): ?>
+        <span class="page-link">Sonraki</span>
+      <?php else: ?>
+        <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => $page + 1])) ?>">Sonraki</a>
+      <?php endif; ?>
+    </li>
+    <li class="page-item <?= $isLast ? 'disabled' : '' ?>">
+      <?php if ($isLast): ?>
+        <span class="page-link">Son</span>
+      <?php else: ?>
+        <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => $totalPages])) ?>">Son</a>
+      <?php endif; ?>
+    </li>
+  </ul>
+</nav>
 
 <?php
 $customers = $pdo->query('SELECT id, first_name, last_name, company_name AS company FROM customers ORDER BY first_name')->fetchAll();
