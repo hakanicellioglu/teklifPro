@@ -279,9 +279,15 @@ unset($_SESSION['flash_error']);
       <?php foreach ($headers as $h): ?>
         <th scope="col">
           <?= e($h['label']) ?>
-          <?php if ($h['key']): ?>
-            <a href="?<?= http_build_query(array_merge($_GET, ['sort'=>$h['key'],'dir'=>'asc','page'=>1])) ?>" class="btn btn-sm btn-link p-0"><i class="bi bi-caret-up-fill"></i></a>
-            <a href="?<?= http_build_query(array_merge($_GET, ['sort'=>$h['key'],'dir'=>'desc','page'=>1])) ?>" class="btn btn-sm btn-link p-0"><i class="bi bi-caret-down-fill"></i></a>
+          <?php if ($h['key']):
+            $isCurrent = $sort === $h['key'];
+            $nextDir   = ($isCurrent && $dirParam === 'asc') ? 'desc' : 'asc';
+            $icon      = 'bi-arrow-down-up';
+            if ($isCurrent) {
+              $icon = $dirParam === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill';
+            }
+          ?>
+            <a href="?<?= http_build_query(array_merge($_GET, ['sort'=>$h['key'],'dir'=>$nextDir,'page'=>1])) ?>" class="btn btn-sm btn-link p-0"><i class="bi <?= $icon ?>"></i></a>
           <?php endif; ?>
         </th>
       <?php endforeach; ?>
