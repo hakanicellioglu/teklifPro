@@ -23,9 +23,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
 }
 
 $search = trim(filter_input(INPUT_GET, 'search', FILTER_SANITIZE_SPECIAL_CHARS) ?? '');
-$page = max(1, (int)($_GET['page'] ?? 1));
-$limit = 10;
-$offset = ($page - 1) * $limit;
+$validPerPages = [10, 25, 50, 100];
+$perPage = isset($_SESSION['per_page']) ? (int)$_SESSION['per_page'] : 10;
+if (isset($_GET['per_page'])) {
+    $pp = (int)$_GET['per_page'];
+    if (!in_array($pp, $validPerPages, true)) {
+        $pp = 10;
+    }
+    $_SESSION['per_page'] = $pp;
+    $perPage = $pp;
+} elseif (!in_array($perPage, $validPerPages, true)) {
+    $perPage = 10;
+    $_SESSION['per_page'] = 10;
+}
+$page = isset($_GET['page']) && ctype_digit((string)$_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) { $page = 1; }
 
 $headers = [
     ['label' => 'İsim',          'key' => 'name'],
@@ -50,29 +62,30 @@ if (!array_key_exists($sort, $allowedSorts)) { $sort = 'id'; }
 $orderSql = $allowedSorts[$sort] . ' ' . $dir;
 
 try { $hasDate = $pdo->query("SHOW COLUMNS FROM customers LIKE 'created_at'")->rowCount() > 0; } catch (Exception $e) { $hasDate = false; }
-$sql = 'SELECT id, first_name, last_name, company_name, email, phone';
-$sql .= $hasDate ? ', created_at AS registration_date' : ', NULL AS registration_date';
-$sql .= ' FROM customers';
+$conditions = [];
 $params = [];
 if ($search !== '') {
-    $sql .= ' WHERE first_name LIKE :term OR last_name LIKE :term OR company_name LIKE :term OR email LIKE :term OR phone LIKE :term';
+    $conditions[] = '(first_name LIKE :term OR last_name LIKE :term OR company_name LIKE :term OR email LIKE :term OR phone LIKE :term)';
     $params['term'] = "%$search%";
 }
-$sql .= ' ORDER BY ' . $orderSql . ' LIMIT :limit OFFSET :offset';
-$stmt = $pdo->prepare($sql);
-foreach ($params as $key => $value) { $stmt->bindValue($key, $value, PDO::PARAM_STR); }
-$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+$baseSql = 'FROM customers';
+if ($conditions) { $baseSql .= ' WHERE ' . implode(' AND ', $conditions); }
+$countStmt = $pdo->prepare('SELECT COUNT(*) ' . $baseSql);
+foreach ($params as $k => $v) { $countStmt->bindValue(':' . $k, $v, PDO::PARAM_STR); }
+$countStmt->execute();
+$totalCustomers = (int)$countStmt->fetchColumn();
+$totalPages = (int)max(1, ceil($totalCustomers / $perPage));
+if ($page > $totalPages) { $page = $totalPages; }
+$offset = ($page - 1) * $perPage;
+$selectSql = 'SELECT id, first_name, last_name, company_name, email, phone';
+$selectSql .= $hasDate ? ', created_at AS registration_date' : ', NULL AS registration_date';
+$selectSql .= ' ' . $baseSql . ' ORDER BY ' . $orderSql . ' LIMIT :limit OFFSET :offset';
+$stmt = $pdo->prepare($selectSql);
+foreach ($params as $k => $v) { $stmt->bindValue(':' . $k, $v, PDO::PARAM_STR); }
+$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $customers = $stmt->fetchAll();
-
-$countSql = 'SELECT COUNT(*) FROM customers';
-if ($search !== '') { $countSql .= ' WHERE first_name LIKE :term OR last_name LIKE :term OR company_name LIKE :term OR email LIKE :term OR phone LIKE :term'; }
-$countStmt = $pdo->prepare($countSql);
-if ($search !== '') { $countStmt->bindValue(':term', "%$search%", PDO::PARAM_STR); }
-$countStmt->execute();
-$totalCustomers = (int)$countStmt->fetchColumn();
-$totalPages = (int)ceil($totalCustomers / $limit);
 
 $success = filter_input(INPUT_GET, 'success', FILTER_SANITIZE_SPECIAL_CHARS);
 $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -88,7 +101,19 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
     <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
   </div>
 </form>
-<div class="table-responsive">
+<form method="get" class="mb-3 text-end">
+  <?php foreach ($_GET as $k => $v): if (in_array($k, ['per_page','page'], true)) continue; ?>
+    <input type="hidden" name="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8'); ?>" value="<?= htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); ?>">
+  <?php endforeach; ?>
+  <label for="per_page" class="form-label me-2">Sayfa Boyutu</label>
+  <select name="per_page" id="per_page" class="form-select d-inline-block w-auto" onchange="this.form.submit()">
+    <?php foreach ($validPerPages as $pp): ?>
+      <option value="<?= $pp ?>" <?= $perPage === $pp ? 'selected' : '' ?>><?= $pp ?></option>
+    <?php endforeach; ?>
+  </select>
+  <noscript><button type="submit" class="btn btn-outline-secondary ms-2">Uygula</button></noscript>
+</form>
+<div class="table-responsive" style="min-height: 50svh;">
 <table class="table table-hover align-middle">
   <thead class="table-light sticky-top">
     <tr class="text-center">
@@ -131,15 +156,63 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
   </tbody>
 </table>
 </div>
-<?php if ($totalPages > 1): ?>
-<nav aria-label="Sayfalar">
+<?php
+$baseParams = $_GET;
+unset($baseParams['page']);
+$baseParams['per_page'] = $perPage;
+?>
+<nav aria-label="Sayfalama">
   <ul class="pagination justify-content-center">
-    <?php for ($i = 1; $i <= $totalPages; $i++): $query = http_build_query(['page'=>$i,'search'=>$search,'sort'=>$sort,'dir'=>$dirParam]); ?>
-      <li class="page-item<?= $i === $page ? ' active' : ''; ?>"><a class="page-link" href="customer?<?= htmlspecialchars($query, ENT_QUOTES, 'UTF-8'); ?>"><?= $i; ?></a></li>
-    <?php endfor; ?>
+    <?php $isFirst = $page <= 1; ?>
+    <li class="page-item <?= $isFirst ? 'disabled' : '' ?>">
+      <?php if ($isFirst): ?>
+        <span class="page-link">İlk</span>
+      <?php else: ?>
+        <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => 1])) ?>">İlk</a>
+      <?php endif; ?>
+    </li>
+    <li class="page-item <?= $isFirst ? 'disabled' : '' ?>">
+      <?php if ($isFirst): ?>
+        <span class="page-link">Önceki</span>
+      <?php else: ?>
+        <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => $page - 1])) ?>">Önceki</a>
+      <?php endif; ?>
+    </li>
+    <?php
+    $pages = $totalPages <= 7
+        ? range(1, $totalPages)
+        : array_unique(array_filter(array_merge(
+            range(1, 3),
+            range($page - 2, $page + 2),
+            range($totalPages - 2, $totalPages)
+        ), fn($p) => $p >= 1 && $p <= $totalPages));
+    sort($pages);
+    $prev = 0;
+    foreach ($pages as $p):
+        if ($prev && $p > $prev + 1): ?>
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+        <?php endif; ?>
+        <li class="page-item <?= $page === $p ? 'active' : '' ?>">
+          <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => $p])) ?>"><?= $p ?></a>
+        </li>
+    <?php $prev = $p; endforeach; ?>
+    <?php $isLast = $page >= $totalPages; ?>
+    <li class="page-item <?= $isLast ? 'disabled' : '' ?>">
+      <?php if ($isLast): ?>
+        <span class="page-link">Sonraki</span>
+      <?php else: ?>
+        <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => $page + 1])) ?>">Sonraki</a>
+      <?php endif; ?>
+    </li>
+    <li class="page-item <?= $isLast ? 'disabled' : '' ?>">
+      <?php if ($isLast): ?>
+        <span class="page-link">Son</span>
+      <?php else: ?>
+        <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => $totalPages])) ?>">Son</a>
+      <?php endif; ?>
+    </li>
   </ul>
 </nav>
-<?php endif; ?>
 <div class="modal fade" id="customerModal" tabindex="-1" aria-labelledby="customerModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
