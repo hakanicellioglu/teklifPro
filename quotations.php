@@ -2,7 +2,6 @@
 declare(strict_types=1);
 require __DIR__ . '/header.php';
 require __DIR__ . '/components/page_header.php';
-require __DIR__ . '/components/data_table.php';
 
 function e(?string $v): string { return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8'); }
 
@@ -74,6 +73,37 @@ $page = isset($_GET['page']) && ctype_digit((string)$_GET['page']) ? (int)$_GET[
 if ($page < 1) {
     $page = 1;
 }
+
+$headers = [
+    ['label' => '#', 'key' => 'id'],
+    ['label' => 'Müşteri', 'key' => 'customer'],
+    ['label' => 'Montaj', 'key' => 'assembly_type'],
+    ['label' => 'Ödeme', 'key' => 'payment_method'],
+    ['label' => 'Süre', 'key' => 'validity_days'],
+    ['label' => 'Vade', 'key' => 'installment_term'],
+    ['label' => 'Tarih', 'key' => 'offer_date'],
+    ['label' => 'Tutar', 'key' => 'total_amount'],
+    ['label' => 'Durum', 'key' => 'status'],
+    ['label' => 'İşlemler', 'key' => null],
+];
+$allowedSorts = [
+    'id' => 'g.id',
+    'customer' => 'customer',
+    'assembly_type' => 'g.assembly_type',
+    'payment_method' => 'g.payment_method',
+    'validity_days' => 'g.validity_days',
+    'installment_term' => 'g.installment_term',
+    'offer_date' => 'g.offer_date',
+    'total_amount' => 'total_amount',
+    'status' => 'g.status',
+];
+$sort = $_GET['sort'] ?? 'offer_date';
+$dirParam = strtolower($_GET['dir'] ?? 'desc');
+$dir = $dirParam === 'asc' ? 'ASC' : 'DESC';
+if (!array_key_exists($sort, $allowedSorts)) {
+    $sort = 'offer_date';
+}
+$orderSql = $allowedSorts[$sort] . ' ' . $dir;
 
 $createErrors = [];
 $createData = [
@@ -203,7 +233,7 @@ $totalPages = (int)max(1, ceil($totalRows / $perPage));
 if ($page > $totalPages) { $page = $totalPages; }
 $offset = ($page - 1) * $perPage;
 $selectSql = 'SELECT g.id, g.offer_date, g.status, g.assembly_type, g.payment_method, g.validity_days, g.installment_term, g.term_months, g.interest_value, CONCAT(c.first_name, " ", c.last_name) AS customer, c.company_name AS company,
-        COALESCE(gs.sum_total,0)+COALESCE(ss.sum_total,0) AS total_amount ' . $baseSql . ' ORDER BY g.offer_date DESC LIMIT :limit OFFSET :offset';
+        COALESCE(gs.sum_total,0)+COALESCE(ss.sum_total,0) AS total_amount ' . $baseSql . ' ORDER BY ' . $orderSql . ' LIMIT :limit OFFSET :offset';
 $stmt = $pdo->prepare($selectSql);
 foreach ($params as $k => $v) { $stmt->bindValue(':' . $k, $v); }
 $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
@@ -215,6 +245,8 @@ unset($_SESSION['flash_error']);
 ?>
 <?php page_header('Teklifler', '<a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal"><i class="bi bi-plus"></i> Yeni Teklif</a>'); ?>
 <form class="row g-2 mb-3" method="get">
+  <input type="hidden" name="sort" value="<?= e($sort) ?>">
+  <input type="hidden" name="dir" value="<?= e($dirParam) ?>">
   <div class="col-md-9">
     <div class="input-group">
       <input type="search" name="search" class="form-control" placeholder="Ara" value="<?= e($search) ?>">
@@ -240,7 +272,28 @@ unset($_SESSION['flash_error']);
   </select>
   <noscript><button type="submit" class="btn btn-outline-secondary ms-2">Uygula</button></noscript>
 </form>
-<?php data_table_start(['#','Müşteri','Montaj','Ödeme','Süre','Vade','Tarih','Tutar','Durum','İşlemler'], 'text-center'); ?>
+<div class="table-responsive" style="min-height: 50svh;">
+<table class="table table-hover align-middle">
+  <thead class="table-light sticky-top">
+    <tr class="text-center">
+      <?php foreach ($headers as $h): ?>
+        <th scope="col">
+          <?= e($h['label']) ?>
+          <?php if ($h['key']):
+            $isCurrent = $sort === $h['key'];
+            $nextDir   = ($isCurrent && $dirParam === 'asc') ? 'desc' : 'asc';
+            $icon      = 'bi-arrow-down-up';
+            if ($isCurrent) {
+              $icon = $dirParam === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill';
+            }
+          ?>
+            <a href="?<?= http_build_query(array_merge($_GET, ['sort'=>$h['key'],'dir'=>$nextDir,'page'=>1])) ?>" class="btn btn-sm btn-link p-0"><i class="bi <?= $icon ?>"></i></a>
+          <?php endif; ?>
+        </th>
+      <?php endforeach; ?>
+    </tr>
+  </thead>
+  <tbody>
 <?php if ($offers): foreach ($offers as $o): ?>
 <tr class="text-center">
   <td><?= (int)$o['id'] ?></td>
@@ -277,7 +330,9 @@ unset($_SESSION['flash_error']);
 <?php endforeach; else: ?>
 <tr><td colspan="10" class="text-center text-muted">Teklif bulunamadı.</td></tr>
 <?php endif; ?>
-<?php data_table_end(); ?>
+  </tbody>
+</table>
+</div>
 
 <?php
 $baseParams = $_GET;
