@@ -88,9 +88,22 @@ $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHAR
 <?php if ($totalPages > 1): ?>
 <nav aria-label="Sayfalar">
   <ul class="pagination justify-content-center">
-    <?php for ($i = 1; $i <= $totalPages; $i++): $query = http_build_query(['page'=>$i,'search'=>$search]); ?>
-      <li class="page-item<?= $i === $page ? ' active' : ''; ?>"><a class="page-link" href="customer?<?= htmlspecialchars($query, ENT_QUOTES, 'UTF-8'); ?>"><?= $i; ?></a></li>
+    <?php $baseQuery = ['search' => $search]; ?>
+    <?php if ($page > 1): $query = http_build_query($baseQuery + ['page' => $page - 1]); ?>
+      <li class="page-item">
+        <a class="page-link" href="customer?<?= htmlspecialchars($query, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Önceki">&laquo;</a>
+      </li>
+    <?php endif; ?>
+    <?php for ($i = 1; $i <= $totalPages; $i++): $query = http_build_query($baseQuery + ['page' => $i]); ?>
+      <li class="page-item<?= $i === $page ? ' active' : ''; ?>">
+        <a class="page-link" href="customer?<?= htmlspecialchars($query, ENT_QUOTES, 'UTF-8'); ?>"><?= $i; ?></a>
+      </li>
     <?php endfor; ?>
+    <?php if ($page < $totalPages): $query = http_build_query($baseQuery + ['page' => $page + 1]); ?>
+      <li class="page-item">
+        <a class="page-link" href="customer?<?= htmlspecialchars($query, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Sonraki">&raquo;</a>
+      </li>
+    <?php endif; ?>
   </ul>
 </nav>
 <?php endif; ?>
