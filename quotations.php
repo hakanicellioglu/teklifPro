@@ -230,18 +230,15 @@ unset($_SESSION['flash_error']);
   </div>
 </form>
 <form method="get" class="mb-3 text-end">
-  <?php if ($search !== ''): ?>
-    <input type="hidden" name="search" value="<?= e($search) ?>">
-  <?php endif; ?>
-  <?php if ($status !== ''): ?>
-    <input type="hidden" name="status" value="<?= e($status) ?>">
-  <?php endif; ?>
-  <select name="per_page" class="form-select d-inline-block w-auto">
+  <?php foreach ($_GET as $k => $v): if (in_array($k, ['per_page','page'], true)) continue; ?>
+    <input type="hidden" name="<?= e($k) ?>" value="<?= e((string)$v) ?>">
+  <?php endforeach; ?>
+  <select name="per_page" class="form-select d-inline-block w-auto" onchange="this.form.submit()">
     <?php foreach ($validPerPages as $pp): ?>
       <option value="<?= $pp ?>" <?= $perPage === $pp ? 'selected' : '' ?>><?= $pp ?></option>
     <?php endforeach; ?>
   </select>
-  <button type="submit" class="btn btn-outline-secondary ms-2">Uygula</button>
+  <noscript><button type="submit" class="btn btn-outline-secondary ms-2">Uygula</button></noscript>
 </form>
 <?php data_table_start(['#','Müşteri','Montaj','Ödeme','Süre','Vade','Tarih','Tutar','Durum','İşlemler'], 'text-center'); ?>
 <?php if ($offers): foreach ($offers as $o): ?>
@@ -304,11 +301,24 @@ $baseParams['per_page'] = $perPage;
         <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => $page - 1])) ?>">Önceki</a>
       <?php endif; ?>
     </li>
-    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-      <li class="page-item <?= $page === $i ? 'active' : '' ?>">
-        <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => $i])) ?>"><?= $i ?></a>
-      </li>
-    <?php endfor; ?>
+    <?php
+    $pages = $totalPages <= 7
+        ? range(1, $totalPages)
+        : array_unique(array_filter(array_merge(
+            range(1, 3),
+            range($page - 2, $page + 2),
+            range($totalPages - 2, $totalPages)
+        ), fn($p) => $p >= 1 && $p <= $totalPages));
+    sort($pages);
+    $prev = 0;
+    foreach ($pages as $p):
+        if ($prev && $p > $prev + 1): ?>
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+        <?php endif; ?>
+        <li class="page-item <?= $page === $p ? 'active' : '' ?>">
+          <a class="page-link" href="?<?= http_build_query(array_merge($baseParams, ['page' => $p])) ?>"><?= $p ?></a>
+        </li>
+    <?php $prev = $p; endforeach; ?>
     <?php $isLast = $page >= $totalPages; ?>
     <li class="page-item <?= $isLast ? 'disabled' : '' ?>">
       <?php if ($isLast): ?>
