@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
         try {
             $stmt = $pdo->prepare('DELETE FROM customers WHERE id = :id');
             $stmt->execute(['id' => $deleteId]);
-            header('Location: customer?success=' . urlencode('Müşteri silindi.'));
+            header('Location: customer.php?success=' . urlencode('Müşteri silindi.'));
             exit;
         } catch (Exception $e) {
             $error = 'Silme başarısız.';
@@ -66,7 +66,7 @@ if ($search !== '') {
     $params['term'] = "%$search%";
 }
 $countStmt = $pdo->prepare('SELECT COUNT(*) ' . $baseSql);
-foreach ($params as $key => $value) { $countStmt->bindValue($key, $value, PDO::PARAM_STR); }
+foreach ($params as $key => $value) { $countStmt->bindValue(':' . $key, $value, PDO::PARAM_STR); }
 $countStmt->execute();
 $totalCustomers = (int)$countStmt->fetchColumn();
 $totalPages = max(1, (int)ceil($totalCustomers / $perPage));
@@ -82,7 +82,7 @@ $sql .= $hasDate ? ', created_at AS registration_date' : ', NULL AS registration
 $sql .= ' ' . $baseSql;
 $sql .= ' ORDER BY ' . $orderSql . ' LIMIT :limit OFFSET :offset';
 $stmt = $pdo->prepare($sql);
-foreach ($params as $key => $value) { $stmt->bindValue($key, $value, PDO::PARAM_STR); }
+foreach ($params as $key => $value) { $stmt->bindValue(':' . $key, $value, PDO::PARAM_STR); }
 $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
@@ -185,7 +185,7 @@ if ($totalPages > 1) {
       <?php if ($page === 1): ?>
         <span class="page-link">İlk</span>
       <?php else: ?>
-        <a class="page-link" href="customer?<?= htmlspecialchars($firstQuery, ENT_QUOTES, 'UTF-8'); ?>" aria-label="İlk">İlk</a>
+        <a class="page-link" href="customer.php?<?= htmlspecialchars($firstQuery, ENT_QUOTES, 'UTF-8'); ?>" aria-label="İlk">İlk</a>
       <?php endif; ?>
     </li>
     <?php $prevQuery = http_build_query(array_merge($baseParams, ['page' => $page - 1])); ?>
@@ -193,17 +193,17 @@ if ($totalPages > 1) {
       <?php if ($page === 1): ?>
         <span class="page-link">Önceki</span>
       <?php else: ?>
-        <a class="page-link" href="customer?<?= htmlspecialchars($prevQuery, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Önceki">Önceki</a>
+        <a class="page-link" href="customer.php?<?= htmlspecialchars($prevQuery, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Önceki">Önceki</a>
       <?php endif; ?>
     </li>
-    <?php foreach ($paginationPages as $p): ?>
-      <?php if ($p === null): ?>
+    <?php foreach ($paginationPages as $pg): ?>
+      <?php if ($pg === null): ?>
         <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
-      <?php elseif ($p === $page): ?>
-        <li class="page-item active" aria-current="page"><span class="page-link"><?= $p ?></span></li>
+      <?php elseif ($pg === $page): ?>
+        <li class="page-item active" aria-current="page"><span class="page-link"><?= htmlspecialchars((string)$pg, ENT_QUOTES, 'UTF-8'); ?></span></li>
       <?php else: ?>
-        <?php $query = http_build_query(array_merge($baseParams, ['page' => $p])); ?>
-        <li class="page-item"><a class="page-link" href="customer?<?= htmlspecialchars($query, ENT_QUOTES, 'UTF-8'); ?>"><?= $p ?></a></li>
+        <?php $query = http_build_query(array_merge($baseParams, ['page' => $pg])); ?>
+        <li class="page-item"><a class="page-link" href="customer.php?<?= htmlspecialchars($query, ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars((string)$pg, ENT_QUOTES, 'UTF-8'); ?></a></li>
       <?php endif; ?>
     <?php endforeach; ?>
     <?php $nextQuery = http_build_query(array_merge($baseParams, ['page' => $page + 1])); ?>
@@ -211,7 +211,7 @@ if ($totalPages > 1) {
       <?php if ($page >= $totalPages): ?>
         <span class="page-link">Sonraki</span>
       <?php else: ?>
-        <a class="page-link" href="customer?<?= htmlspecialchars($nextQuery, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Sonraki">Sonraki</a>
+        <a class="page-link" href="customer.php?<?= htmlspecialchars($nextQuery, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Sonraki">Sonraki</a>
       <?php endif; ?>
     </li>
     <?php $lastQuery = http_build_query(array_merge($baseParams, ['page' => $totalPages])); ?>
@@ -219,7 +219,7 @@ if ($totalPages > 1) {
       <?php if ($page >= $totalPages): ?>
         <span class="page-link">Son</span>
       <?php else: ?>
-        <a class="page-link" href="customer?<?= htmlspecialchars($lastQuery, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Son">Son</a>
+        <a class="page-link" href="customer.php?<?= htmlspecialchars($lastQuery, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Son">Son</a>
       <?php endif; ?>
     </li>
   </ul>
