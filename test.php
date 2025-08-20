@@ -186,6 +186,10 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
                         $qtyDisplay = $kg;
                     }
                 }
+                if ($cat === 'Alüminyum') {
+                    $kg        *= 1.1;
+                    $qtyDisplay = $kg;
+                }
                 $lineTotal = $qtyDisplay * 200;
             }
             $base += $lineTotal;
