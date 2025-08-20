@@ -107,9 +107,20 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
                     $qtyDisplay = $rq;
                     $lineTotal  = $rq * $unitPriceVat;
             }
-            $base += $lineTotal;
             $cat = trim((string)($p['category'] ?? ''));
             $cat = $cat !== '' ? $cat : 'Diğer';
+            if (in_array($cat, ['Alüminyum', 'Alüminyum Boyalı', 'Alüminyum Fire'], true)) {
+                if ($kg <= 0) {
+                    $wpm = (float)($p['weight_per_meter'] ?? 0);
+                    if ($wpm > 0 && ($unit === 'm' || $unit === 'metre')) {
+                        $meters     = ($measure / 1000) * $rq;
+                        $kg         = $meters * $wpm;
+                        $qtyDisplay = $kg;
+                    }
+                }
+                $lineTotal = $qtyDisplay * 200;
+            }
+            $base += $lineTotal;
             $categoryTotals[$cat] = ($categoryTotals[$cat] ?? 0) + $lineTotal;
             if (strtolower($cat) === 'alüminyum') {
                 $aluminumKg += $kg;
@@ -129,16 +140,17 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $alWasteQty  = $kgPainted * 0.07;
     $alWasteCost = $alWasteQty * 200;
     $base += $alPaintCost + $alWasteCost;
-    $categoryTotals['Alüminyum'] = ($categoryTotals['Alüminyum'] ?? 0) + $alPaintCost + $alWasteCost;
+    $categoryTotals['Alüminyum Boyalı'] = ($categoryTotals['Alüminyum Boyalı'] ?? 0) + $alPaintCost;
+    $categoryTotals['Alüminyum Fire']   = ($categoryTotals['Alüminyum Fire'] ?? 0) + $alWasteCost;
     $items[] = [
-        'category' => 'Alüminyum',
+        'category' => 'Alüminyum Boyalı',
         'name'     => 'Alüminyum Boyalı',
         'unit'     => 'kg',
         'quantity' => $kgPainted,
         'total'    => $alPaintCost,
     ];
     $items[] = [
-        'category' => 'Alüminyum',
+        'category' => 'Alüminyum Fire',
         'name'     => 'Alüminyum Fire',
         'unit'     => 'kg',
         'quantity' => $alWasteQty,
@@ -173,7 +185,7 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
 }
 
 $totals = calculateGuillotineCategoryTotals($pdo, $system);
-$orderedCats = ['Alüminyum','Aksesuar','Fitil','Cam','İşçilik','Montaj','Diğer'];
+$orderedCats = ['Alüminyum','Alüminyum Boyalı','Alüminyum Fire','Aksesuar','Fitil','Cam','İşçilik','Montaj','Diğer'];
 $catTotals = array_merge(array_fill_keys($orderedCats, 0), $totals['categories']);
 $itemsByCat = [];
 foreach ($totals['items'] as $it) {
