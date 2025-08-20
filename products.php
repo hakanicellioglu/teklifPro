@@ -28,7 +28,7 @@ function formatPrice(float $price): string
 $errors = [];
 $error = null;
 $success = null;
-$vatAllowed = [1, 8, 18, 20];
+$vatAllowed = [0, 1, 8, 18, 20];
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 $categoryOptions = ['Cam', 'Alüminyum', 'Aksesuar', 'Fitil', 'Kumanda'];
 $unitTypeOptions = ['kg/m', 'm', 'm²', 'adet'];
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     if ($vat_rate === '') {
       $vat_rate = null;
     } elseif (!in_array((int)$vat_rate, $vatAllowed, true)) {
-      $errors[] = 'KDV oranı sadece %1, %8, %18 veya %20 olabilir.';
+      $errors[] = 'KDV oranı sadece %0, %1, %8, %18 veya %20 olabilir.';
     } else {
       $vat_rate = (int)$vat_rate;
     }
@@ -206,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     if ($vat_rate === '') {
       $vat_rate = null;
     } elseif (!in_array((int)$vat_rate, $vatAllowed, true)) {
-      $errors[] = 'KDV oranı sadece %1, %8, %18 veya %20 olabilir.';
+      $errors[] = 'KDV oranı sadece %0, %1, %8, %18 veya %20 olabilir.';
     } else {
       $vat_rate = (int)$vat_rate;
     }
@@ -484,7 +484,7 @@ require __DIR__ . '/header.php';
                             <input type="number" step="10" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
                           </div>
                           <?php
-                          $allowedVat = [1, 8, 18, 20];
+                          $allowedVat = [0, 1, 8, 18, 20];
                           $currentVat = is_null($p['vat_rate']) ? null : (int)round((float)$p['vat_rate']); // "20.00" -> 20
                           ?>
                           <div class="col-md-6">
@@ -604,7 +604,7 @@ require __DIR__ . '/header.php';
                   <label class="form-label">KDV Oranı</label>
                   <select name="vat_rate" class="form-select">
                     <option value="">Seçiniz</option>
-                    <?php foreach ([1, 8, 18, 20] as $vr): ?>
+                    <?php foreach ([0, 1, 8, 18, 20] as $vr): ?>
                       <option value="<?= $vr ?>" <?= (isset($_POST['vat_rate']) && $_POST['vat_rate'] === (string)$vr) ? 'selected' : '' ?>>%<?= $vr ?></option>
                     <?php endforeach; ?>
                   </select>
