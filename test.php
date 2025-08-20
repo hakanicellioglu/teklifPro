@@ -6,6 +6,26 @@ function e(?string $v): string
     return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+function fmt_try(float $v): string
+{
+    return number_format($v, 2, ',', '.');
+}
+
+function fmt_qty(float $v, string $unit): string
+{
+    $unit = strtolower(trim($unit));
+    $decimals = in_array($unit, ['kg', 'kilogram', 'kg/m', 'm', 'metre', 'm²', 'm2'], true) ? 3 : 2;
+    return number_format($v, $decimals, ',', '.');
+}
+
+function fmt_measure($v, string $unit): string
+{
+    if (!is_numeric($v)) {
+        return '-';
+    }
+    return fmt_qty((float)$v, $unit);
+}
+
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -221,15 +241,15 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
                         <tr>
                             <td><?= e($label) ?></td>
                             <td><?= e($item['name']) ?></td>
-                            <td class="text-end"><?= e(is_numeric($item['measure']) ? number_format((float)$item['measure'], 2, ',', '.') : '-') ?></td>
-                            <td><?= e($item['unit']) ?></td>
-                            <td class="text-end"><?= e(number_format($item['quantity'], 2, ',', '.')) ?></td>
-                            <td class="text-end"><?= e(number_format($item['total'], 2, ',', '.')) ?> ₺</td>
+                              <td class="text-end"><?= e(fmt_measure($item['measure'], $item['unit'])) ?></td>
+                              <td><?= e($item['unit']) ?></td>
+                              <td class="text-end"><?= e(fmt_qty($item['quantity'], $item['unit'])) ?></td>
+                              <td class="text-end"><?= e(fmt_try($item['total'])) ?> ₺</td>
                         </tr>
                     <?php endforeach; ?>
                     <tr class="table-light">
                         <th colspan="5" class="text-end">Toplam <?= e($label) ?></th>
-                        <th class="text-end"><?= e(number_format($catTotals[$label] ?? 0, 2, ',', '.')) ?> ₺</th>
+                          <th class="text-end"><?= e(fmt_try($catTotals[$label] ?? 0)) ?> ₺</th>
                     </tr>
                 <?php endif; ?>
             <?php endforeach; ?>
@@ -237,7 +257,7 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
             <tfoot>
                 <tr>
                     <th colspan="5">Genel Toplam</th>
-                    <th class="text-end"><?= e(number_format($total, 2, ',', '.')) ?> ₺</th>
+                      <th class="text-end"><?= e(fmt_try($total)) ?> ₺</th>
                 </tr>
             </tfoot>
         </table>
