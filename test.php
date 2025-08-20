@@ -37,7 +37,7 @@ if (!$quoteId) {
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT * FROM guillotinesystems WHERE id = :id');
+$stmt = $pdo->prepare('SELECT width, height, quantity, glass_type FROM guillotinesystems WHERE id = :id');
 $stmt->execute([':id' => $quoteId]);
 $system = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$system) {
