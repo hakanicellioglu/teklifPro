@@ -37,9 +37,9 @@ $statusLabels = [
 
 function calculateGuillotineTotals(PDO $pdo, array $row): array
 {
-    $width = max(0, (float)($row['width'] ?? 0));
+    $width  = max(0, (float)($row['width'] ?? 0));
     $height = max(0, (float)($row['height'] ?? 0));
-    $qty = max(0, (int)($row['quantity'] ?? 0));
+    $qty    = max(0, (int)($row['quantity'] ?? 0));
 
     $rules = [
         ['name' => 'Motor Kutusu',       'measure' => fn($w,$h,$q) => $w - 14,                        'qty' => fn($w,$h,$q) => $q],
@@ -63,9 +63,10 @@ function calculateGuillotineTotals(PDO $pdo, array $row): array
         ['name' => 'Kanat Contası',      'measure' => fn($w,$h,$q) => (($h - 290)/3)*$q*2,             'qty' => fn($w,$h,$q) => 1],
     ];
 
-    $pStmt = $pdo->prepare('SELECT unit, unit_price, vat_rate, weight_per_meter FROM products WHERE LOWER(name) = LOWER(:name)');
+    $pStmt = $pdo->prepare('SELECT unit, unit_price, vat_rate, weight_per_meter, category FROM products WHERE LOWER(name) = LOWER(:name)');
 
-    $base = 0.0;
+    $base       = 0.0;
+    $aluminumKg = 0.0;
     foreach ($rules as $rule) {
         $measure = max(0, $rule['measure']($width, $height, $qty));
         $rq = max(0, $rule['qty']($width, $height, $qty));
@@ -88,8 +89,11 @@ function calculateGuillotineTotals(PDO $pdo, array $row): array
                         continue 2;
                     }
                     $meters = ($measure / 1000) * $rq;
-                    $kg = $meters * $wpm;
+                    $kg      = $meters * $wpm;
                     $lineTotal = $kg * $unitPriceVat;
+                    if (strtolower((string)($p['category'] ?? '')) === 'alüminyum') {
+                        $aluminumKg += $kg;
+                    }
                     break;
                 case 'metre':
                 case 'm':
@@ -109,9 +113,17 @@ function calculateGuillotineTotals(PDO $pdo, array $row): array
         }
     }
 
-    $rate = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
+    // Additional cost items
+    $kgBoyalı = $aluminumKg * 1.01; // Alüminyum Boyalı kg
+    $base += $kgBoyalı * 200;       // Alüminyum Boyalı toplamı
+    $base += $kgBoyalı * 0.07 * 200; // Alüminyum Fire toplamı
+
+    $area = ($width * $height * $qty) / 1000000; // m²
+    $base += $area * 40; // İmalat İşçiliği
+
+    $rate   = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
     $profit = $base * ($rate / 100);
-    $total = $base + $profit;
+    $total  = $base + $profit;
     return ['profit' => $profit, 'total' => $total];
 }
 
