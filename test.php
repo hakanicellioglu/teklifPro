@@ -209,6 +209,31 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
         }
     }
 
+    $camWidth        = max(0, $width - 221);
+    $verticalBase    = max(0, ($height - 290) / 3);
+    $camHeight       = max(0, $verticalBase + 28);
+    $kanatAdet       = 2 * $qty;
+    $dikeyBazaAdet   = 4 * $qty;
+    $camAdet         = ($kanatAdet + $dikeyBazaAdet) / 2;
+    $camAreaPerPiece = ($camWidth * $camHeight) / 1000000;
+    $camAreaTotal    = $camAreaPerPiece * $camAdet;
+    $camTotal        = $camAreaTotal * 1680;
+    $base           += $camTotal;
+    $categoryTotals['Cam']    = ($categoryTotals['Cam'] ?? 0) + $camTotal;
+    $categoryQtyTotals['Cam'] = ($categoryQtyTotals['Cam'] ?? 0) + $camAreaTotal;
+    $items[] = [
+        'category' => 'Cam',
+        'name'     => 'Cam',
+        'measure'  => null,
+        'unit'     => 'm²',
+        'quantity' => $camAreaTotal,
+        'width'    => $camWidth,
+        'height'   => $camHeight,
+        'count'    => $camAdet,
+        'area'     => $camAreaTotal,
+        'total'    => $camTotal,
+    ];
+
     $kgPainted   = $aluminumKg * 1.01;
     $alPaintCost = $kgPainted * 200;
     $alWasteQty  = $kgPainted * 0.07;
@@ -279,7 +304,7 @@ $itemsByCat = [];
 foreach ($totals['items'] as $it) {
     $itemsByCat[$it['category']][] = $it;
 }
-$includedForTotal = ['Alüminyum Boyalı','Alüminyum Fire','Aksesuar','Fitil','İşçilik'];
+$includedForTotal = ['Alüminyum Boyalı','Alüminyum Fire','Aksesuar','Fitil','Cam','İşçilik'];
 $total = 0;
 foreach ($includedForTotal as $c) {
     $total += $catTotals[$c] ?? 0;
@@ -298,6 +323,10 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
                     <th class="text-end">Ölçü</th>
                     <th>Birim</th>
                     <th class="text-end">Birim Değeri</th>
+                    <th class="text-end">Genişlik (mm)</th>
+                    <th class="text-end">Yükseklik (mm)</th>
+                    <th class="text-end">Adet</th>
+                    <th class="text-end">Toplam m²</th>
                     <th class="text-end">Tutar (₺)</th>
                 </tr>
             </thead>
@@ -311,11 +340,15 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
                               <td class="text-end"><?= e(fmtFlex($item['measure'], $item['unit'])) ?></td>
                               <td><?= e($item['unit']) ?></td>
                               <td class="text-end"><?= e(fmtFlex($item['quantity'], $item['unit'])) ?></td>
+                              <td class="text-end"><?= e(isset($item['width']) ? fmtFlex($item['width']) : '') ?></td>
+                              <td class="text-end"><?= e(isset($item['height']) ? fmtFlex($item['height']) : '') ?></td>
+                              <td class="text-end"><?= e(isset($item['count']) ? fmtFlex($item['count']) : '') ?></td>
+                              <td class="text-end"><?= e(isset($item['area']) ? fmtFlex($item['area']) : '') ?></td>
                               <td class="text-end"><?= e(fmtFlex($item['total'], '', true)) ?> ₺</td>
                         </tr>
                     <?php endforeach; ?>
                     <tr class="table-light">
-                        <th colspan="4" class="text-end">Toplam <?= e($label) ?></th>
+                        <th colspan="8" class="text-end">Toplam <?= e($label) ?></th>
                         <th class="text-end"><?= e(fmtFlex($catQtyTotals[$label] ?? 0)) ?></th>
                         <th class="text-end"><?= e(fmtFlex($catTotals[$label] ?? 0, '', true)) ?> ₺</th>
                     </tr>
@@ -324,7 +357,7 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
             </tbody>
             <tfoot>
                 <tr>
-                    <th colspan="5">Genel Toplam</th>
+                    <th colspan="9">Genel Toplam</th>
                       <th class="text-end"><?= e(fmtFlex($total, '', true)) ?> ₺</th>
                 </tr>
             </tfoot>
