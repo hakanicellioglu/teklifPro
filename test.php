@@ -97,7 +97,7 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     // Eski Zincir ürününü Plastik Set olarak değiştir
     $rules[] = ['name' => 'Plastik Set',         'measure' => fn($w,$h,$q) => 1,                               'qty' => fn($w,$h,$q) => $q];
     $rules[] = ['name' => 'Flatbelt Kayış',      'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600, 'qty' => fn($w,$h,$q) => 2*$q];
-    $rules[] = ['name' => 'Motor Borusu',        'measure' => fn($w,$h,$q) => $w - 59,                         'qty' => fn($w,$h,$q) => $q];
+    $rules[] = ['name' => 'Motor Borusu',        'measure' => fn($w,$h,$q) => $w - 75,                         'qty' => fn($w,$h,$q) => $q];
     $rules[] = ['name' => 'Motor Kutu Contası',  'measure' => fn($w,$h,$q) => ($w - 14)*$q + $w*$q,            'qty' => fn($w,$h,$q) => 1];
     $rules[] = ['name' => 'Kanat Contası',       'measure' => fn($w,$h,$q) => (($h - 290)/3)*$q*2,             'qty' => fn($w,$h,$q) => 1];
     // Yeni Zincir ürününü ekle
