@@ -316,7 +316,7 @@ if ($gPost) {
             $validNumbers = $width !== false && $width > 0
                 && $height !== false && $height > 0
                 && $quantity !== false && $quantity > 0
-                && $profitMargin !== false && $profitMargin > 0
+                && $profitMargin !== false && $profitMargin >= 0
                 && ($remoteQty === null || ($remoteQty !== false && $remoteQty > 0));
 
             if (!$validNumbers) {
@@ -668,7 +668,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                         </div>
                         <div class="col-md-6">
                             <label for="profit_margin" class="form-label">Kâr Marjı (%)</label>
-                            <input type="number" min="0.01" step="0.01" class="form-control text-start" id="profit_margin" name="profit_margin">
+                            <input type="number" min="0" step="0.01" class="form-control text-start" id="profit_margin" name="profit_margin">
                         </div>
                     </div>
                 </div>
