@@ -48,9 +48,11 @@ if (!$system) {
 
 function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
 {
-    $width  = max(0, (float)($row['width'] ?? 0));
-    $height = max(0, (float)($row['height'] ?? 0));
-    $qty    = max(0, (int)($row['quantity'] ?? 0));
+    $width     = max(0, (float)($row['width'] ?? 0));
+    $height    = max(0, (float)($row['height'] ?? 0));
+    $qty       = max(0, (int)($row['quantity'] ?? 0));
+    $glassType = mb_strtolower(trim($row['glass_type'] ?? ''), 'UTF-8');
+    $isDouble  = in_array($glassType, ['isikcam', 'ısıcam'], true);
 
     $rules = [
         ['name' => 'Motor Kutusu',        'measure' => fn($w,$h,$q) => $w - 14,                        'qty' => fn($w,$h,$q) => $q],
@@ -83,6 +85,12 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $aluminumKg       = 0.0;
 
     foreach ($rules as $rule) {
+        if (
+            $isDouble
+            && in_array($rule['name'], ['Yatay Tek Cam Çıtası', 'Dikey Tek Cam Çıtası'], true)
+        ) {
+            continue;
+        }
         $measure = max(0, $rule['measure']($width, $height, $qty));
         $rq      = max(0, $rule['qty']($width, $height, $qty));
         if ($measure <= 0 || $rq <= 0) {
