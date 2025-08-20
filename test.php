@@ -17,7 +17,7 @@ function fmtFlex($v, string $unit = '', bool $currency = false): string
     }
     $unit = strtolower(trim($unit));
     if (in_array($unit, ['kg', 'kilogram', 'kg/m', 'm', 'metre', 'm²', 'm2'], true)) {
-        $formatted = number_format($v, 4, ',', '.');
+        $formatted = number_format($v, 3, ',', '.');
     } else {
         $formatted = number_format($v, 2, ',', '.');
     }
