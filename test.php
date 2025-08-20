@@ -46,16 +46,22 @@ if (!$system) {
     exit;
 }
 
-function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
+$glassTypeRaw = (string)($system['glass_type'] ?? '');
+$glassTypeNorm = function_exists('mb_strtolower') ? mb_strtolower($glassTypeRaw, 'UTF-8') : strtolower($glassTypeRaw);
+$glassTypeNorm = str_replace(' ', '', $glassTypeNorm);
+$isInsulated   = in_array($glassTypeNorm, ['ısıcam', 'isicam'], true);
+$isSingle      = in_array($glassTypeNorm, ['tekcam'], true);
+if ($glassTypeRaw === '' || (!$isInsulated && !$isSingle)) {
+    $glassDebug = '<div class="alert alert-warning">Cam tipi belirlenemedi: ' . e($glassTypeRaw) . '</div>';
+} else {
+    $glassDebug = '<div class="alert alert-warning">Cam tipi: ' . e($glassTypeRaw) . ' (' . ($isInsulated ? 'ısıcam' : 'tek cam') . ')</div>';
+}
+
+function calculateGuillotineCategoryTotals(PDO $pdo, array $row, bool $isInsulated): array
 {
     $width  = max(0, (float)($row['width'] ?? 0));
     $height = max(0, (float)($row['height'] ?? 0));
     $qty    = max(0, (int)($row['quantity'] ?? 0));
-
-    $glassTypeRaw = (string)($row['glass_type'] ?? '');
-    $glassType    = function_exists('mb_strtolower') ? mb_strtolower($glassTypeRaw, 'UTF-8') : strtolower($glassTypeRaw);
-    $glassType    = str_replace(' ', '', $glassType);
-    $isInsulated  = in_array($glassType, ['ısıcam', 'isicam'], true);
 
     $rules = [
         ['name' => 'Motor Kutusu',        'measure' => fn($w,$h,$q) => $w - 14,                        'qty' => fn($w,$h,$q) => $q],
@@ -228,7 +234,7 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     ];
 }
 
-$totals = calculateGuillotineCategoryTotals($pdo, $system);
+$totals = calculateGuillotineCategoryTotals($pdo, $system, $isInsulated);
 $orderedCats = ['Alüminyum','Alüminyum Boyalı','Alüminyum Fire','Aksesuar','Fitil','Cam','İşçilik','Montaj','Diğer'];
 $catTotals    = array_merge(array_fill_keys($orderedCats, 0), $totals['categories']);
 $catQtyTotals = array_merge(array_fill_keys($orderedCats, 0), $totals['quantities']);
@@ -240,6 +246,7 @@ $total = $totals['total'];
 $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_id'] ?? ''));
 ?>
 <div class="container mt-4">
+    <?= $glassDebug ?>
     <a href="<?= e($backUrl) ?>" class="btn btn-sm btn-secondary mb-3">&larr; Geri Dön</a>
     <h3>Giyotin Teklif Kalemleri</h3>
     <div class="table-responsive">
