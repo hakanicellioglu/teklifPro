@@ -65,8 +65,11 @@ function calculateGuillotineTotals(PDO $pdo, array $row): array
 
     $pStmt = $pdo->prepare('SELECT unit, unit_price, vat_rate, weight_per_meter, category FROM products WHERE LOWER(name) = LOWER(:name)');
 
-    $base       = 0.0;
-    $aluminumKg = 0.0;
+    $base          = 0.0;
+    $aluminumKg    = 0.0;
+    $aluminumCost  = 0.0;
+    $glassCost     = 0.0;
+    $laborCost     = 0.0;
     foreach ($rules as $rule) {
         $measure = max(0, $rule['measure']($width, $height, $qty));
         $rq = max(0, $rule['qty']($width, $height, $qty));
@@ -80,6 +83,7 @@ function calculateGuillotineTotals(PDO $pdo, array $row): array
             $unitPriceVat = $unitPrice * (1 + $vatRate / 100);
             $unit = strtolower($p['unit'] ?? '');
             $lineTotal = 0.0;
+            $kg = 0.0;
             switch ($unit) {
                 case 'kilogram':
                 case 'kg':
@@ -110,21 +114,36 @@ function calculateGuillotineTotals(PDO $pdo, array $row): array
                     $lineTotal = $rq * $unitPriceVat;
             }
             $base += $lineTotal;
+            $cat = strtolower((string)($p['category'] ?? ''));
+            if ($cat === 'alüminyum') {
+                $aluminumCost += $lineTotal;
+            } elseif ($cat === 'cam') {
+                $glassCost += $lineTotal;
+            }
         }
     }
 
     // Additional cost items
-    $kgBoyalı = $aluminumKg * 1.01; // Alüminyum Boyalı kg
-    $base += $kgBoyalı * 200;       // Alüminyum Boyalı toplamı
-    $base += $kgBoyalı * 0.07 * 200; // Alüminyum Fire toplamı
+    $kgBoyalı       = $aluminumKg * 1.01; // Alüminyum Boyalı kg
+    $alPaint        = $kgBoyalı * 200;    // Alüminyum Boyalı toplamı
+    $alWaste        = $kgBoyalı * 0.07 * 200; // Alüminyum Fire toplamı
+    $base          += $alPaint + $alWaste;
+    $aluminumCost  += $alPaint + $alWaste;
 
-    $area = ($width * $height * $qty) / 1000000; // m²
-    $base += $area * 40; // İmalat İşçiliği
+    $area      = ($width * $height * $qty) / 1000000; // m²
+    $laborCost = $area * 40; // İmalat İşçiliği
+    $base     += $laborCost;
 
     $rate   = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
     $profit = $base * ($rate / 100);
     $total  = $base + $profit;
-    return ['profit' => $profit, 'total' => $total];
+    $breakdown = [
+        'Cam Maliyeti'       => $glassCost,
+        'Alüminyum Maliyeti' => $aluminumCost,
+        'İşçilik'            => $laborCost,
+        'Kâr Marjı'          => $profit,
+    ];
+    return ['profit' => $profit, 'total' => $total, 'breakdown' => $breakdown];
 }
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
@@ -535,6 +554,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                     <td><?= e($g['ral_code']) ?></td>
                                     <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
                                     <td class="text-end">
+                                        <a href="test.php?id=<?= e((string)$g['id']) ?>" class="btn btn-sm btn-info" target="_blank">Kalemler</a>
                                         <button type="button" class="btn btn-sm btn-secondary edit-guillotine" data-bs-toggle="modal" data-bs-target="#addGuillotineModal"
                                             data-id="<?= e((string)$g['id']) ?>"
                                             data-width="<?= e((string)$g['width']) ?>"
