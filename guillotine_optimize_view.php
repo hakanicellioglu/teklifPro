@@ -57,7 +57,7 @@ function computeSystem(array $row, PDO $pdo, array &$alerts): array {
         ['label' => 'Motor Kutusu',          'name' => 'Motor Kutusu',  'measure' => fn($w,$h,$q) => $w - 14,                                            'qty' => fn($w,$h,$q) => $q],
         ['label' => 'Motor Kapak',           'name' => 'Motor Kapak',   'measure' => fn($w,$h,$q) => $w - 15,                                            'qty' => fn($w,$h,$q) => $q],
         ['label' => 'Alt Kasa',              'name' => 'Alt Kasa',      'measure' => fn($w,$h,$q) => $w,                                                 'qty' => fn($w,$h,$q) => $q],
-        ['label' => 'Tutamak',               'name' => 'Tutamak',       'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => 6*$q],
+        ['label' => 'Tutamak',               'name' => 'Tutamak',       'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => $q],
         ['label' => 'Kenetli Baza',          'name' => 'Kenetli Baza',  'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => 3*$q],
         ['label' => 'Küpeşte Bazası',        'name' => 'Küpeşte Bazası',  'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => 2*$q],
         ['label' => 'Küpeşte',               'name' => 'Küpeşte',       'measure' => fn($w,$h,$q) => $w - 185,                                           'qty' => fn($w,$h,$q) => $q],
