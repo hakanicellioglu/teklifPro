@@ -51,6 +51,7 @@ $glassStmt->execute([':id' => $quoteId]);
 $glassType = $glassStmt->fetchColumn();
 if ($glassType !== false) {
     $system['glass_type'] = $glassType;
+    trigger_error('Cam tipi: ' . $glassType, E_USER_WARNING);
 }
 
 function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
