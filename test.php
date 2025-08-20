@@ -52,6 +52,26 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $height = max(0, (float)($row['height'] ?? 0));
     $qty    = max(0, (int)($row['quantity'] ?? 0));
 
+    // Helper to normalize glass type into three categories
+    if (!function_exists('classifyGlassType')) {
+        function classifyGlassType(?string $glassType): string
+        {
+            $gt = strtolower(trim((string)$glassType));
+            $gt = str_replace([' ', '-', '_', 'ı'], ['', '', '', 'i'], $gt);
+            if ($gt === 'tek' || $gt === 'tekcam') {
+                return 'tek';
+            }
+            if (str_contains($gt, 'isicam')) {
+                return 'ısıcam';
+            }
+            return 'other';
+        }
+    }
+
+    $glassType = classifyGlassType($row['glass_type'] ?? '');
+    $includeGlassStrips = $glassType === 'tek';
+
+    // Base rules common to all glass types
     $rules = [
         ['name' => 'Motor Kutusu',        'measure' => fn($w,$h,$q) => $w - 14,                        'qty' => fn($w,$h,$q) => $q],
         ['name' => 'Motor Kapak',         'measure' => fn($w,$h,$q) => $w - 15,                        'qty' => fn($w,$h,$q) => $q],
@@ -60,19 +80,25 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
         ['name' => 'Kenetli Baza',        'measure' => fn($w,$h,$q) => $w - 185,                        'qty' => fn($w,$h,$q) => 3*$q],
         ['name' => 'Küpeşte Bazası',      'measure' => fn($w,$h,$q) => $w - 185,                        'qty' => fn($w,$h,$q) => 2*$q],
         ['name' => 'Küpeşte',             'measure' => fn($w,$h,$q) => $w - 185,                        'qty' => fn($w,$h,$q) => $q],
-        ['name' => 'Yatay Tek Cam Çıtası','measure' => fn($w,$h,$q) => ($w - 185) - 52,                'qty' => fn($w,$h,$q) => 11*$q],
-        ['name' => 'Dikey Tek Cam Çıtası','measure' => fn($w,$h,$q) => (($h - 290) / 3) - 5,           'qty' => fn($w,$h,$q) => 11*$q],
-        ['name' => 'Dikme',               'measure' => fn($w,$h,$q) => $h - 166,                        'qty' => fn($w,$h,$q) => 2*$q],
-        ['name' => 'Orta Dikme',          'measure' => fn($w,$h,$q) => $h - 166,                        'qty' => fn($w,$h,$q) => 2*$q],
-        ['name' => 'Son Kapatma',         'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221,       'qty' => fn($w,$h,$q) => 2*$q],
-        ['name' => 'Kanat',               'measure' => fn($w,$h,$q) => ($h - 290) / 3,                  'qty' => fn($w,$h,$q) => 2*$q],
-        ['name' => 'Dikey Baza',          'measure' => fn($w,$h,$q) => ($h - 290) / 3,                  'qty' => fn($w,$h,$q) => 4*$q],
-        ['name' => 'Zincir',              'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600, 'qty' => fn($w,$h,$q) => 2*$q],
-        ['name' => 'Flatbelt Kayış',      'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600, 'qty' => fn($w,$h,$q) => 2*$q],
-        ['name' => 'Motor Borusu',        'measure' => fn($w,$h,$q) => $w - 59,                         'qty' => fn($w,$h,$q) => $q],
-        ['name' => 'Motor Kutu Contası',  'measure' => fn($w,$h,$q) => ($w - 14)*$q + $w*$q,            'qty' => fn($w,$h,$q) => 1],
-        ['name' => 'Kanat Contası',       'measure' => fn($w,$h,$q) => (($h - 290)/3)*$q*2,             'qty' => fn($w,$h,$q) => 1],
     ];
+
+    // Include glass strips only for single glass systems
+    if ($includeGlassStrips) {
+        $rules[] = ['name' => 'Yatay Tek Cam Çıtası', 'measure' => fn($w,$h,$q) => ($w - 185) - 52,      'qty' => fn($w,$h,$q) => 11*$q];
+        $rules[] = ['name' => 'Dikey Tek Cam Çıtası', 'measure' => fn($w,$h,$q) => (($h - 290) / 3) - 5, 'qty' => fn($w,$h,$q) => 11*$q];
+    }
+
+    // Remaining universal rules
+    $rules[] = ['name' => 'Dikme',               'measure' => fn($w,$h,$q) => $h - 166,                        'qty' => fn($w,$h,$q) => 2*$q];
+    $rules[] = ['name' => 'Orta Dikme',          'measure' => fn($w,$h,$q) => $h - 166,                        'qty' => fn($w,$h,$q) => 2*$q];
+    $rules[] = ['name' => 'Son Kapatma',         'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221,       'qty' => fn($w,$h,$q) => 2*$q];
+    $rules[] = ['name' => 'Kanat',               'measure' => fn($w,$h,$q) => ($h - 290) / 3,                  'qty' => fn($w,$h,$q) => 2*$q];
+    $rules[] = ['name' => 'Dikey Baza',          'measure' => fn($w,$h,$q) => ($h - 290) / 3,                  'qty' => fn($w,$h,$q) => 4*$q];
+    $rules[] = ['name' => 'Zincir',              'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600, 'qty' => fn($w,$h,$q) => 2*$q];
+    $rules[] = ['name' => 'Flatbelt Kayış',      'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600, 'qty' => fn($w,$h,$q) => 2*$q];
+    $rules[] = ['name' => 'Motor Borusu',        'measure' => fn($w,$h,$q) => $w - 59,                         'qty' => fn($w,$h,$q) => $q];
+    $rules[] = ['name' => 'Motor Kutu Contası',  'measure' => fn($w,$h,$q) => ($w - 14)*$q + $w*$q,            'qty' => fn($w,$h,$q) => 1];
+    $rules[] = ['name' => 'Kanat Contası',       'measure' => fn($w,$h,$q) => (($h - 290)/3)*$q*2,             'qty' => fn($w,$h,$q) => 1];
 
     $pStmt = $pdo->prepare('SELECT unit, unit_price, vat_rate, weight_per_meter, category FROM products WHERE LOWER(name) = LOWER(:name)');
 
