@@ -57,6 +57,7 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $pStmt = $pdo->prepare('SELECT unit, unit_price, vat_rate, weight_per_meter, category FROM products WHERE LOWER(name) = LOWER(:name)');
 
     $categoryTotals = [];
+    $items       = [];
     $base        = 0.0;
     $aluminumKg  = 0.0;
 
@@ -68,12 +69,14 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
         }
         $pStmt->execute([':name' => $rule['name']]);
         if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
-            $unitPrice   = (float)($p['unit_price'] ?? 0);
-            $vatRate     = (float)($p['vat_rate'] ?? 0);
+            $unitPrice    = (float)($p['unit_price'] ?? 0);
+            $vatRate      = (float)($p['vat_rate'] ?? 0);
             $unitPriceVat = $unitPrice * (1 + $vatRate / 100);
-            $unit        = strtolower($p['unit'] ?? '');
-            $lineTotal   = 0.0;
-            $kg          = 0.0;
+            $unitRaw      = (string)($p['unit'] ?? '');
+            $unit         = strtolower($unitRaw);
+            $lineTotal    = 0.0;
+            $qtyDisplay   = 0.0;
+            $kg           = 0.0;
             switch ($unit) {
                 case 'kilogram':
                 case 'kg':
@@ -84,21 +87,25 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
                     }
                     $meters    = ($measure / 1000) * $rq;
                     $kg        = $meters * $wpm;
-                    $lineTotal = $kg * $unitPriceVat;
+                    $qtyDisplay = $kg;
+                    $lineTotal  = $kg * $unitPriceVat;
                     break;
                 case 'metre':
                 case 'm':
-                    $meters    = ($measure / 1000) * $rq;
-                    $lineTotal = $meters * $unitPriceVat;
+                    $meters     = ($measure / 1000) * $rq;
+                    $qtyDisplay = $meters;
+                    $lineTotal  = $meters * $unitPriceVat;
                     break;
                 case 'metrekare':
                 case 'm²':
                 case 'm2':
-                    $area      = ($width * $height / 1000000) * $rq;
-                    $lineTotal = $area * $unitPriceVat;
+                    $area       = ($width * $height / 1000000) * $rq;
+                    $qtyDisplay = $area;
+                    $lineTotal  = $area * $unitPriceVat;
                     break;
                 default:
-                    $lineTotal = $rq * $unitPriceVat;
+                    $qtyDisplay = $rq;
+                    $lineTotal  = $rq * $unitPriceVat;
             }
             $base += $lineTotal;
             $cat = trim((string)($p['category'] ?? ''));
@@ -107,6 +114,13 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
             if (strtolower($cat) === 'alüminyum') {
                 $aluminumKg += $kg;
             }
+            $items[] = [
+                'category' => $cat,
+                'name'     => $rule['name'],
+                'unit'     => $unitRaw,
+                'quantity' => $qtyDisplay,
+                'total'    => $lineTotal,
+            ];
         }
     }
 
@@ -115,23 +129,48 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $alWaste   = $kgPainted * 0.07 * 200;
     $base     += $alPaint + $alWaste;
     $categoryTotals['Alüminyum'] = ($categoryTotals['Alüminyum'] ?? 0) + $alPaint + $alWaste;
+    $items[] = [
+        'category' => 'Alüminyum',
+        'name'     => 'Boya + Fire',
+        'unit'     => 'kg',
+        'quantity' => $kgPainted,
+        'total'    => $alPaint + $alWaste,
+    ];
 
     $area      = ($width * $height * $qty) / 1000000;
     $laborCost = $area * 40;
     $base     += $laborCost;
     $categoryTotals['İşçilik'] = ($categoryTotals['İşçilik'] ?? 0) + $laborCost;
+    $items[] = [
+        'category' => 'İşçilik',
+        'name'     => 'İşçilik',
+        'unit'     => 'm²',
+        'quantity' => $area,
+        'total'    => $laborCost,
+    ];
 
     $rate   = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
     $profit = $base * ($rate / 100);
     $total  = $base + $profit;
     $categoryTotals['Diğer'] = ($categoryTotals['Diğer'] ?? 0) + $profit;
+    $items[] = [
+        'category' => 'Diğer',
+        'name'     => 'Kâr',
+        'unit'     => '',
+        'quantity' => 1,
+        'total'    => $profit,
+    ];
 
-    return ['categories' => $categoryTotals, 'total' => $total];
+    return ['categories' => $categoryTotals, 'items' => $items, 'total' => $total];
 }
 
 $totals = calculateGuillotineCategoryTotals($pdo, $system);
 $orderedCats = ['Alüminyum','Aksesuar','Fitil','Cam','İşçilik','Montaj','Diğer'];
 $catTotals = array_merge(array_fill_keys($orderedCats, 0), $totals['categories']);
+$itemsByCat = [];
+foreach ($totals['items'] as $it) {
+    $itemsByCat[$it['category']][] = $it;
+}
 $total = $totals['total'];
 $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_id'] ?? ''));
 ?>
@@ -143,20 +182,34 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
             <thead>
                 <tr>
                     <th>Kategori</th>
+                    <th>Kalem</th>
+                    <th>Birim</th>
+                    <th class="text-end">Birim Değeri</th>
                     <th class="text-end">Tutar (₺)</th>
                 </tr>
             </thead>
             <tbody>
             <?php foreach ($orderedCats as $label): ?>
-                <tr>
-                    <td><?= e($label) ?></td>
-                    <td class="text-end"><?= e(number_format($catTotals[$label] ?? 0, 2, ',', '.')) ?> ₺</td>
-                </tr>
+                <?php if (!empty($itemsByCat[$label])): ?>
+                    <?php foreach ($itemsByCat[$label] as $item): ?>
+                        <tr>
+                            <td><?= e($label) ?></td>
+                            <td><?= e($item['name']) ?></td>
+                            <td><?= e($item['unit']) ?></td>
+                            <td class="text-end"><?= e(number_format($item['quantity'], 2, ',', '.')) ?></td>
+                            <td class="text-end"><?= e(number_format($item['total'], 2, ',', '.')) ?> ₺</td>
+                        </tr>
+                    <?php endforeach; ?>
+                    <tr class="table-light">
+                        <th colspan="4" class="text-end">Toplam <?= e($label) ?></th>
+                        <th class="text-end"><?= e(number_format($catTotals[$label] ?? 0, 2, ',', '.')) ?> ₺</th>
+                    </tr>
+                <?php endif; ?>
             <?php endforeach; ?>
             </tbody>
             <tfoot>
                 <tr>
-                    <th>Genel Toplam</th>
+                    <th colspan="4">Genel Toplam</th>
                     <th class="text-end"><?= e(number_format($total, 2, ',', '.')) ?> ₺</th>
                 </tr>
             </tfoot>
@@ -164,4 +217,3 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
     </div>
 </div>
 <?php require __DIR__ . '/footer.php'; ?>
-
