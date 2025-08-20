@@ -124,17 +124,25 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
         }
     }
 
-    $kgPainted = $aluminumKg * 1.01;
-    $alPaint   = $kgPainted * 200;
-    $alWaste   = $kgPainted * 0.07 * 200;
-    $base     += $alPaint + $alWaste;
-    $categoryTotals['Alüminyum'] = ($categoryTotals['Alüminyum'] ?? 0) + $alPaint + $alWaste;
+    $kgPainted   = $aluminumKg * 1.01;
+    $alPaintCost = $kgPainted * 200;
+    $alWasteQty  = $kgPainted * 0.07;
+    $alWasteCost = $alWasteQty * 200;
+    $base += $alPaintCost + $alWasteCost;
+    $categoryTotals['Alüminyum'] = ($categoryTotals['Alüminyum'] ?? 0) + $alPaintCost + $alWasteCost;
     $items[] = [
         'category' => 'Alüminyum',
-        'name'     => 'Boya + Fire',
+        'name'     => 'Alüminyum Boyalı',
         'unit'     => 'kg',
         'quantity' => $kgPainted,
-        'total'    => $alPaint + $alWaste,
+        'total'    => $alPaintCost,
+    ];
+    $items[] = [
+        'category' => 'Alüminyum',
+        'name'     => 'Alüminyum Fire',
+        'unit'     => 'kg',
+        'quantity' => $alWasteQty,
+        'total'    => $alWasteCost,
     ];
 
     $area      = ($width * $height * $qty) / 1000000;
