@@ -6,24 +6,24 @@ function e(?string $v): string
     return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-function fmt_try(float $v): string
-{
-    return number_format($v, 2, ',', '.');
-}
-
-function fmt_qty(float $v, string $unit): string
-{
-    $unit = strtolower(trim($unit));
-    $decimals = in_array($unit, ['kg', 'kilogram', 'kg/m', 'm', 'metre', 'm²', 'm2'], true) ? 3 : 2;
-    return number_format($v, $decimals, ',', '.');
-}
-
-function fmt_measure($v, string $unit): string
+function fmtFlex($v, string $unit = '', bool $currency = false): string
 {
     if (!is_numeric($v)) {
         return '-';
     }
-    return fmt_qty((float)$v, $unit);
+    $v = (float)$v;
+    if ($currency) {
+        return number_format($v, 2, ',', '.');
+    }
+    $unit = strtolower(trim($unit));
+    if (in_array($unit, ['kg', 'kilogram', 'kg/m', 'm', 'metre', 'm²', 'm2'], true)) {
+        $formatted = number_format($v, 4, ',', '.');
+    } else {
+        $formatted = number_format($v, 2, ',', '.');
+    }
+    $formatted = rtrim($formatted, '0');
+    $formatted = rtrim($formatted, ',');
+    return $formatted;
 }
 
 if (empty($_SESSION['csrf_token'])) {
@@ -241,15 +241,15 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
                         <tr>
                             <td><?= e($label) ?></td>
                             <td><?= e($item['name']) ?></td>
-                              <td class="text-end"><?= e(fmt_measure($item['measure'], $item['unit'])) ?></td>
+                              <td class="text-end"><?= e(fmtFlex($item['measure'], $item['unit'])) ?></td>
                               <td><?= e($item['unit']) ?></td>
-                              <td class="text-end"><?= e(fmt_qty($item['quantity'], $item['unit'])) ?></td>
-                              <td class="text-end"><?= e(fmt_try($item['total'])) ?> ₺</td>
+                              <td class="text-end"><?= e(fmtFlex($item['quantity'], $item['unit'])) ?></td>
+                              <td class="text-end"><?= e(fmtFlex($item['total'], '', true)) ?> ₺</td>
                         </tr>
                     <?php endforeach; ?>
                     <tr class="table-light">
                         <th colspan="5" class="text-end">Toplam <?= e($label) ?></th>
-                          <th class="text-end"><?= e(fmt_try($catTotals[$label] ?? 0)) ?> ₺</th>
+                          <th class="text-end"><?= e(fmtFlex($catTotals[$label] ?? 0, '', true)) ?> ₺</th>
                     </tr>
                 <?php endif; ?>
             <?php endforeach; ?>
@@ -257,7 +257,7 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
             <tfoot>
                 <tr>
                     <th colspan="5">Genel Toplam</th>
-                      <th class="text-end"><?= e(fmt_try($total)) ?> ₺</th>
+                      <th class="text-end"><?= e(fmtFlex($total, '', true)) ?> ₺</th>
                 </tr>
             </tfoot>
         </table>
