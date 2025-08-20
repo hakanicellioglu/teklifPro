@@ -209,6 +209,27 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
         }
     }
 
+    $camWidth        = max(0, $width - 221);
+    $verticalBase    = max(0, ($height - 290) / 3);
+    $camHeight       = max(0, $verticalBase + 28);
+    $kanatAdet       = 2 * $qty;
+    $dikeyBazaAdet   = 4 * $qty;
+    $camAdet         = ($kanatAdet + $dikeyBazaAdet) / 2;
+    $camAreaPerPiece = ($camWidth * $camHeight) / 1000000;
+    $camAreaTotal    = $camAreaPerPiece * $camAdet;
+    $camTotal        = $camAreaTotal * 1680;
+    $base           += $camTotal;
+    $categoryTotals['Cam']    = ($categoryTotals['Cam'] ?? 0) + $camTotal;
+    $categoryQtyTotals['Cam'] = ($categoryQtyTotals['Cam'] ?? 0) + $camAreaTotal;
+    $items[] = [
+        'category' => 'Cam',
+        'name'     => 'Cam',
+        'measure'  => null,
+        'unit'     => 'm²',
+        'quantity' => $camAreaTotal,
+        'total'    => $camTotal,
+    ];
+
     $kgPainted   = $aluminumKg * 1.01;
     $alPaintCost = $kgPainted * 200;
     $alWasteQty  = $kgPainted * 0.07;
@@ -279,7 +300,7 @@ $itemsByCat = [];
 foreach ($totals['items'] as $it) {
     $itemsByCat[$it['category']][] = $it;
 }
-$includedForTotal = ['Alüminyum Boyalı','Alüminyum Fire','Aksesuar','Fitil','İşçilik'];
+$includedForTotal = ['Alüminyum Boyalı','Alüminyum Fire','Aksesuar','Fitil','Cam','İşçilik'];
 $total = 0;
 foreach ($includedForTotal as $c) {
     $total += $catTotals[$c] ?? 0;
