@@ -279,7 +279,11 @@ $itemsByCat = [];
 foreach ($totals['items'] as $it) {
     $itemsByCat[$it['category']][] = $it;
 }
-$total = $totals['total'];
+$includedForTotal = ['Alüminyum Boyalı','Alüminyum Fire','Aksesuar','Fitil','İşçilik'];
+$total = 0;
+foreach ($includedForTotal as $c) {
+    $total += $catTotals[$c] ?? 0;
+}
 $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_id'] ?? ''));
 ?>
 <div class="container mt-4">
