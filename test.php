@@ -46,11 +46,22 @@ if (!$system) {
     exit;
 }
 
+$glassStmt = $pdo->prepare('SELECT glass_type FROM guillotinesystems WHERE id = :id');
+$glassStmt->execute([':id' => $quoteId]);
+$glassType = $glassStmt->fetchColumn();
+if ($glassType !== false) {
+    $system['glass_type'] = $glassType;
+}
+
 function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
 {
     $width  = max(0, (float)($row['width'] ?? 0));
     $height = max(0, (float)($row['height'] ?? 0));
     $qty    = max(0, (int)($row['quantity'] ?? 0));
+
+    $glassType = trim((string)($row['glass_type'] ?? ''));
+    $glassTypeLower = function_exists('mb_strtolower') ? mb_strtolower($glassType, 'UTF-8') : strtolower($glassType);
+    $includeGlassStrips = !in_array($glassTypeLower, ['ısıcam', 'isicam'], true);
 
     $rules = [
         ['name' => 'Motor Kutusu',        'measure' => fn($w,$h,$q) => $w - 14,                        'qty' => fn($w,$h,$q) => $q],
@@ -60,8 +71,12 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
         ['name' => 'Kenetli Baza',        'measure' => fn($w,$h,$q) => $w - 185,                        'qty' => fn($w,$h,$q) => 3*$q],
         ['name' => 'Küpeşte Bazası',      'measure' => fn($w,$h,$q) => $w - 185,                        'qty' => fn($w,$h,$q) => 2*$q],
         ['name' => 'Küpeşte',             'measure' => fn($w,$h,$q) => $w - 185,                        'qty' => fn($w,$h,$q) => $q],
-        ['name' => 'Yatay Tek Cam Çıtası','measure' => fn($w,$h,$q) => ($w - 185) - 52,                'qty' => fn($w,$h,$q) => 11*$q],
-        ['name' => 'Dikey Tek Cam Çıtası','measure' => fn($w,$h,$q) => (($h - 290) / 3) - 5,           'qty' => fn($w,$h,$q) => 11*$q],
+    ];
+    if ($includeGlassStrips) {
+        $rules[] = ['name' => 'Yatay Tek Cam Çıtası','measure' => fn($w,$h,$q) => ($w - 185) - 52,                'qty' => fn($w,$h,$q) => 11*$q];
+        $rules[] = ['name' => 'Dikey Tek Cam Çıtası','measure' => fn($w,$h,$q) => (($h - 290) / 3) - 5,           'qty' => fn($w,$h,$q) => 11*$q];
+    }
+    $rules = array_merge($rules, [
         ['name' => 'Dikme',               'measure' => fn($w,$h,$q) => $h - 166,                        'qty' => fn($w,$h,$q) => 2*$q],
         ['name' => 'Orta Dikme',          'measure' => fn($w,$h,$q) => $h - 166,                        'qty' => fn($w,$h,$q) => 2*$q],
         ['name' => 'Son Kapatma',         'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221,       'qty' => fn($w,$h,$q) => 2*$q],
@@ -72,7 +87,7 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
         ['name' => 'Motor Borusu',        'measure' => fn($w,$h,$q) => $w - 59,                         'qty' => fn($w,$h,$q) => $q],
         ['name' => 'Motor Kutu Contası',  'measure' => fn($w,$h,$q) => ($w - 14)*$q + $w*$q,            'qty' => fn($w,$h,$q) => 1],
         ['name' => 'Kanat Contası',       'measure' => fn($w,$h,$q) => (($h - 290)/3)*$q*2,             'qty' => fn($w,$h,$q) => 1],
-    ];
+    ]);
 
     $pStmt = $pdo->prepare('SELECT unit, unit_price, vat_rate, weight_per_meter, category FROM products WHERE LOWER(name) = LOWER(:name)');
 
