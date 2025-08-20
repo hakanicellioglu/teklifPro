@@ -76,10 +76,11 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
 
     $pStmt = $pdo->prepare('SELECT unit, unit_price, vat_rate, weight_per_meter, category FROM products WHERE LOWER(name) = LOWER(:name)');
 
-    $categoryTotals = [];
-    $items       = [];
-    $base        = 0.0;
-    $aluminumKg  = 0.0;
+    $categoryTotals   = [];
+    $categoryQtyTotals = [];
+    $items            = [];
+    $base             = 0.0;
+    $aluminumKg       = 0.0;
 
     foreach ($rules as $rule) {
         $measure = max(0, $rule['measure']($width, $height, $qty));
@@ -141,7 +142,8 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
                 $lineTotal = $qtyDisplay * 200;
             }
             $base += $lineTotal;
-            $categoryTotals[$cat] = ($categoryTotals[$cat] ?? 0) + $lineTotal;
+            $categoryTotals[$cat]    = ($categoryTotals[$cat] ?? 0) + $lineTotal;
+            $categoryQtyTotals[$cat] = ($categoryQtyTotals[$cat] ?? 0) + $qtyDisplay;
             if (strtolower($cat) === 'alüminyum') {
                 $aluminumKg += $kg;
             }
@@ -161,8 +163,10 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $alWasteQty  = $kgPainted * 0.07;
     $alWasteCost = $alWasteQty * 200;
     $base += $alPaintCost + $alWasteCost;
-    $categoryTotals['Alüminyum Boyalı'] = ($categoryTotals['Alüminyum Boyalı'] ?? 0) + $alPaintCost;
-    $categoryTotals['Alüminyum Fire']   = ($categoryTotals['Alüminyum Fire'] ?? 0) + $alWasteCost;
+    $categoryTotals['Alüminyum Boyalı']    = ($categoryTotals['Alüminyum Boyalı'] ?? 0) + $alPaintCost;
+    $categoryQtyTotals['Alüminyum Boyalı'] = ($categoryQtyTotals['Alüminyum Boyalı'] ?? 0) + $kgPainted;
+    $categoryTotals['Alüminyum Fire']     = ($categoryTotals['Alüminyum Fire'] ?? 0) + $alWasteCost;
+    $categoryQtyTotals['Alüminyum Fire']  = ($categoryQtyTotals['Alüminyum Fire'] ?? 0) + $alWasteQty;
     $items[] = [
         'category' => 'Alüminyum Boyalı',
         'name'     => 'Alüminyum Boyalı',
@@ -183,7 +187,8 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $area      = ($width * $height * $qty) / 1000000;
     $laborCost = $area * 40;
     $base     += $laborCost;
-    $categoryTotals['İşçilik'] = ($categoryTotals['İşçilik'] ?? 0) + $laborCost;
+    $categoryTotals['İşçilik']    = ($categoryTotals['İşçilik'] ?? 0) + $laborCost;
+    $categoryQtyTotals['İşçilik'] = ($categoryQtyTotals['İşçilik'] ?? 0) + $area;
     $items[] = [
         'category' => 'İşçilik',
         'name'     => 'İşçilik',
@@ -196,7 +201,8 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $rate   = (float)($row['profit_rate'] ?? $row['profit_margin'] ?? 0);
     $profit = $base * ($rate / 100);
     $total  = $base + $profit;
-    $categoryTotals['Diğer'] = ($categoryTotals['Diğer'] ?? 0) + $profit;
+    $categoryTotals['Diğer']    = ($categoryTotals['Diğer'] ?? 0) + $profit;
+    $categoryQtyTotals['Diğer'] = ($categoryQtyTotals['Diğer'] ?? 0) + 1;
     $items[] = [
         'category' => 'Diğer',
         'name'     => 'Kâr',
@@ -206,12 +212,18 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
         'total'    => $profit,
     ];
 
-    return ['categories' => $categoryTotals, 'items' => $items, 'total' => $total];
+    return [
+        'categories' => $categoryTotals,
+        'quantities' => $categoryQtyTotals,
+        'items'      => $items,
+        'total'      => $total,
+    ];
 }
 
 $totals = calculateGuillotineCategoryTotals($pdo, $system);
 $orderedCats = ['Alüminyum','Alüminyum Boyalı','Alüminyum Fire','Aksesuar','Fitil','Cam','İşçilik','Montaj','Diğer'];
-$catTotals = array_merge(array_fill_keys($orderedCats, 0), $totals['categories']);
+$catTotals    = array_merge(array_fill_keys($orderedCats, 0), $totals['categories']);
+$catQtyTotals = array_merge(array_fill_keys($orderedCats, 0), $totals['quantities']);
 $itemsByCat = [];
 foreach ($totals['items'] as $it) {
     $itemsByCat[$it['category']][] = $it;
@@ -248,8 +260,9 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
                         </tr>
                     <?php endforeach; ?>
                     <tr class="table-light">
-                        <th colspan="5" class="text-end">Toplam <?= e($label) ?></th>
-                          <th class="text-end"><?= e(fmtFlex($catTotals[$label] ?? 0, '', true)) ?> ₺</th>
+                        <th colspan="4" class="text-end">Toplam <?= e($label) ?></th>
+                        <th class="text-end"><?= e(fmtFlex($catQtyTotals[$label] ?? 0)) ?></th>
+                        <th class="text-end"><?= e(fmtFlex($catTotals[$label] ?? 0, '', true)) ?> ₺</th>
                     </tr>
                 <?php endif; ?>
             <?php endforeach; ?>
