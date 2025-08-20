@@ -217,6 +217,11 @@ foreach ($totals['items'] as $it) {
     $itemsByCat[$it['category']][] = $it;
 }
 $total = $totals['total'];
+$aluminumTotal = (
+    ($catTotals['Alüminyum'] ?? 0) +
+    ($catTotals['Alüminyum Boyalı'] ?? 0) +
+    ($catTotals['Alüminyum Fire'] ?? 0)
+);
 $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_id'] ?? ''));
 ?>
 <div class="container mt-4">
@@ -256,8 +261,12 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
             </tbody>
             <tfoot>
                 <tr>
+                    <th colspan="5">Alüminyum Ürün Toplamı</th>
+                    <th class="text-end"><?= e(fmtFlex($aluminumTotal, '', true)) ?> ₺</th>
+                </tr>
+                <tr>
                     <th colspan="5">Genel Toplam</th>
-                      <th class="text-end"><?= e(fmtFlex($total, '', true)) ?> ₺</th>
+                    <th class="text-end"><?= e(fmtFlex($total, '', true)) ?> ₺</th>
                 </tr>
             </tfoot>
         </table>
