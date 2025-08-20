@@ -94,11 +94,14 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $rules[] = ['name' => 'Son Kapatma',         'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221,       'qty' => fn($w,$h,$q) => 2*$q];
     $rules[] = ['name' => 'Kanat',               'measure' => fn($w,$h,$q) => ($h - 290) / 3,                  'qty' => fn($w,$h,$q) => 2*$q];
     $rules[] = ['name' => 'Dikey Baza',          'measure' => fn($w,$h,$q) => ($h - 290) / 3,                  'qty' => fn($w,$h,$q) => 4*$q];
-    $rules[] = ['name' => 'Zincir',              'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600, 'qty' => fn($w,$h,$q) => 2*$q];
+    // Eski Zincir ürününü Plastik Set olarak değiştir
+    $rules[] = ['name' => 'Plastik Set',         'measure' => fn($w,$h,$q) => 1,                               'qty' => fn($w,$h,$q) => $q];
     $rules[] = ['name' => 'Flatbelt Kayış',      'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600, 'qty' => fn($w,$h,$q) => 2*$q];
     $rules[] = ['name' => 'Motor Borusu',        'measure' => fn($w,$h,$q) => $w - 59,                         'qty' => fn($w,$h,$q) => $q];
     $rules[] = ['name' => 'Motor Kutu Contası',  'measure' => fn($w,$h,$q) => ($w - 14)*$q + $w*$q,            'qty' => fn($w,$h,$q) => 1];
     $rules[] = ['name' => 'Kanat Contası',       'measure' => fn($w,$h,$q) => (($h - 290)/3)*$q*2,             'qty' => fn($w,$h,$q) => 1];
+    // Yeni Zincir ürününü ekle
+    $rules[] = ['name' => 'Zincir',              'measure' => fn($w,$h,$q) => 1,                               'qty' => fn($w,$h,$q) => $q];
 
     $pStmt = $pdo->prepare('SELECT unit, unit_price, vat_rate, weight_per_meter, category FROM products WHERE LOWER(name) = LOWER(:name)');
 
@@ -112,6 +115,24 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
         $measure = max(0, $rule['measure']($width, $height, $qty));
         $rq      = max(0, $rule['qty']($width, $height, $qty));
         if ($measure <= 0 || $rq <= 0) {
+            continue;
+        }
+        if (in_array($rule['name'], ['Plastik Set', 'Zincir'], true)) {
+            $unitPrice  = $rule['name'] === 'Plastik Set' ? 1680 : 840;
+            $qtyDisplay = $rq;
+            $lineTotal  = $qtyDisplay * $unitPrice;
+            $cat        = 'Aksesuar';
+            $base += $lineTotal;
+            $categoryTotals[$cat]    = ($categoryTotals[$cat] ?? 0) + $lineTotal;
+            $categoryQtyTotals[$cat] = ($categoryQtyTotals[$cat] ?? 0) + $qtyDisplay;
+            $items[] = [
+                'category' => $cat,
+                'name'     => $rule['name'],
+                'measure'  => null,
+                'unit'     => 'set',
+                'quantity' => $qtyDisplay,
+                'total'    => $lineTotal,
+            ];
             continue;
         }
         $pStmt->execute([':name' => $rule['name']]);
