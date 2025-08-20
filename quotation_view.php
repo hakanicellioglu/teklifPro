@@ -554,7 +554,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                     <td><?= e($g['ral_code']) ?></td>
                                     <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
                                     <td class="text-end">
-                                        <a href="test.php?id=<?= e((string)$g['id']) ?>" class="btn btn-sm btn-info" target="_blank">Kalemler</a>
+                                        <a href="test.php?quote_id=<?= e((string)$g['id']) ?>" class="btn btn-sm btn-info">Kalemler</a>
                                         <button type="button" class="btn btn-sm btn-secondary edit-guillotine" data-bs-toggle="modal" data-bs-target="#addGuillotineModal"
                                             data-id="<?= e((string)$g['id']) ?>"
                                             data-width="<?= e((string)$g['width']) ?>"
