@@ -48,10 +48,9 @@ if (!$system) {
 
 $glassTypeRaw = (string)($system['glass_type'] ?? '');
 error_log('glass_type from query: ' . $glassTypeRaw);
-$glassTypeNorm = function_exists('mb_strtolower') ? mb_strtolower($glassTypeRaw, 'UTF-8') : strtolower($glassTypeRaw);
-$glassTypeNorm = str_replace(' ', '', $glassTypeNorm);
-$isInsulated   = in_array($glassTypeNorm, ['ısıcam', 'isicam'], true);
-$isSingle      = in_array($glassTypeNorm, ['tekcam'], true);
+$glassType    = function_exists('mb_strtolower') ? mb_strtolower($glassTypeRaw, 'UTF-8') : strtolower($glassTypeRaw);
+$isInsulated  = in_array($glassType, ['ısıcam', 'isicam'], true);
+$isSingle     = in_array($glassType, ['tek cam', 'tekcam'], true);
 if ($glassTypeRaw === '' || (!$isInsulated && !$isSingle)) {
     $glassDebug = '<div class="alert alert-warning">Cam tipi belirlenemedi: ' . e($glassTypeRaw) . '</div>';
 } else {
