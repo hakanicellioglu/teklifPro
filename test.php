@@ -99,6 +99,7 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $rules[] = ['name' => 'Motor Borusu',        'measure' => fn($w,$h,$q) => $w - 59,                         'qty' => fn($w,$h,$q) => $q];
     $rules[] = ['name' => 'Motor Kutu Contası',  'measure' => fn($w,$h,$q) => ($w - 14)*$q + $w*$q,            'qty' => fn($w,$h,$q) => 1];
     $rules[] = ['name' => 'Kanat Contası',       'measure' => fn($w,$h,$q) => (($h - 290)/3)*$q*2,             'qty' => fn($w,$h,$q) => 1];
+    $rules[] = ['name' => 'Kıl Fitil',           'measure' => fn($w,$h,$q) => (($w - 183) * 4) + (($h - 166) * 8) + ((($h - 290) / 3) * 2), 'qty' => fn($w,$h,$q) => $q, 'category' => 'Fitil'];
 
     $pStmt = $pdo->prepare('SELECT unit, unit_price, vat_rate, weight_per_meter, category FROM products WHERE LOWER(name) = LOWER(:name)');
 
@@ -154,7 +155,7 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
                     $qtyDisplay = $rq;
                     $lineTotal  = $rq * $unitPriceVat;
             }
-            $cat = trim((string)($p['category'] ?? ''));
+            $cat = $rule['category'] ?? trim((string)($p['category'] ?? ''));
             $cat = $cat !== '' ? $cat : 'Diğer';
             if (in_array($cat, ['Alüminyum', 'Alüminyum Boyalı', 'Alüminyum Fire'], true)) {
                 if ($kg <= 0) {
