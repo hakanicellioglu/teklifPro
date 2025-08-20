@@ -128,6 +128,7 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
             $items[] = [
                 'category' => $cat,
                 'name'     => $rule['name'],
+                'measure'  => $measure,
                 'unit'     => $unitRaw,
                 'quantity' => $qtyDisplay,
                 'total'    => $lineTotal,
@@ -145,6 +146,7 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $items[] = [
         'category' => 'Alüminyum Boyalı',
         'name'     => 'Alüminyum Boyalı',
+        'measure'  => null,
         'unit'     => 'kg',
         'quantity' => $kgPainted,
         'total'    => $alPaintCost,
@@ -152,6 +154,7 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $items[] = [
         'category' => 'Alüminyum Fire',
         'name'     => 'Alüminyum Fire',
+        'measure'  => null,
         'unit'     => 'kg',
         'quantity' => $alWasteQty,
         'total'    => $alWasteCost,
@@ -164,6 +167,7 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $items[] = [
         'category' => 'İşçilik',
         'name'     => 'İşçilik',
+        'measure'  => null,
         'unit'     => 'm²',
         'quantity' => $area,
         'total'    => $laborCost,
@@ -176,6 +180,7 @@ function calculateGuillotineCategoryTotals(PDO $pdo, array $row): array
     $items[] = [
         'category' => 'Diğer',
         'name'     => 'Kâr',
+        'measure'  => null,
         'unit'     => '',
         'quantity' => 1,
         'total'    => $profit,
@@ -203,6 +208,7 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
                 <tr>
                     <th>Kategori</th>
                     <th>Kalem</th>
+                    <th class="text-end">Ölçü</th>
                     <th>Birim</th>
                     <th class="text-end">Birim Değeri</th>
                     <th class="text-end">Tutar (₺)</th>
@@ -215,13 +221,14 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
                         <tr>
                             <td><?= e($label) ?></td>
                             <td><?= e($item['name']) ?></td>
+                            <td class="text-end"><?= e(is_numeric($item['measure']) ? number_format((float)$item['measure'], 2, ',', '.') : '-') ?></td>
                             <td><?= e($item['unit']) ?></td>
                             <td class="text-end"><?= e(number_format($item['quantity'], 2, ',', '.')) ?></td>
                             <td class="text-end"><?= e(number_format($item['total'], 2, ',', '.')) ?> ₺</td>
                         </tr>
                     <?php endforeach; ?>
                     <tr class="table-light">
-                        <th colspan="4" class="text-end">Toplam <?= e($label) ?></th>
+                        <th colspan="5" class="text-end">Toplam <?= e($label) ?></th>
                         <th class="text-end"><?= e(number_format($catTotals[$label] ?? 0, 2, ',', '.')) ?> ₺</th>
                     </tr>
                 <?php endif; ?>
@@ -229,7 +236,7 @@ $backUrl = 'quotation_view.php?id=' . urlencode((string)($system['general_offer_
             </tbody>
             <tfoot>
                 <tr>
-                    <th colspan="4">Genel Toplam</th>
+                    <th colspan="5">Genel Toplam</th>
                     <th class="text-end"><?= e(number_format($total, 2, ',', '.')) ?> ₺</th>
                 </tr>
             </tfoot>
