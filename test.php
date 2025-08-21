@@ -386,7 +386,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<table class="table table-bordered table-sm">';
     echo '<tbody>';
 
-    echo '<tr><th>Alüminyum Maliyeti</th><td>' . e(number_format($tot['alu_cost'], 2, ',', '.')) . ' ₺</td></tr>';
     echo '<tr><th>Cam Maliyeti</th><td>' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</td></tr>';
     echo '<tr><th>Alüminyum Boyalı KG</th><td>' . e(number_format($result['alu_painted_kg'], 2, ',', '.')) . ' kg</td></tr>';
     echo '<tr><th>Alüminyum Fire KG</th><td>' . e(number_format($result['alu_fire_kg'], 2, ',', '.')) . ' kg</td></tr>';
