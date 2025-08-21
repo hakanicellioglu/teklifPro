@@ -64,7 +64,7 @@ function calculateGuillotineTotals(array $input): array
     // Glass dimension and quantity calculations
     $verticalBaseMeasure = max(0.0, ($height - 290) / 3);
     $glassWidth  = max(0.0, $width - 221);
-    $glassHeight = max(0.0, $verticalBaseMeasure + 28);
+    $glassHeight = max(0.0, $verticalBaseMeasure + 25);
     $wingCount   = 2 * $qty;
     $baseCount   = 4 * $qty;
     $glassQty    = ($wingCount + $baseCount) / 2;
