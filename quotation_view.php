@@ -482,9 +482,9 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                     <td><?= e($g['ral_code']) ?></td>
                                     <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
                                     <td class="text-end">
-                                        <div class="btn-group">
+                                        <div class="btn-group w-100 justify-content-end">
                                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Hızlı Gör</button>
-                                            <div class="dropdown-menu dropdown-menu-end p-0">
+                                            <div class="dropdown-menu dropdown-menu-end p-0 w-100">
                                                 <div class="d-flex justify-content-between align-items-center px-2 py-1 border-bottom">
                                                     <span class="fw-bold small">Kalemler</span>
                                                     <a href="test.php?quote_id=<?= e((string)$g['id']) ?>" class="small text-decoration-none">Detay »</a>
