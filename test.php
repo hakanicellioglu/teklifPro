@@ -90,11 +90,11 @@ function calculateGuillotineTotals(array $input): array
         ['name' => 'Son Kapatma',        'measure' => fn($w,$h,$q) => $h - (($h - 290) / 3) - 221,      'qty' => fn($w,$h,$q) => 2 * $q],
         ['name' => 'Kanat',              'measure' => fn($w,$h,$q) => ($h - 290) / 3,                   'qty' => fn($w,$h,$q) => 2 * $q],
         ['name' => 'Dikey Baza',         'measure' => fn($w,$h,$q) => ($h - 290) / 3,                   'qty' => fn($w,$h,$q) => 4 * $q],
-        ['name' => 'Plastik Set',        'measure' => fn($w,$h,$q) => 1,                                'qty' => fn($w,$h,$q) => $q],
         ['name' => 'Flatbelt Kayış',     'measure' => fn($w,$h,$q) => $h - (($h - 290) / 3) - 221 + 600,'qty' => fn($w,$h,$q) => 2 * $q],
         ['name' => 'Motor Borusu',       'measure' => fn($w,$h,$q) => $w - 75,                          'qty' => fn($w,$h,$q) => $q],
         ['name' => 'Motor Kutu Contası', 'measure' => fn($w,$h,$q) => ($w - 14) * $q + $w * $q,         'qty' => fn($w,$h,$q) => 1],
         ['name' => 'Kanat Contası',      'measure' => fn($w,$h,$q) => (($h - 290) / 3) * $q * 2,        'qty' => fn($w,$h,$q) => 1],
+        ['name' => 'Plastik Set',        'measure' => fn($w,$h,$q) => 1,                                'qty' => fn($w,$h,$q) => $q],
         ['name' => 'Zincir',             'measure' => fn($w,$h,$q) => 1,                                'qty' => fn($w,$h,$q) => $q],
     ]);
 

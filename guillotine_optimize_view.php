@@ -68,11 +68,12 @@ function computeSystem(array $row, PDO $pdo, array &$alerts): array {
         ['label' => 'Son Kapatma',           'name' => 'Son Kapatma',   'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221,                          'qty' => fn($w,$h,$q) => 2*$q],
         ['label' => 'Kanat',                 'name' => 'Kanat',         'measure' => fn($w,$h,$q) => ($h - 290) / 3,                                      'qty' => fn($w,$h,$q) => 2*$q],
         ['label' => 'Dikey Baza',            'name' => 'Dikey Baza',    'measure' => fn($w,$h,$q) => ($h - 290) / 3,                                      'qty' => fn($w,$h,$q) => 4*$q],
-        ['label' => 'Zincir',                'name' => 'Zincir',        'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600,                    'qty' => fn($w,$h,$q) => 2*$q],
         ['label' => 'Flatbelt Kayış',        'name' => 'Flatbelt Kayış',      'measure' => fn($w,$h,$q) => $h - (($h - 290)/3) - 221 + 600,                    'qty' => fn($w,$h,$q) => 2*$q],
         ['label' => 'Motor Borusu',          'name' => 'Motor Borusu',  'measure' => fn($w,$h,$q) => $w - 59,                                            'qty' => fn($w,$h,$q) => $q],
         ['label' => 'Motor Kutu Contası',    'name' => 'Motor Kutu Contası','measure' => fn($w,$h,$q) => ($w - 14)*$q + $w*$q,                                'qty' => fn($w,$h,$q) => 1],
         ['label' => 'Kanat Contası',         'name' => 'Kanat Contası',     'measure' => fn($w,$h,$q) => (($h - 290)/3)*$q*2,                                 'qty' => fn($w,$h,$q) => 1],
+        ['label' => 'Plastik Set',           'name' => 'Plastik Set',   'measure' => fn($w,$h,$q) => 1,                          'qty' => fn($w,$h,$q) => $q],
+        ['label' => 'Zincir',                'name' => 'Zincir',        'measure' => fn($w,$h,$q) => 1,                          'qty' => fn($w,$h,$q) => $q],
     ];
 
     $pStmt = $pdo->prepare('SELECT product_code, name, unit, unit_price, vat_rate, weight_per_meter FROM products WHERE LOWER(name) = LOWER(:name)');
