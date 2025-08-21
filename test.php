@@ -35,7 +35,6 @@ interface ProductProviderInterface
  *     alu_cost: float,
  *     glass_cost: float,
  *     extras: array{paint: float, waste: float, labor: float},
- *     base_cost: float,
  *     profit: float,
  *     grand_total: float
  *   },
@@ -111,7 +110,6 @@ function calculateGuillotineTotals(array $input): array
     $lines        = [];
     $aluCost      = 0.0;
     $glassCost    = 0.0;
-    $baseCost     = 0.0;
     $aluKg        = 0.0;
     $aksesuarCost = 0.0;
     $fitilCost    = 0.0;
@@ -182,7 +180,6 @@ function calculateGuillotineTotals(array $input): array
                 break;
         }
 
-        $baseCost += $lineTotal;
         if (strtolower($category) === 'alüminyum') {
             $aluCost += $lineTotal;
             $aluKg   += $kg;
@@ -214,9 +211,6 @@ function calculateGuillotineTotals(array $input): array
     $area = ($width * $height * $qty) / 1000000; // m²
     $extras['labor'] = $area * 40;
 
-    $baseCost += array_sum($extras);
-    $profit = $baseCost * ($profitRate / 100);
-
     $paintCost       = $extras['paint'] ?? 0.0;
     $fireCost        = $extras['waste'] ?? 0.0;
     $otherExtras     = $extras;
@@ -232,11 +226,12 @@ function calculateGuillotineTotals(array $input): array
         + $glassCost
         + $otherExtrasCost;
 
+    $profit = $grandTotal * ($profitRate / 100);
+
     $totals = [
         'alu_cost'    => $aluCost,
         'glass_cost'  => $glassCost,
         'extras'      => $extras,
-        'base_cost'   => $baseCost,
         'profit'      => $profit,
         'grand_total' => $grandTotal,
     ];
@@ -399,7 +394,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<li>Fire: ' . e(number_format($tot['extras']['waste'], 2, ',', '.')) . ' ₺</li>';
     echo '<li>İmalat İşçiliği: ' . e(number_format($tot['extras']['labor'], 2, ',', '.')) . ' ₺</li>';
     echo '</ul>';
-    echo '<p><strong>Temel Maliyet:</strong> ' . e(number_format($tot['base_cost'], 2, ',', '.')) . ' ₺</p>';
     echo '<p><strong>Kâr:</strong> ' . e(number_format($tot['profit'], 2, ',', '.')) . ' ₺</p>';
     echo '<p><strong>Genel Toplam:</strong> ' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ₺</p>';
     echo '</div></div>';
