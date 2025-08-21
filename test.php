@@ -198,8 +198,11 @@ function calculateGuillotineTotals(array $input): array
         ];
     }
 
+    $aluPaintedKg = $aluKg * 1.1 * 1.01;
+    $aluFireKg    = $aluPaintedKg * 0.07;
+
     $extras = [
-        'paint' => $aluKg * 200,
+        'paint' => $aluPaintedKg * 200,
     ];
     $extras['waste'] = ($aluCost + $extras['paint']) * 0.07;
     $area = ($width * $height * $qty) / 1000000; // m²
@@ -219,10 +222,12 @@ function calculateGuillotineTotals(array $input): array
     ];
 
     return [
-        'lines'  => $lines,
-        'totals' => $totals,
-        'alu_kg' => $aluKg,
-        'glass'  => [
+        'lines'          => $lines,
+        'totals'         => $totals,
+        'alu_kg'         => $aluKg,
+        'alu_painted_kg' => $aluPaintedKg,
+        'alu_fire_kg'    => $aluFireKg,
+        'glass'          => [
             'width'    => $glassWidth,
             'height'   => $glassHeight,
             'quantity' => $glassQty,
@@ -366,6 +371,8 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<p><strong>Alüminyum Maliyeti:</strong> ' . e(number_format($tot['alu_cost'], 2, ',', '.')) . ' ₺</p>';
     echo '<p><strong>Cam Maliyeti:</strong> ' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</p>';
     echo '<p><strong>Cam Birim Fiyatı:</strong> ' . e(number_format(GLASS_UNIT_PRICE, 2, ',', '.')) . ' ₺/m²</p>';
+    echo '<p><strong>Alüminyum Boyalı KG:</strong> ' . e(number_format($result['alu_painted_kg'], 2, ',', '.')) . ' kg</p>';
+    echo '<p><strong>Alüminyum Fire KG:</strong> ' . e(number_format($result['alu_fire_kg'], 2, ',', '.')) . ' kg</p>';
     echo '<p><strong>Ekstralar:</strong></p>';
     echo '<ul>';
     echo '<li>Boyalı Alüminyum: ' . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ₺</li>';
