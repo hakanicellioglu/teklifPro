@@ -60,6 +60,14 @@ function calculateGuillotineTotals(array $input): array
     $glassType = strtolower(str_replace([' ', '-', '_', 'ı'], ['', '', '', 'i'], (string) ($input['glass_type'] ?? '')));
     $includeGlassStrips = $glassType === 'tek' || $glassType === 'tekcam';
 
+    // Glass dimension and quantity calculations
+    $verticalBaseMeasure = max(0.0, ($height - 290) / 3);
+    $glassWidth  = max(0.0, $width - 221);
+    $glassHeight = max(0.0, $verticalBaseMeasure + 28);
+    $wingCount   = 2 * $qty;
+    $baseCount   = 4 * $qty;
+    $glassQty    = ($wingCount + $baseCount) / 2;
+
     $rules = [
         ['name' => 'Motor Kutusu',       'measure' => fn($w,$h,$q) => $w - 14,                        'qty' => fn($w,$h,$q) => $q],
         ['name' => 'Motor Kapak',        'measure' => fn($w,$h,$q) => $w - 15,                        'qty' => fn($w,$h,$q) => $q],
@@ -89,6 +97,15 @@ function calculateGuillotineTotals(array $input): array
         ['name' => 'Zincir',             'measure' => fn($w,$h,$q) => 1,                                'qty' => fn($w,$h,$q) => $q],
     ]);
 
+    // Glass product rule using calculated dimensions and quantity
+    $rules[] = [
+        'name'    => 'Cam',
+        'measure' => fn($w,$h,$q) => $glassWidth,
+        'width'   => fn($w,$h,$q) => $glassWidth,
+        'height'  => fn($w,$h,$q) => $glassHeight,
+        'qty'     => fn($w,$h,$q) => $glassQty,
+    ];
+
     $lines    = [];
     $aluCost  = 0.0;
     $glassCost = 0.0;
@@ -96,8 +113,10 @@ function calculateGuillotineTotals(array $input): array
     $aluKg    = 0.0;
 
     foreach ($rules as $rule) {
-        $measure = max(0.0, $rule['measure']($width, $height, $qty));
-        $rq      = max(0, $rule['qty']($width, $height, $qty));
+        $measure    = max(0.0, $rule['measure']($width, $height, $qty));
+        $rq         = max(0, $rule['qty']($width, $height, $qty));
+        $ruleWidth  = isset($rule['width'])  ? max(0.0, $rule['width']($width, $height, $qty))  : $width;
+        $ruleHeight = isset($rule['height']) ? max(0.0, $rule['height']($width, $height, $qty)) : $height;
         if ($measure <= 0 || $rq <= 0) {
             continue;
         }
@@ -139,7 +158,7 @@ function calculateGuillotineTotals(array $input): array
             case 'metrekare':
             case 'm²':
             case 'm2':
-                $area       = ($width * $height / 1000000) * $rq;
+                $area       = ($ruleWidth * $ruleHeight / 1000000) * $rq;
                 $qtyDisplay = $area;
                 $lineTotal  = $area * $unitPriceVat;
                 break;
@@ -191,6 +210,11 @@ function calculateGuillotineTotals(array $input): array
         'lines'  => $lines,
         'totals' => $totals,
         'alu_kg' => $aluKg,
+        'glass'  => [
+            'width'    => $glassWidth,
+            'height'   => $glassHeight,
+            'quantity' => $glassQty,
+        ],
     ];
 }
 
