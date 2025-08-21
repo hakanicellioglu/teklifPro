@@ -108,11 +108,13 @@ function calculateGuillotineTotals(array $input): array
         'qty'     => fn($w,$h,$q) => $glassQty,
     ];
 
-    $lines    = [];
-    $aluCost  = 0.0;
-    $glassCost = 0.0;
-    $baseCost = 0.0;
-    $aluKg    = 0.0;
+    $lines        = [];
+    $aluCost      = 0.0;
+    $glassCost    = 0.0;
+    $baseCost     = 0.0;
+    $aluKg        = 0.0;
+    $aksesuarCost = 0.0;
+    $fitilCost    = 0.0;
 
     foreach ($rules as $rule) {
         $measure    = max(0.0, $rule['measure']($width, $height, $qty));
@@ -186,6 +188,10 @@ function calculateGuillotineTotals(array $input): array
             $aluKg   += $kg;
         } elseif (strtolower($category) === 'cam') {
             $glassCost += $lineTotal;
+        } elseif (strtolower($category) === 'aksesuar') {
+            $aksesuarCost += $lineTotal;
+        } elseif (strtolower($category) === 'fitil') {
+            $fitilCost += $lineTotal;
         }
 
         $lines[] = [
@@ -209,8 +215,20 @@ function calculateGuillotineTotals(array $input): array
     $extras['labor'] = $area * 40;
 
     $baseCost += array_sum($extras);
-    $profit     = $baseCost * ($profitRate / 100);
-    $grandTotal = $baseCost + $profit;
+    $profit = $baseCost * ($profitRate / 100);
+
+    $paintCost       = $extras['paint'] ?? 0.0;
+    $fireCost        = $extras['waste'] ?? 0.0;
+    $otherExtras     = $extras;
+    unset($otherExtras['paint'], $otherExtras['waste']);
+    $otherExtrasCost = array_sum($otherExtras);
+
+    $grandTotal = ($aluCost + $paintCost)
+        + $fireCost
+        + $aksesuarCost
+        + $fitilCost
+        + $glassCost
+        + $otherExtrasCost;
 
     $totals = [
         'alu_cost'    => $aluCost,
