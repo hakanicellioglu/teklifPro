@@ -98,7 +98,17 @@ function calculateGuillotineTotals(array $input): array
         ['name' => 'Motor Kutu Contası', 'measure' => fn($w,$h,$q) => ($w - 14) * $q + $w * $q,         'qty' => fn($w,$h,$q) => 1],
         ['name' => 'Kanat Contası',      'measure' => fn($w,$h,$q) => (($h - 290) / 3) * $q * 2,        'qty' => fn($w,$h,$q) => 1],
         ['name' => 'Plastik Set',        'measure' => fn($w,$h,$q) => 1,                                'qty' => fn($w,$h,$q) => $q],
-        ['name' => 'Zincir',             'measure' => fn($w,$h,$q) => 1,                                'qty' => fn($w,$h,$q) => $q],
+        // Zincir unit price was previously treated as 900₺ via outdated DB data.
+        // Force the correct unit price (680₺) here to keep calculations consistent
+        // even if the database still holds an old value.
+        [
+            'name'       => 'Zincir',
+            'measure'    => fn($w,$h,$q) => 1,
+            'qty'        => fn($w,$h,$q) => $q,
+            'unit_price' => 680.0,
+            'unit'       => 'set',
+            'category'   => 'Aksesuar',
+        ],
     ]);
 
     // Glass product rule using calculated dimensions and quantity
@@ -135,7 +145,25 @@ function calculateGuillotineTotals(array $input): array
             ];
         } else {
             $product = $provider->getProduct($rule['name']);
-            if (!$product) {
+            if ($product) {
+                if (isset($rule['unit_price'])) {
+                    $product['unit_price'] = $rule['unit_price'];
+                }
+                if (isset($rule['unit'])) {
+                    $product['unit'] = $rule['unit'];
+                }
+                if (isset($rule['category'])) {
+                    $product['category'] = $rule['category'];
+                }
+            } elseif (isset($rule['unit_price'])) {
+                // Fallback when product row is missing; use data provided in the rule.
+                $product = [
+                    'unit'            => $rule['unit'] ?? 'adet',
+                    'unit_price'      => $rule['unit_price'],
+                    'weight_per_meter'=> 0,
+                    'category'        => $rule['category'] ?? 'Diğer',
+                ];
+            } else {
                 continue;
             }
         }
