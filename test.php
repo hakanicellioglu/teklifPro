@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+const GLASS_UNIT_PRICE = 1680; // ₺ per m²
+
 /**
  * Provides product information required for calculations.
  */
@@ -121,9 +123,19 @@ function calculateGuillotineTotals(array $input): array
             continue;
         }
 
-        $product = $provider->getProduct($rule['name']);
-        if (!$product) {
-            continue;
+        if ($rule['name'] === 'Cam') {
+            $product = [
+                'unit'            => 'm²',
+                'unit_price'      => GLASS_UNIT_PRICE,
+                'vat_rate'        => 0,
+                'weight_per_meter'=> 0,
+                'category'        => 'Cam',
+            ];
+        } else {
+            $product = $provider->getProduct($rule['name']);
+            if (!$product) {
+                continue;
+            }
         }
 
         $unit          = strtolower((string) ($product['unit'] ?? ''));
@@ -297,6 +309,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<div class="mt-3">';
     echo '<p><strong>Alüminyum Maliyeti:</strong> ' . e(number_format($tot['alu_cost'], 2, ',', '.')) . ' ₺</p>';
     echo '<p><strong>Cam Maliyeti:</strong> ' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</p>';
+    echo '<p><strong>Cam Birim Fiyatı:</strong> ' . e(number_format(GLASS_UNIT_PRICE, 2, ',', '.')) . ' ₺/m²</p>';
     echo '<p><strong>Ekstralar:</strong></p>';
     echo '<ul>';
     echo '<li>Boyalı Alüminyum: ' . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ₺</li>';
