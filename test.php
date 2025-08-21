@@ -10,7 +10,7 @@ const GLASS_UNIT_PRICE = 1680; // ₺ per m²
 interface ProductProviderInterface
 {
     /**
-     * Return product fields: unit, unit_price, vat_rate, weight_per_meter, category.
+     * Return product fields: unit, unit_price, weight_per_meter, category.
      * Return null if product is not found.
      */
     public function getProduct(string $name): ?array;
@@ -130,7 +130,6 @@ function calculateGuillotineTotals(array $input): array
             $product = [
                 'unit'            => 'm²',
                 'unit_price'      => GLASS_UNIT_PRICE,
-                'vat_rate'        => 0,
                 'weight_per_meter'=> 0,
                 'category'        => 'Cam',
             ];
@@ -143,8 +142,6 @@ function calculateGuillotineTotals(array $input): array
 
         $unit          = strtolower((string) ($product['unit'] ?? ''));
         $unitPrice     = (float) ($product['unit_price'] ?? 0);
-        $vatRate       = (float) ($product['vat_rate'] ?? 0);
-        $unitPriceVat  = $unitPrice * (1 + $vatRate / 100);
         $wpm           = (float) ($product['weight_per_meter'] ?? 0);
         $category      = (string) ($product['category'] ?? 'Diğer');
 
@@ -162,24 +159,24 @@ function calculateGuillotineTotals(array $input): array
                 $meters     = ($measure / 1000) * $rq;
                 $kg         = $meters * $wpm;
                 $qtyDisplay = $kg;
-                $lineTotal  = $kg * $unitPriceVat;
+                $lineTotal  = $kg * $unitPrice;
                 break;
             case 'metre':
             case 'm':
                 $meters     = ($measure / 1000) * $rq;
                 $qtyDisplay = $meters;
-                $lineTotal  = $meters * $unitPriceVat;
+                $lineTotal  = $meters * $unitPrice;
                 break;
             case 'metrekare':
             case 'm²':
             case 'm2':
                 $area       = ($ruleWidth * $ruleHeight / 1000000) * $rq;
                 $qtyDisplay = $area;
-                $lineTotal  = $area * $unitPriceVat;
+                $lineTotal  = $area * $unitPrice;
                 break;
             default:
                 $qtyDisplay = $rq;
-                $lineTotal  = $rq * $unitPriceVat;
+                $lineTotal  = $rq * $unitPrice;
                 break;
         }
 
@@ -288,7 +285,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
         public function getProduct(string $name): ?array
         {
-            $stmt = $this->pdo->prepare('SELECT unit, unit_price, vat_rate, weight_per_meter, category FROM products WHERE LOWER(name) = LOWER(:name)');
+            $stmt = $this->pdo->prepare('SELECT unit, unit_price, weight_per_meter, category FROM products WHERE LOWER(name) = LOWER(:name)');
             $stmt->execute([':name' => $name]);
 
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
