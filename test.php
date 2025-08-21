@@ -34,6 +34,8 @@ interface ProductProviderInterface
  *   totals: array{
  *     alu_cost: float,
  *     glass_cost: float,
+ *     aksesuar_cost: float,
+ *     fitil_cost: float,
  *     extras: array{paint: float, waste: float, labor: float},
  *     profit: float,
  *     grand_total: float
@@ -229,11 +231,13 @@ function calculateGuillotineTotals(array $input): array
     $profit = $grandTotal * ($profitRate / 100);
 
     $totals = [
-        'alu_cost'    => $aluCost,
-        'glass_cost'  => $glassCost,
-        'extras'      => $extras,
-        'profit'      => $profit,
-        'grand_total' => $grandTotal,
+        'alu_cost'      => $aluCost,
+        'glass_cost'    => $glassCost,
+        'aksesuar_cost' => $aksesuarCost,
+        'fitil_cost'    => $fitilCost,
+        'extras'        => $extras,
+        'profit'        => $profit,
+        'grand_total'   => $grandTotal,
     ];
 
     return [
@@ -398,21 +402,22 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<table class="table table-bordered table-sm">';
     echo '<tbody>';
 
-    echo '<tr><th>Cam Maliyeti</th><td>' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</td></tr>';
-    echo '<tr><th>Alüminyum Boyalı KG</th><td>' . e(number_format($result['alu_painted_kg'], 2, ',', '.')) . ' kg</td></tr>';
-    echo '<tr><th>Alüminyum Fire KG</th><td>' . e(number_format($result['alu_fire_kg'], 2, ',', '.')) . ' kg</td></tr>';
+    $grandTotalWithProfit = $tot['grand_total'] + $tot['profit'];
 
-    echo '<tr><th rowspan="3" class="align-middle">Ekstralar</th><td>Boyalı Alüminyum: '
-            . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ₺</td></tr>';
-    echo '<tr><td>Fire: ' . e(number_format($tot['extras']['waste'], 2, ',', '.')) . ' ₺</td></tr>';
-    echo '<tr><td>İmalat İşçiliği: ' . e(number_format($tot['extras']['labor'], 2, ',', '.')) . ' ₺</td></tr>';
+    echo '<tr><th>Alüminyum Boyalı ' . e(number_format($result['alu_painted_kg'], 2, ',', '.')) . ' kg</th><td>'
+        . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ₺</td></tr>';
+    echo '<tr><th>Alüminyum Fire ' . e(number_format($result['alu_fire_kg'], 2, ',', '.')) . ' kg</th><td>'
+        . e(number_format($tot['extras']['waste'], 2, ',', '.')) . ' ₺</td></tr>';
+    echo '<tr><th>Aksesuar</th><td>' . e(number_format($tot['aksesuar_cost'], 2, ',', '.')) . ' ₺</td></tr>';
+    echo '<tr><th>Fitil</th><td>' . e(number_format($tot['fitil_cost'], 2, ',', '.')) . ' ₺</td></tr>';
+    echo '<tr><th>İmalat İşçiliği</th><td>' . e(number_format($tot['extras']['labor'], 2, ',', '.')) . ' ₺</td></tr>';
 
     echo '<tr class="table-light fw-bold">';
     echo '<td>Kâr</td><td>' . e(number_format($tot['profit'], 2, ',', '.')) . ' ₺</td>';
     echo '</tr>';
 
     echo '<tr class="table-success fw-bold">';
-    echo '<td>Genel Toplam</td><td>' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ₺</td>';
+    echo '<td>Genel Toplam</td><td>' . e(number_format($grandTotalWithProfit, 2, ',', '.')) . ' ₺</td>';
     echo '</tr>';
 
     echo '</tbody>';
