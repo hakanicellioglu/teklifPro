@@ -208,9 +208,10 @@ function calculateGuillotineTotals(array $input): array
     $aluFireKg    = $aluPaintedKg * 0.07;
 
     $extras = [
-        'paint' => $aluPaintedKg * 200,
+        'paint'  => $aluPaintedKg * 200,
+        // Fire cost calculated per kilogram of aluminum waste
+        'waste'  => $aluFireKg * 200,
     ];
-    $extras['waste'] = ($aluCost + $extras['paint']) * 0.07;
     $area = ($width * $height * $qty) / 1000000; // m²
     $extras['labor'] = $area * 40;
 
