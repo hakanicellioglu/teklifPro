@@ -194,3 +194,96 @@ function calculateGuillotineTotals(array $input): array
     ];
 }
 
+if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
+    require __DIR__ . '/header.php';
+
+    function e(?string $v): string
+    {
+        return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
+    }
+
+    class PdoProductProvider implements ProductProviderInterface
+    {
+        public function __construct(private PDO $pdo)
+        {
+        }
+
+        public function getProduct(string $name): ?array
+        {
+            $stmt = $this->pdo->prepare('SELECT unit, unit_price, vat_rate, weight_per_meter, category FROM products WHERE LOWER(name) = LOWER(:name)');
+            $stmt->execute([':name' => $name]);
+
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $row ?: null;
+        }
+    }
+
+    $id = filter_input(INPUT_GET, 'quote_id', FILTER_VALIDATE_INT);
+    if (!$id) {
+        echo '<div class="container mt-4"><div class="alert alert-danger">Geçersiz giyotin.</div></div>';
+        require __DIR__ . '/footer.php';
+        exit;
+    }
+
+    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, profit_rate, profit_margin FROM guillotinesystems WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) {
+        echo '<div class="container mt-4"><div class="alert alert-danger">Giyotin satırı bulunamadı.</div></div>';
+        require __DIR__ . '/footer.php';
+        exit;
+    }
+
+    $provider = new PdoProductProvider($pdo);
+
+    try {
+        $result = calculateGuillotineTotals([
+            'width'       => $row['width'],
+            'height'      => $row['height'],
+            'quantity'    => $row['quantity'],
+            'glass_type'  => $row['glass_type'] ?? '',
+            'profit_rate' => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
+            'provider'    => $provider,
+        ]);
+    } catch (Throwable $e) {
+        echo '<div class="container mt-4"><div class="alert alert-danger">Hesaplama hatası: ' . e($e->getMessage()) . '</div></div>';
+        require __DIR__ . '/footer.php';
+        exit;
+    }
+
+    echo '<div class="container mt-4">';
+    echo '<h3>Kalemler</h3>';
+    echo '<div class="table-responsive">';
+    echo '<table class="table table-sm table-striped mb-0">';
+    echo '<thead><tr><th>Kategori</th><th>Ad</th><th>Ölçü (mm)</th><th>Miktar</th><th>Birim</th><th class="text-end">Tutar</th></tr></thead><tbody>';
+    foreach ($result['lines'] as $line) {
+        echo '<tr>';
+        echo '<td>' . e($line['category']) . '</td>';
+        echo '<td>' . e($line['name']) . '</td>';
+        echo '<td>' . e(number_format($line['measure'], 2, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($line['quantity'], 2, ',', '.')) . '</td>';
+        echo '<td>' . e($line['unit']) . '</td>';
+        echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ₺</td>';
+        echo '</tr>';
+    }
+    echo '</tbody></table></div>';
+
+    $tot = $result['totals'];
+    echo '<div class="mt-3">';
+    echo '<p><strong>Alüminyum Maliyeti:</strong> ' . e(number_format($tot['alu_cost'], 2, ',', '.')) . ' ₺</p>';
+    echo '<p><strong>Cam Maliyeti:</strong> ' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</p>';
+    echo '<p><strong>Ekstralar:</strong></p>';
+    echo '<ul>';
+    echo '<li>Boyalı Alüminyum: ' . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ₺</li>';
+    echo '<li>Fire: ' . e(number_format($tot['extras']['waste'], 2, ',', '.')) . ' ₺</li>';
+    echo '<li>İmalat İşçiliği: ' . e(number_format($tot['extras']['labor'], 2, ',', '.')) . ' ₺</li>';
+    echo '</ul>';
+    echo '<p><strong>Temel Maliyet:</strong> ' . e(number_format($tot['base_cost'], 2, ',', '.')) . ' ₺</p>';
+    echo '<p><strong>Kâr:</strong> ' . e(number_format($tot['profit'], 2, ',', '.')) . ' ₺</p>';
+    echo '<p><strong>Genel Toplam:</strong> ' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ₺</p>';
+    echo '</div></div>';
+
+    require __DIR__ . '/footer.php';
+}
+
