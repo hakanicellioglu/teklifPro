@@ -232,7 +232,17 @@ function calculateGuillotineTotals(array $input): array
 
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $embed = ($_GET['embed'] ?? '') === '1';
-    if (!$embed) {
+    if ($embed) {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (empty($_SESSION['user_id'])) {
+            http_response_code(403);
+            echo '<div class="text-danger small">Oturum gerekli.</div>';
+            exit;
+        }
+        require __DIR__ . '/config.php';
+    } else {
         require __DIR__ . '/header.php';
     }
 
