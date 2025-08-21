@@ -383,20 +383,32 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '</tbody></table></div>';
     }
     echo '<div class="mt-3">';
-    echo '<p><strong>Alüminyum Maliyeti:</strong> ' . e(number_format($tot['alu_cost'], 2, ',', '.')) . ' ₺</p>';
-    echo '<p><strong>Cam Maliyeti:</strong> ' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</p>';
-    echo '<p><strong>Cam Birim Fiyatı:</strong> ' . e(number_format(GLASS_UNIT_PRICE, 2, ',', '.')) . ' ₺/m²</p>';
-    echo '<p><strong>Alüminyum Boyalı KG:</strong> ' . e(number_format($result['alu_painted_kg'], 2, ',', '.')) . ' kg</p>';
-    echo '<p><strong>Alüminyum Fire KG:</strong> ' . e(number_format($result['alu_fire_kg'], 2, ',', '.')) . ' kg</p>';
-    echo '<p><strong>Ekstralar:</strong></p>';
-    echo '<ul>';
-    echo '<li>Boyalı Alüminyum: ' . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ₺</li>';
-    echo '<li>Fire: ' . e(number_format($tot['extras']['waste'], 2, ',', '.')) . ' ₺</li>';
-    echo '<li>İmalat İşçiliği: ' . e(number_format($tot['extras']['labor'], 2, ',', '.')) . ' ₺</li>';
-    echo '</ul>';
-    echo '<p><strong>Kâr:</strong> ' . e(number_format($tot['profit'], 2, ',', '.')) . ' ₺</p>';
-    echo '<p><strong>Genel Toplam:</strong> ' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ₺</p>';
-    echo '</div></div>';
+    echo '<table class="table table-bordered table-sm">';
+    echo '<tbody>';
+
+    echo '<tr><th>Alüminyum Maliyeti</th><td>' . e(number_format($tot['alu_cost'], 2, ',', '.')) . ' ₺</td></tr>';
+    echo '<tr><th>Cam Maliyeti</th><td>' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</td></tr>';
+    echo '<tr><th>Cam Birim Fiyatı</th><td>' . e(number_format(GLASS_UNIT_PRICE, 2, ',', '.')) . ' ₺/m²</td></tr>';
+    echo '<tr><th>Alüminyum Boyalı KG</th><td>' . e(number_format($result['alu_painted_kg'], 2, ',', '.')) . ' kg</td></tr>';
+    echo '<tr><th>Alüminyum Fire KG</th><td>' . e(number_format($result['alu_fire_kg'], 2, ',', '.')) . ' kg</td></tr>';
+
+    echo '<tr><th rowspan="3" class="align-middle">Ekstralar</th><td>Boyalı Alüminyum: '
+            . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ₺</td></tr>';
+    echo '<tr><td>Fire: ' . e(number_format($tot['extras']['waste'], 2, ',', '.')) . ' ₺</td></tr>';
+    echo '<tr><td>İmalat İşçiliği: ' . e(number_format($tot['extras']['labor'], 2, ',', '.')) . ' ₺</td></tr>';
+
+    echo '<tr class="table-light fw-bold">';
+    echo '<td>Kâr</td><td>' . e(number_format($tot['profit'], 2, ',', '.')) . ' ₺</td>';
+    echo '</tr>';
+
+    echo '<tr class="table-success fw-bold">';
+    echo '<td>Genel Toplam</td><td>' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ₺</td>';
+    echo '</tr>';
+
+    echo '</tbody>';
+    echo '</table>';
+    echo '</div>';
+    echo '</div>';
 
     require __DIR__ . '/footer.php';
 }
