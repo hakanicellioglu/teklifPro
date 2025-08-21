@@ -248,7 +248,7 @@ if (
 
                 $pdo->commit();
                 $_SESSION['flash_success'] = 'Giyotin optimize edildi.';
-                header('Location: optimizasyon.php?id=' . $id . '&gid=' . $gId);
+                header('Location: test.php?quote_id=' . $gId);
                 exit;
             } else {
                 throw new Exception('Giyotin satırı bulunamadı.');
