@@ -15,6 +15,32 @@ if (!defined('BOOTSTRAP_LOADED')) {
         return number_format($v, 2, ',', '.');
     }
 
+    /**
+     * Calculate the general total using selected category totals and extras.
+     *
+     * Only "Alüminyum Boyalı", "Alüminyum Fire" and the provided extras are
+     * taken into account. Missing values are treated as zero.
+     *
+     * @param array $categoryTotals Associative array of category => amount
+     * @param array $extras         Associative array of extra costs
+     */
+    function calcGeneralTotal(array $categoryTotals = [], array $extras = []): float
+    {
+        $totals = [];
+        foreach ($categoryTotals as $k => $v) {
+            $totals[mb_strtolower($k, 'UTF-8')] = (float) $v;
+        }
+
+        $sum = ($totals['alüminyum boyalı'] ?? 0.0)
+              + ($totals['alüminyum fire'] ?? 0.0);
+
+        foreach ($extras as $v) {
+            $sum += (float) $v;
+        }
+
+        return $sum;
+    }
+
     set_error_handler(function ($severity, $message, $file, $line) {
         if (!(error_reporting() & $severity)) {
             return false;

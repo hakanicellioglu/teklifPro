@@ -39,6 +39,7 @@ interface ProductProviderInterface
  *     profit: float,
  *     grand_total: float
  *   },
+ *   category_totals: array<string,float>,
  *   alu_kg: float
  * }
  */
@@ -113,6 +114,7 @@ function calculateGuillotineTotals(array $input): array
     $glassCost = 0.0;
     $baseCost = 0.0;
     $aluKg    = 0.0;
+    $categoryTotals = [];
 
     foreach ($rules as $rule) {
         $measure    = max(0.0, $rule['measure']($width, $height, $qty));
@@ -196,6 +198,9 @@ function calculateGuillotineTotals(array $input): array
             'quantity' => $qtyDisplay,
             'total'    => $lineTotal,
         ];
+
+        $catKey = mb_strtolower($category, 'UTF-8');
+        $categoryTotals[$catKey] = ($categoryTotals[$catKey] ?? 0) + $lineTotal;
     }
 
     $aluPaintedKg = $aluKg * 1.1 * 1.01;
@@ -209,8 +214,9 @@ function calculateGuillotineTotals(array $input): array
     $extras['labor'] = $area * 40;
 
     $baseCost += array_sum($extras);
-    $profit     = $baseCost * ($profitRate / 100);
-    $grandTotal = $baseCost + $profit;
+    $profit = $baseCost * ($profitRate / 100);
+
+    $grandTotal = calcGeneralTotal($categoryTotals, $extras);
 
     $totals = [
         'alu_cost'    => $aluCost,
@@ -224,6 +230,7 @@ function calculateGuillotineTotals(array $input): array
     return [
         'lines'          => $lines,
         'totals'         => $totals,
+        'category_totals'=> $categoryTotals,
         'alu_kg'         => $aluKg,
         'alu_painted_kg' => $aluPaintedKg,
         'alu_fire_kg'    => $aluFireKg,
@@ -381,7 +388,8 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '</ul>';
     echo '<p><strong>Temel Maliyet:</strong> ' . e(number_format($tot['base_cost'], 2, ',', '.')) . ' ₺</p>';
     echo '<p><strong>Kâr:</strong> ' . e(number_format($tot['profit'], 2, ',', '.')) . ' ₺</p>';
-    echo '<p><strong>Genel Toplam:</strong> ' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ₺</p>';
+    echo '<h5>Genel Toplam</h5>';
+    echo '<p>' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ₺</p>';
     echo '</div></div>';
 
     require __DIR__ . '/footer.php';
