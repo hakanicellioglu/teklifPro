@@ -17,6 +17,18 @@ interface ProductProviderInterface
 }
 
 /**
+ * Calculate overall total from component amounts.
+ * Missing values are treated as zero.
+ */
+function calcGeneralTotal(
+    float|int|string $aluPainted = 0,
+    float|int|string $aluFire = 0,
+    float|int|string $extras = 0
+): float {
+    return (float)$aluPainted + (float)$aluFire + (float)$extras;
+}
+
+/**
  * Calculates cost breakdown for a guillotine system.
  *
  * @param array{
@@ -210,7 +222,11 @@ function calculateGuillotineTotals(array $input): array
 
     $baseCost += array_sum($extras);
     $profit     = $baseCost * ($profitRate / 100);
-    $grandTotal = $baseCost + $profit;
+    $grandTotal = calcGeneralTotal(
+        $extras['paint'] ?? 0,
+        $extras['waste'] ?? 0,
+        $extras['labor'] ?? 0
+    );
 
     $totals = [
         'alu_cost'    => $aluCost,
@@ -381,7 +397,12 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '</ul>';
     echo '<p><strong>Temel Maliyet:</strong> ' . e(number_format($tot['base_cost'], 2, ',', '.')) . ' ₺</p>';
     echo '<p><strong>Kâr:</strong> ' . e(number_format($tot['profit'], 2, ',', '.')) . ' ₺</p>';
-    echo '<p><strong>Genel Toplam:</strong> ' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ₺</p>';
+    $generalTotal = calcGeneralTotal(
+        $tot['extras']['paint'] ?? 0,
+        $tot['extras']['waste'] ?? 0,
+        $tot['extras']['labor'] ?? 0
+    );
+    echo '<p><strong>Genel Toplam:</strong> ' . e(number_format($generalTotal, 2, ',', '.')) . ' ₺</p>';
     echo '</div></div>';
 
     require __DIR__ . '/footer.php';
