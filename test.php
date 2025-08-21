@@ -311,6 +311,9 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '<div class="table-responsive">';
         echo '<table class="table table-sm table-striped mb-3">';
         echo '<thead><tr><th>Ad</th><th>Ölçü (mm)</th><th>Miktar</th><th>Birim</th><th class="text-end">Tutar</th></tr></thead><tbody>';
+        $qtySum   = 0.0;
+        $totalSum = 0.0;
+        $unit     = '';
         foreach ($cat['lines'] as $line) {
             echo '<tr>';
             echo '<td>' . e($line['name']) . '</td>';
@@ -319,7 +322,20 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             echo '<td>' . e($line['unit']) . '</td>';
             echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ₺</td>';
             echo '</tr>';
+            $qtySum   += $line['quantity'];
+            $totalSum += $line['total'];
+            if ($unit === '') {
+                $unit = $line['unit'];
+            } elseif ($unit !== $line['unit']) {
+                $unit = '';
+            }
         }
+        echo '<tr>';
+        echo '<td colspan="2" class="text-end"><strong>Toplam</strong></td>';
+        echo '<td>' . e(number_format($qtySum, 2, ',', '.')) . '</td>';
+        echo '<td>' . e($unit) . '</td>';
+        echo '<td class="text-end">' . e(number_format($totalSum, 2, ',', '.')) . ' ₺</td>';
+        echo '</tr>';
         echo '</tbody></table></div>';
     }
 
@@ -335,6 +351,12 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '<td>' . e(number_format($glassInfo['height'], 2, ',', '.')) . '</td>';
         echo '<td>' . e(number_format($glassInfo['quantity'], 2, ',', '.')) . '</td>';
         echo '<td>' . e(number_format($singleArea, 2, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
+        echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<td colspan="3" class="text-end"><strong>Toplam</strong></td>';
+        echo '<td></td>';
         echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
         echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</td>';
         echo '</tr>';
