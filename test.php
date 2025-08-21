@@ -38,6 +38,7 @@ interface ProductProviderInterface
  *     fitil_cost: float,
  *     extras: array{paint: float, waste: float, labor: float},
  *     profit: float,
+ *     general_expense: float,
  *     grand_total: float
  *   },
  *   alu_kg: float
@@ -228,16 +229,20 @@ function calculateGuillotineTotals(array $input): array
         + $glassCost
         + $otherExtrasCost;
 
-    $profit = $grandTotal * ($profitRate / 100);
+    $profit         = $grandTotal * ($profitRate / 100);
+    $totalAmount    = $grandTotal + $profit;
+    $generalExpense = $totalAmount * 0.01;
+    $finalTotal     = $totalAmount + $generalExpense;
 
     $totals = [
-        'alu_cost'      => $aluCost,
-        'glass_cost'    => $glassCost,
-        'aksesuar_cost' => $aksesuarCost,
-        'fitil_cost'    => $fitilCost,
-        'extras'        => $extras,
-        'profit'        => $profit,
-        'grand_total'   => $grandTotal,
+        'alu_cost'        => $aluCost,
+        'glass_cost'      => $glassCost,
+        'aksesuar_cost'   => $aksesuarCost,
+        'fitil_cost'      => $fitilCost,
+        'extras'          => $extras,
+        'profit'          => $profit,
+        'general_expense' => $generalExpense,
+        'grand_total'     => $finalTotal,
     ];
 
     return [
@@ -402,7 +407,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<table class="table table-bordered table-sm">';
     echo '<tbody>';
 
-    $grandTotalWithProfit = $tot['grand_total'] + $tot['profit'];
+    $grandTotalWithProfit = $tot['grand_total'];
 
     echo '<tr><th>Alüminyum Boyalı ' . e(number_format($result['alu_painted_kg'], 2, ',', '.')) . ' kg</th><td>'
         . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ₺</td></tr>';
@@ -415,6 +420,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<tr class="table-light fw-bold">';
     echo '<td>Kâr</td><td>' . e(number_format($tot['profit'], 2, ',', '.')) . ' ₺</td>';
     echo '</tr>';
+    echo '<tr><th>Genel Gider</th><td>' . e(number_format($tot['general_expense'], 2, ',', '.')) . ' ₺</td></tr>';
 
     echo '<tr class="table-success fw-bold">';
     echo '<td>Genel Toplam</td><td>' . e(number_format($grandTotalWithProfit, 2, ',', '.')) . ' ₺</td>';
