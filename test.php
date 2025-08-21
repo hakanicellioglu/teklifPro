@@ -223,7 +223,9 @@ function calculateGuillotineTotals(array $input): array
     unset($otherExtras['paint'], $otherExtras['waste']);
     $otherExtrasCost = array_sum($otherExtras);
 
-    $grandTotal = ($aluCost + $paintCost)
+    // Grand total no longer includes the aluminum cost; it consists only of
+    // paint, fire, accessories, seal, glass and other extras costs.
+    $grandTotal = $paintCost
         + $fireCost
         + $aksesuarCost
         + $fitilCost
