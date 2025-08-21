@@ -26,7 +26,7 @@ SET time_zone = "+00:00";
 --
 -- Tablo için tablo yapısı `categories`
 --
-
+DROP TABLE IF EXISTS `categories`;
 CREATE TABLE `categories` (
   `id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -207,11 +207,12 @@ INSERT INTO `products` (`id`, `product_code`, `name`, `category`, `unit`, `chann
 (12, 'ALU-012', 'Son Kapatma', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d8e53630e23.99446192.png', NULL, 200.00, 0.980, 20.00, 1),
 (13, 'ALU-013', 'Kanat', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d979f9d9095.83107493.png', NULL, 200.00, 1.499, 20.00, 1),
 (14, 'ALU-014', 'Dikey Baza', 'Alüminyum', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d98fb17a318.00944727.png', NULL, 200.00, 0.627, 20.00, 1),
-(15, 'AKS-001', 'Zincir', 'Aksesuar', 'adet', NULL, NULL, NULL, NULL, 'uploads/prod_689daf670db319.58780229.png', NULL, 900.00, 1.000, 20.00, 2),
+(15, 'AKS-001', 'Plastik Set', 'Aksesuar', 'set', NULL, NULL, NULL, NULL, 'uploads/prod_689daf670db319.58780229.png', NULL, 1680.00, 1.000, 20.00, 2),
 (17, 'ALU-015', 'Motor Borusu', 'Aksesuar', 'adet', NULL, NULL, NULL, NULL, 'uploads/prod_689dba8ccbd6a4.05135182.png', NULL, 190.00, 1.000, 20.00, 1),
 (18, 'FIT-001', 'Motor Kutu Contası', 'Fitil', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbaa5c1c036.57568229.png', NULL, 30.00, 1.000, 20.00, 3),
 (19, 'FIT-002', 'Kanat Contası', 'Fitil', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbabf730f57.59776694.png', NULL, 30.00, 1.000, 20.00, 3),
-(20, 'PRD-01', 'Kıl Fitil', 'Fitil', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbad192dca3.02797000.jpg', NULL, 25.00, 1.000, 20.00, NULL);
+(20, 'PRD-01', 'Kıl Fitil', 'Fitil', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbad192dca3.02797000.jpg', NULL, 25.00, 1.000, 20.00, NULL),
+(21, 'AKS-021', 'Zincir', 'Aksesuar', 'set', NULL, NULL, NULL, NULL, NULL, NULL, 680.00, 1.000, 20.00, 2);
 
 -- --------------------------------------------------------
 

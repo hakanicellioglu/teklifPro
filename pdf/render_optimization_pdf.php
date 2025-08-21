@@ -79,10 +79,12 @@ $rules = [
     'Son Kapatma'          => fn($w, $h, $q) => [$h - (($h - 290) / 3) - 221, 2 * $q],
     'Kanat'                => fn($w, $h, $q) => [($h - 290) / 3, 2 * $q],
     'Dikey Baza'           => fn($w, $h, $q) => [($h - 290) / 3, 4 * $q],
-    'Zincir'               => fn($w, $h, $q) => [$h - (($h - 290) / 3) - 221 + 600, 2 * $q],
+    'Flatbelt Kayış'       => fn($w, $h, $q) => [$h - (($h - 290) / 3) - 221 + 600, 2 * $q],
     'Motor Borusu'         => fn($w, $h, $q) => [$w - 59, $q],
     'Motor Kutu Contası'   => fn($w, $h, $q) => [$w * $q * 2, 1],
     'Kanat Contası'        => fn($w, $h, $q) => [(($h - 290) / 3) * 2, $q],
+    'Plastik Set'          => fn($w, $h, $q) => [1, $q],
+    'Zincir'               => fn($w, $h, $q) => [1, $q],
     'Kıl Fitil'            => fn($w, $h, $q) => [(($w - 183) * 4) + (($h - 166) * 8) + ((($h - 290) / 3) * 2), $q],
 ];
 
