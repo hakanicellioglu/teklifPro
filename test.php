@@ -352,7 +352,8 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '</ul>';
     echo '<p><strong>Temel Maliyet:</strong> ' . e(number_format($tot['base_cost'], 2, ',', '.')) . ' ₺</p>';
     echo '<p><strong>Kâr:</strong> ' . e(number_format($tot['profit'], 2, ',', '.')) . ' ₺</p>';
-    echo '<p><strong>Genel Toplam:</strong> ' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ₺</p>';
+    echo '<p><strong>Toplam KG:</strong> ' . e(number_format($result['alu_kg'], 2, ',', '.')) . ' kg</p>';
+    echo '<p><strong>Toplam Tutar:</strong> ' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ₺</p>';
     echo '</div></div>';
 
     require __DIR__ . '/footer.php';
