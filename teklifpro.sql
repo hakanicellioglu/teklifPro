@@ -212,7 +212,7 @@ INSERT INTO `products` (`id`, `product_code`, `name`, `category`, `unit`, `chann
 (18, 'FIT-001', 'Motor Kutu Contası', 'Fitil', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbaa5c1c036.57568229.png', NULL, 30.00, 1.000, 20.00, 3),
 (19, 'FIT-002', 'Kanat Contası', 'Fitil', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbabf730f57.59776694.png', NULL, 30.00, 1.000, 20.00, 3),
 (20, 'PRD-01', 'Kıl Fitil', 'Fitil', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbad192dca3.02797000.jpg', NULL, 25.00, 1.000, 20.00, NULL),
-(21, 'AKS-021', 'Zincir', 'Aksesuar', 'set', NULL, NULL, NULL, NULL, NULL, NULL, 680.00, 1.000, 20.00, 2);
+(21, 'AKS-021', 'Zincir', 'Aksesuar', 'set', NULL, NULL, NULL, NULL, NULL, NULL, 680.00, 1.000, 20.00, 2); -- corrected price
 
 -- --------------------------------------------------------
 
