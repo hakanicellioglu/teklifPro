@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+const GLASS_UNIT_PRICE = 1680; // ₺ per m²
+
 /**
  * Provides product information required for calculations.
  */
@@ -60,6 +62,14 @@ function calculateGuillotineTotals(array $input): array
     $glassType = strtolower(str_replace([' ', '-', '_', 'ı'], ['', '', '', 'i'], (string) ($input['glass_type'] ?? '')));
     $includeGlassStrips = $glassType === 'tek' || $glassType === 'tekcam';
 
+    // Glass dimension and quantity calculations
+    $verticalBaseMeasure = max(0.0, ($height - 290) / 3);
+    $glassWidth  = max(0.0, $width - 221);
+    $glassHeight = max(0.0, $verticalBaseMeasure + 28);
+    $wingCount   = 2 * $qty;
+    $baseCount   = 4 * $qty;
+    $glassQty    = ($wingCount + $baseCount) / 2;
+
     $rules = [
         ['name' => 'Motor Kutusu',       'measure' => fn($w,$h,$q) => $w - 14,                        'qty' => fn($w,$h,$q) => $q],
         ['name' => 'Motor Kapak',        'measure' => fn($w,$h,$q) => $w - 15,                        'qty' => fn($w,$h,$q) => $q],
@@ -89,6 +99,15 @@ function calculateGuillotineTotals(array $input): array
         ['name' => 'Zincir',             'measure' => fn($w,$h,$q) => 1,                                'qty' => fn($w,$h,$q) => $q],
     ]);
 
+    // Glass product rule using calculated dimensions and quantity
+    $rules[] = [
+        'name'    => 'Cam',
+        'measure' => fn($w,$h,$q) => $glassWidth,
+        'width'   => fn($w,$h,$q) => $glassWidth,
+        'height'  => fn($w,$h,$q) => $glassHeight,
+        'qty'     => fn($w,$h,$q) => $glassQty,
+    ];
+
     $lines    = [];
     $aluCost  = 0.0;
     $glassCost = 0.0;
@@ -96,15 +115,27 @@ function calculateGuillotineTotals(array $input): array
     $aluKg    = 0.0;
 
     foreach ($rules as $rule) {
-        $measure = max(0.0, $rule['measure']($width, $height, $qty));
-        $rq      = max(0, $rule['qty']($width, $height, $qty));
+        $measure    = max(0.0, $rule['measure']($width, $height, $qty));
+        $rq         = max(0, $rule['qty']($width, $height, $qty));
+        $ruleWidth  = isset($rule['width'])  ? max(0.0, $rule['width']($width, $height, $qty))  : $width;
+        $ruleHeight = isset($rule['height']) ? max(0.0, $rule['height']($width, $height, $qty)) : $height;
         if ($measure <= 0 || $rq <= 0) {
             continue;
         }
 
-        $product = $provider->getProduct($rule['name']);
-        if (!$product) {
-            continue;
+        if ($rule['name'] === 'Cam') {
+            $product = [
+                'unit'            => 'm²',
+                'unit_price'      => GLASS_UNIT_PRICE,
+                'vat_rate'        => 0,
+                'weight_per_meter'=> 0,
+                'category'        => 'Cam',
+            ];
+        } else {
+            $product = $provider->getProduct($rule['name']);
+            if (!$product) {
+                continue;
+            }
         }
 
         $unit          = strtolower((string) ($product['unit'] ?? ''));
@@ -139,7 +170,7 @@ function calculateGuillotineTotals(array $input): array
             case 'metrekare':
             case 'm²':
             case 'm2':
-                $area       = ($width * $height / 1000000) * $rq;
+                $area       = ($ruleWidth * $ruleHeight / 1000000) * $rq;
                 $qtyDisplay = $area;
                 $lineTotal  = $area * $unitPriceVat;
                 break;
@@ -191,6 +222,11 @@ function calculateGuillotineTotals(array $input): array
         'lines'  => $lines,
         'totals' => $totals,
         'alu_kg' => $aluKg,
+        'glass'  => [
+            'width'    => $glassWidth,
+            'height'   => $glassHeight,
+            'quantity' => $glassQty,
+        ],
     ];
 }
 
@@ -254,25 +290,60 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     echo '<div class="container mt-4">';
     echo '<h3>Kalemler</h3>';
-    echo '<div class="table-responsive">';
-    echo '<table class="table table-sm table-striped mb-0">';
-    echo '<thead><tr><th>Kategori</th><th>Ad</th><th>Ölçü (mm)</th><th>Miktar</th><th>Birim</th><th class="text-end">Tutar</th></tr></thead><tbody>';
-    foreach ($result['lines'] as $line) {
-        echo '<tr>';
-        echo '<td>' . e($line['category']) . '</td>';
-        echo '<td>' . e($line['name']) . '</td>';
-        echo '<td>' . e(number_format($line['measure'], 2, ',', '.')) . '</td>';
-        echo '<td>' . e(number_format($line['quantity'], 2, ',', '.')) . '</td>';
-        echo '<td>' . e($line['unit']) . '</td>';
-        echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ₺</td>';
-        echo '</tr>';
-    }
-    echo '</tbody></table></div>';
 
-    $tot = $result['totals'];
+    $categories = [];
+    foreach ($result['lines'] as $line) {
+        if (strtolower($line['category']) === 'cam') {
+            continue;
+        }
+        $key = strtolower($line['category']);
+        if (!isset($categories[$key])) {
+            $categories[$key] = ['title' => $line['category'], 'lines' => []];
+        }
+        $categories[$key]['lines'][] = $line;
+    }
+
+    $tot       = $result['totals'];
+    $glassInfo = $result['glass'] ?? null;
+
+    foreach ($categories as $cat) {
+        echo '<h5>' . e($cat['title']) . '</h5>';
+        echo '<div class="table-responsive">';
+        echo '<table class="table table-sm table-striped mb-3">';
+        echo '<thead><tr><th>Ad</th><th>Ölçü (mm)</th><th>Miktar</th><th>Birim</th><th class="text-end">Tutar</th></tr></thead><tbody>';
+        foreach ($cat['lines'] as $line) {
+            echo '<tr>';
+            echo '<td>' . e($line['name']) . '</td>';
+            echo '<td>' . e(number_format($line['measure'], 2, ',', '.')) . '</td>';
+            echo '<td>' . e(number_format($line['quantity'], 2, ',', '.')) . '</td>';
+            echo '<td>' . e($line['unit']) . '</td>';
+            echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ₺</td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table></div>';
+    }
+
+    if ($glassInfo && $glassInfo['quantity'] > 0) {
+        $singleArea = ($glassInfo['width'] * $glassInfo['height']) / 1000000;
+        $totalArea  = $singleArea * $glassInfo['quantity'];
+        echo '<h5>Cam</h5>';
+        echo '<div class="table-responsive">';
+        echo '<table class="table table-sm table-striped mb-3">';
+        echo '<thead><tr><th>Genişlik (mm)</th><th>Yükseklik (mm)</th><th>Adet</th><th>Birim m²</th><th>Toplam m²</th><th class="text-end">Tutar</th></tr></thead><tbody>';
+        echo '<tr>';
+        echo '<td>' . e(number_format($glassInfo['width'], 2, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($glassInfo['height'], 2, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($glassInfo['quantity'], 2, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($singleArea, 2, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
+        echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</td>';
+        echo '</tr>';
+        echo '</tbody></table></div>';
+    }
     echo '<div class="mt-3">';
     echo '<p><strong>Alüminyum Maliyeti:</strong> ' . e(number_format($tot['alu_cost'], 2, ',', '.')) . ' ₺</p>';
     echo '<p><strong>Cam Maliyeti:</strong> ' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</p>';
+    echo '<p><strong>Cam Birim Fiyatı:</strong> ' . e(number_format(GLASS_UNIT_PRICE, 2, ',', '.')) . ' ₺/m²</p>';
     echo '<p><strong>Ekstralar:</strong></p>';
     echo '<ul>';
     echo '<li>Boyalı Alüminyum: ' . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ₺</li>';
