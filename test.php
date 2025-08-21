@@ -290,22 +290,56 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     echo '<div class="container mt-4">';
     echo '<h3>Kalemler</h3>';
-    echo '<div class="table-responsive">';
-    echo '<table class="table table-sm table-striped mb-0">';
-    echo '<thead><tr><th>Kategori</th><th>Ad</th><th>Ölçü (mm)</th><th>Miktar</th><th>Birim</th><th class="text-end">Tutar</th></tr></thead><tbody>';
-    foreach ($result['lines'] as $line) {
-        echo '<tr>';
-        echo '<td>' . e($line['category']) . '</td>';
-        echo '<td>' . e($line['name']) . '</td>';
-        echo '<td>' . e(number_format($line['measure'], 2, ',', '.')) . '</td>';
-        echo '<td>' . e(number_format($line['quantity'], 2, ',', '.')) . '</td>';
-        echo '<td>' . e($line['unit']) . '</td>';
-        echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ₺</td>';
-        echo '</tr>';
-    }
-    echo '</tbody></table></div>';
 
-    $tot = $result['totals'];
+    $categories = [];
+    foreach ($result['lines'] as $line) {
+        if (strtolower($line['category']) === 'cam') {
+            continue;
+        }
+        $key = strtolower($line['category']);
+        if (!isset($categories[$key])) {
+            $categories[$key] = ['title' => $line['category'], 'lines' => []];
+        }
+        $categories[$key]['lines'][] = $line;
+    }
+
+    $tot       = $result['totals'];
+    $glassInfo = $result['glass'] ?? null;
+
+    foreach ($categories as $cat) {
+        echo '<h5>' . e($cat['title']) . '</h5>';
+        echo '<div class="table-responsive">';
+        echo '<table class="table table-sm table-striped mb-3">';
+        echo '<thead><tr><th>Ad</th><th>Ölçü (mm)</th><th>Miktar</th><th>Birim</th><th class="text-end">Tutar</th></tr></thead><tbody>';
+        foreach ($cat['lines'] as $line) {
+            echo '<tr>';
+            echo '<td>' . e($line['name']) . '</td>';
+            echo '<td>' . e(number_format($line['measure'], 2, ',', '.')) . '</td>';
+            echo '<td>' . e(number_format($line['quantity'], 2, ',', '.')) . '</td>';
+            echo '<td>' . e($line['unit']) . '</td>';
+            echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ₺</td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table></div>';
+    }
+
+    if ($glassInfo && $glassInfo['quantity'] > 0) {
+        $singleArea = ($glassInfo['width'] * $glassInfo['height']) / 1000000;
+        $totalArea  = $singleArea * $glassInfo['quantity'];
+        echo '<h5>Cam</h5>';
+        echo '<div class="table-responsive">';
+        echo '<table class="table table-sm table-striped mb-3">';
+        echo '<thead><tr><th>Genişlik (mm)</th><th>Yükseklik (mm)</th><th>Adet</th><th>Birim m²</th><th>Toplam m²</th><th class="text-end">Tutar</th></tr></thead><tbody>';
+        echo '<tr>';
+        echo '<td>' . e(number_format($glassInfo['width'], 2, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($glassInfo['height'], 2, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($glassInfo['quantity'], 2, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($singleArea, 2, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
+        echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</td>';
+        echo '</tr>';
+        echo '</tbody></table></div>';
+    }
     echo '<div class="mt-3">';
     echo '<p><strong>Alüminyum Maliyeti:</strong> ' . e(number_format($tot['alu_cost'], 2, ',', '.')) . ' ₺</p>';
     echo '<p><strong>Cam Maliyeti:</strong> ' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</p>';
