@@ -26,7 +26,7 @@ SET time_zone = "+00:00";
 --
 -- Tablo için tablo yapısı `categories`
 --
-
+DROP TABLE IF EXISTS `categories`;
 CREATE TABLE `categories` (
   `id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
