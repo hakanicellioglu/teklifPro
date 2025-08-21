@@ -258,6 +258,18 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
     }
 
+    /**
+     * Format a numeric value based on its unit.
+     * Uses 0 decimals for pieces/mm and 2 decimals for metric units.
+     */
+    function fmtUnit(float $value, string $unit): string
+    {
+        $unit = strtolower(trim($unit));
+        $twoDecimals = ['metre', 'm', 'kilogram', 'kg', 'kg/m', 'metrekare', 'm²', 'm2'];
+        $decimals = in_array($unit, $twoDecimals, true) ? 2 : 0;
+        return number_format($value, $decimals, ',', '.');
+    }
+
     class PdoProductProvider implements ProductProviderInterface
     {
         public function __construct(private PDO $pdo)
@@ -337,8 +349,8 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         foreach ($cat['lines'] as $line) {
             echo '<tr>';
             echo '<td>' . e($line['name']) . '</td>';
-            echo '<td>' . e(number_format($line['measure'], 2, ',', '.')) . '</td>';
-            echo '<td>' . e(number_format($line['quantity'], 2, ',', '.')) . '</td>';
+            echo '<td>' . e(number_format($line['measure'], 0, ',', '.')) . '</td>';
+            echo '<td>' . e(fmtUnit($line['quantity'], $line['unit'])) . '</td>';
             echo '<td>' . e($line['unit']) . '</td>';
             echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ₺</td>';
             echo '</tr>';
@@ -352,7 +364,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         }
         echo '<tr>';
         echo '<td colspan="2" class="text-end"><strong>Toplam</strong></td>';
-        echo '<td>' . e(number_format($qtySum, 2, ',', '.')) . '</td>';
+        echo '<td>' . e(fmtUnit($qtySum, $unit)) . '</td>';
         echo '<td>' . e($unit) . '</td>';
         echo '<td class="text-end">' . e(number_format($totalSum, 2, ',', '.')) . ' ₺</td>';
         echo '</tr>';
@@ -367,9 +379,9 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '<table class="table table-sm table-striped mb-3">';
         echo '<thead><tr><th>Genişlik (mm)</th><th>Yükseklik (mm)</th><th>Adet</th><th>Birim m²</th><th>Toplam m²</th><th class="text-end">Tutar</th></tr></thead><tbody>';
         echo '<tr>';
-        echo '<td>' . e(number_format($glassInfo['width'], 2, ',', '.')) . '</td>';
-        echo '<td>' . e(number_format($glassInfo['height'], 2, ',', '.')) . '</td>';
-        echo '<td>' . e(number_format($glassInfo['quantity'], 2, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($glassInfo['width'], 0, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($glassInfo['height'], 0, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($glassInfo['quantity'], 0, ',', '.')) . '</td>';
         echo '<td>' . e(number_format($singleArea, 2, ',', '.')) . '</td>';
         echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
         echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</td>';
