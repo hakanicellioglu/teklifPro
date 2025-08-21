@@ -373,6 +373,12 @@ $totalFormatted = tr_money($totalAmount) . ' ₺';
 $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
 
 ?>
+<style>
+    .items-scroll { max-height: 320px; overflow: auto; }
+    .dropdown-menu .table-sm th,
+    .dropdown-menu .table-sm td { padding: .25rem .5rem; }
+    .dropdown-menu table { margin-bottom: 0; }
+</style>
 <nav aria-label="breadcrumb" class="mb-3">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="quotations.php">Teklifler</a></li>
@@ -476,36 +482,49 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                     <td><?= e($g['ral_code']) ?></td>
                                     <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
                                     <td class="text-end">
-                                        <a href="test.php?quote_id=<?= e((string)$g['id']) ?>" class="btn btn-sm btn-info">Kalemler</a>
-                                        <button type="button" class="btn btn-sm btn-secondary edit-guillotine" data-bs-toggle="modal" data-bs-target="#addGuillotineModal"
-                                            data-id="<?= e((string)$g['id']) ?>"
-                                            data-width="<?= e((string)$g['width']) ?>"
-                                            data-height="<?= e((string)$g['height']) ?>"
-                                            data-quantity="<?= e((string)$g['quantity']) ?>"
-                                            data-motor="<?= e($g['motor_system']) ?>"
-                                            data-glass-type="<?= e($g['glass_type']) ?>"
-                                            data-glass-color="<?= e($g['glass_color']) ?>"
-                                            data-remote="<?= e((string)$g['remote_quantity']) ?>"
-                                            data-ral="<?= e($g['ral_code']) ?>"
-                                            data-profit="<?= e((string)$g['profit_margin']) ?>">
-                                            Düzenle
-                                        </button>
-                                        <?php if ($role === 'admin' && strtolower((string)$g['system_type']) === 'guillotine'): ?>
-                                            <form method="post" class="d-inline" target="_blank">
-                                                <input type="hidden" name="action" value="optimize_guillotine">
-                                                <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
-                                                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                                <button type="submit" class="btn btn-sm btn-secondary"><i class="bi bi-gear"></i> Optimize</button>
-                                            </form>
-                                        <?php endif; ?>
-                                        <?php if ($role === 'admin'): ?>
-                                            <form method="post" class="d-inline" onsubmit="return confirm('Bu giyotin sistemini silmek istediğinize emin misiniz?');">
-                                                <input type="hidden" name="action" value="delete_guillotine">
-                                                <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
-                                                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                                <button type="submit" class="btn btn-sm btn-danger">Sil</button>
-                                            </form>
-                                        <?php endif; ?>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Hızlı Gör</button>
+                                            <div class="dropdown-menu dropdown-menu-end p-0">
+                                                <div class="d-flex justify-content-between align-items-center px-2 py-1 border-bottom">
+                                                    <span class="fw-bold small">Kalemler</span>
+                                                    <a href="test.php?quote_id=<?= e((string)$g['id']) ?>" class="small text-decoration-none">Detay »</a>
+                                                </div>
+                                                <div id="items-dd-<?= e((string)$g['id']) ?>" class="items-scroll" data-src="test.php?quote_id=<?= e((string)$g['id']) ?>&embed=1">
+                                                    <div class="p-2 text-center text-muted"><span class="spinner-border spinner-border-sm text-secondary me-2" role="status"></span>Yükleniyor…</div>
+                                                </div>
+                                                <div class="border-top p-2">
+                                                    <?php if ($role === 'admin' && strtolower((string)$g['system_type']) === 'guillotine'): ?>
+                                                        <form method="post" class="d-inline" target="_blank">
+                                                            <input type="hidden" name="action" value="optimize_guillotine">
+                                                            <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
+                                                            <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                                            <button type="submit" class="btn btn-sm btn-secondary"><i class="bi bi-gear"></i> Optimize</button>
+                                                        </form>
+                                                    <?php endif; ?>
+                                                    <button type="button" class="btn btn-sm btn-secondary edit-guillotine" data-bs-toggle="modal" data-bs-target="#addGuillotineModal"
+                                                        data-id="<?= e((string)$g['id']) ?>"
+                                                        data-width="<?= e((string)$g['width']) ?>"
+                                                        data-height="<?= e((string)$g['height']) ?>"
+                                                        data-quantity="<?= e((string)$g['quantity']) ?>"
+                                                        data-motor="<?= e($g['motor_system']) ?>"
+                                                        data-glass-type="<?= e($g['glass_type']) ?>"
+                                                        data-glass-color="<?= e($g['glass_color']) ?>"
+                                                        data-remote="<?= e((string)$g['remote_quantity']) ?>"
+                                                        data-ral="<?= e($g['ral_code']) ?>"
+                                                        data-profit="<?= e((string)$g['profit_margin']) ?>">
+                                                        Düzenle
+                                                    </button>
+                                                    <?php if ($role === 'admin'): ?>
+                                                        <form method="post" class="d-inline" onsubmit="return confirm('Bu giyotin sistemini silmek istediğinize emin misiniz?');">
+                                                            <input type="hidden" name="action" value="delete_guillotine">
+                                                            <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
+                                                            <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                                            <button type="submit" class="btn btn-sm btn-danger">Sil</button>
+                                                        </form>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -656,6 +675,35 @@ document.getElementById('addGuillotineModal').addEventListener('show.bs.modal', 
         form.querySelector('#guillotine_id').value = '';
         this.querySelector('.modal-title').textContent = 'Add Guillotine System Offer';
     }
+});
+
+document.addEventListener('shown.bs.dropdown', (e) => {
+    const group = e.target.closest('.btn-group');
+    if (!group) {
+        return;
+    }
+    const container = group.querySelector('[id^="items-dd-"]');
+    if (!container || container.dataset.loaded === '1') {
+        return;
+    }
+    const src = container.getAttribute('data-src');
+    if (!src) {
+        return;
+    }
+    fetch(src, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => {
+            if (!r.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return r.text();
+        })
+        .then(html => {
+            container.innerHTML = html;
+            container.dataset.loaded = '1';
+        })
+        .catch(() => {
+            container.innerHTML = '<div class="p-2 text-danger small">Kalemler yüklenemedi.</div>';
+        });
 });
 
 </script>

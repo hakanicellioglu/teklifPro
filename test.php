@@ -231,7 +231,10 @@ function calculateGuillotineTotals(array $input): array
 }
 
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
-    require __DIR__ . '/header.php';
+    $embed = ($_GET['embed'] ?? '') === '1';
+    if (!$embed) {
+        require __DIR__ . '/header.php';
+    }
 
     function e(?string $v): string
     {
@@ -257,8 +260,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     $id = filter_input(INPUT_GET, 'quote_id', FILTER_VALIDATE_INT);
     if (!$id) {
-        echo '<div class="container mt-4"><div class="alert alert-danger">Geçersiz giyotin.</div></div>';
-        require __DIR__ . '/footer.php';
+        echo $embed ? '<div class="text-danger small">Geçersiz giyotin.</div>' : '<div class="container mt-4"><div class="alert alert-danger">Geçersiz giyotin.</div></div>';
+        if (!$embed) {
+            require __DIR__ . '/footer.php';
+        }
         exit;
     }
 
@@ -266,8 +271,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
-        echo '<div class="container mt-4"><div class="alert alert-danger">Giyotin satırı bulunamadı.</div></div>';
-        require __DIR__ . '/footer.php';
+        echo $embed ? '<div class="text-danger small">Giyotin satırı bulunamadı.</div>' : '<div class="container mt-4"><div class="alert alert-danger">Giyotin satırı bulunamadı.</div></div>';
+        if (!$embed) {
+            require __DIR__ . '/footer.php';
+        }
         exit;
     }
 
@@ -283,8 +290,32 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             'provider'    => $provider,
         ]);
     } catch (Throwable $e) {
-        echo '<div class="container mt-4"><div class="alert alert-danger">Hesaplama hatası: ' . e($e->getMessage()) . '</div></div>';
-        require __DIR__ . '/footer.php';
+        $err = e($e->getMessage());
+        echo $embed ? '<div class="text-danger small">Hesaplama hatası: ' . $err . '</div>' : '<div class="container mt-4"><div class="alert alert-danger">Hesaplama hatası: ' . $err . '</div></div>';
+        if (!$embed) {
+            require __DIR__ . '/footer.php';
+        }
+        exit;
+    }
+
+    if ($embed) {
+        echo '<table class="table table-sm">';
+        echo '<thead><tr><th>Kalem</th><th>Ölçü/Adet</th><th>Birim</th><th>Birim Fiyat</th><th class="text-end">Tutar</th></tr></thead><tbody>';
+        foreach ($result['lines'] as $line) {
+            $measure = number_format($line['measure'], 2, ',', '.');
+            $qty = number_format($line['quantity'], 2, ',', '.');
+            $unitPrice = $line['quantity'] > 0 ? $line['total'] / $line['quantity'] : 0;
+            $unitPriceFmt = number_format($unitPrice, 2, ',', '.');
+            $totalFmt = number_format($line['total'], 2, ',', '.');
+            echo '<tr>';
+            echo '<td>' . e($line['name']) . '</td>';
+            echo '<td>' . e($measure) . ' / ' . e($qty) . '</td>';
+            echo '<td>' . e($line['unit']) . '</td>';
+            echo '<td>' . e($unitPriceFmt) . ' ₺</td>';
+            echo '<td class="text-end">' . e($totalFmt) . ' ₺</td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table>';
         exit;
     }
 
@@ -357,4 +388,3 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     require __DIR__ . '/footer.php';
 }
-
