@@ -49,6 +49,8 @@ try {
     $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS total_with_interest DECIMAL(12,2) NULL AFTER interest_amount");
     $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS monthly_installment DECIMAL(12,2) NULL AFTER total_with_interest");
     $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS grace_days INT NULL DEFAULT 0 AFTER monthly_installment");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS approval_token VARCHAR(64) NULL AFTER profit_amount");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS approved_at DATETIME NULL AFTER approval_token");
 } catch (Exception $e) {
     // ignore migration errors
 }
@@ -83,6 +85,7 @@ $headers = [
     ['label' => 'Vade', 'key' => 'installment_term'],
     ['label' => 'Tarih', 'key' => 'offer_date'],
     ['label' => 'Tutar', 'key' => 'total_amount'],
+    ['label' => 'Onay Tarihi', 'key' => 'approved_at'],
     ['label' => 'Durum', 'key' => 'status'],
     ['label' => 'İşlemler', 'key' => null],
 ];
@@ -95,6 +98,7 @@ $allowedSorts = [
     'installment_term' => 'g.installment_term',
     'offer_date' => 'g.offer_date',
     'total_amount' => 'total_amount',
+    'approved_at' => 'g.approved_at',
     'status' => 'g.status',
 ];
 $sort = $_GET['sort'] ?? 'offer_date';
@@ -182,7 +186,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
 
     if (!$createErrors) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO generaloffers (customer_id, offer_date, assembly_type, payment_method, validity_days, installment_term, term_months, interest_value) VALUES (:customer_id, :offer_date, :assembly_type, :payment_method, :validity_days, :installment_term, :term_months, :interest_value)");
+            $approvalToken = bin2hex(random_bytes(16));
+            $stmt = $pdo->prepare("INSERT INTO generaloffers (customer_id, offer_date, assembly_type, payment_method, validity_days, installment_term, term_months, interest_value, approval_token) VALUES (:customer_id, :offer_date, :assembly_type, :payment_method, :validity_days, :installment_term, :term_months, :interest_value, :approval_token)");
             $stmt->bindValue(':customer_id', $customerId, PDO::PARAM_INT);
             $stmt->bindValue(':offer_date', $offerDate);
             $stmt->bindValue(':assembly_type', $assembly);
@@ -191,6 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
             $stmt->bindValue(':installment_term', $term !== '' ? $term : null, $term === '' ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->bindValue(':term_months', $termMonths !== '' ? (int)$termMonths : null, $termMonths === '' ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmt->bindValue(':interest_value', $interest !== '' ? $interest : null, $interest === '' ? PDO::PARAM_NULL : PDO::PARAM_STR);
+            $stmt->bindValue(':approval_token', $approvalToken);
             $stmt->execute();
             $newId = (int)$pdo->lastInsertId();
             $_SESSION['flash_success'] = 'Teklif oluşturuldu.';
@@ -232,7 +238,7 @@ $totalRows = (int)$countStmt->fetchColumn();
 $totalPages = (int)max(1, ceil($totalRows / $perPage));
 if ($page > $totalPages) { $page = $totalPages; }
 $offset = ($page - 1) * $perPage;
-$selectSql = 'SELECT g.id, g.offer_date, g.status, g.assembly_type, g.payment_method, g.validity_days, g.installment_term, g.term_months, g.interest_value, CONCAT(c.first_name, " ", c.last_name) AS customer, c.company_name AS company,
+$selectSql = 'SELECT g.id, g.offer_date, g.status, g.approved_at, g.assembly_type, g.payment_method, g.validity_days, g.installment_term, g.term_months, g.interest_value, CONCAT(c.first_name, " ", c.last_name) AS customer, c.company_name AS company,
         COALESCE(gs.sum_total,0)+COALESCE(ss.sum_total,0) AS total_amount ' . $baseSql . ' ORDER BY ' . $orderSql . ' LIMIT :limit OFFSET :offset';
 $stmt = $pdo->prepare($selectSql);
 foreach ($params as $k => $v) { $stmt->bindValue(':' . $k, $v); }
@@ -316,6 +322,7 @@ unset($_SESSION['flash_error']);
   </td>
   <td><time datetime="<?= e($o['offer_date']) ?>"><?= e($o['offer_date']) ?></time></td>
   <td><?= number_format((float)$o['total_amount'],2,',','.') ?> ₺</td>
+  <td><?= $o['approved_at'] ? e($o['approved_at']) : '' ?></td>
   <td><?= e($statusLabels[$o['status']] ?? $o['status']) ?></td>
   <td class="text-center">
     <a href="quotation_view.php?id=<?= (int)$o['id'] ?>" class="btn btn-sm btn-outline-secondary" title="Görüntüle"><i class="bi bi-eye"></i></a>
@@ -328,7 +335,7 @@ unset($_SESSION['flash_error']);
   </td>
 </tr>
 <?php endforeach; else: ?>
-<tr><td colspan="10" class="text-center text-muted">Teklif bulunamadı.</td></tr>
+<tr><td colspan="11" class="text-center text-muted">Teklif bulunamadı.</td></tr>
 <?php endif; ?>
   </tbody>
 </table>

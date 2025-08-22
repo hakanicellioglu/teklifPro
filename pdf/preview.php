@@ -32,6 +32,7 @@ $guillotines = [];
 $slidings = [];
 $systems = [];
 $error = null;
+$approveUrl = '';
 
 try {
     $stmt = $pdo->prepare('SELECT g.*, c.first_name, c.last_name, c.company_name AS customer_company, c.email AS customer_email, c.phone AS customer_phone, c.address AS customer_address, co.name AS company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id LEFT JOIN company co ON g.company_id = co.id WHERE g.id = :id');
@@ -70,6 +71,11 @@ try {
     $uStmt->execute([':id' => $userId]);
     $u = $uStmt->fetch(PDO::FETCH_ASSOC);
     $preparedBy = $u['full_name'] ?: ($u['username'] ?? '');
+    if (!empty($quote['approval_token'])) {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $approveUrl = $host ? $scheme . '://' . $host . '/approve.php?token=' . urlencode($quote['approval_token']) : '';
+    }
 } catch (Throwable $e) {
     error_log($e->getMessage());
     $error = 'Veriler yüklenemedi.';
@@ -198,6 +204,9 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
                             <div><span class="fw-semibold">Teklif No:</span> <?= h($quote['quote_no'] ?? '') ?></div>
                             <div><span class="fw-semibold">Tarih:</span> <?= h($quote['offer_date'] ?? '') ?></div>
                             <div><span class="fw-semibold">Hazırlayan:</span> <?= h($preparedBy) ?></div>
+                            <?php if ($approveUrl): ?>
+                            <div><span class="fw-semibold">Onay:</span> <a href="<?= h($approveUrl) ?>"><?= h($approveUrl) ?></a></div>
+                            <?php endif; ?>
                             <div><span class="fw-semibold">E-posta:</span> <?= h($company['email']) ?></div>
                         </div>
                     </div>

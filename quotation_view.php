@@ -487,6 +487,9 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                             <strong>Durum:</strong> <?= e($statusLabels[$offer['status']] ?? $offer['status']) ?>
                         <?php endif; ?>
                     </div>
+                    <?php if (!empty($offer['approved_at'])): ?>
+                        <div class="mb-2"><strong>Onay Tarihi:</strong> <?= e($offer['approved_at']) ?></div>
+                    <?php endif; ?>
                 </div>
                 <div class="col-md-6">
                     <?php if (!empty($offer['company_name']) || !empty($offer['customer_company'])): ?>

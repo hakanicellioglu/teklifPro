@@ -35,6 +35,7 @@ if (!$id) {
 
 $guillotines = [];
 $slidings    = [];
+$approveUrl  = '';
 try {
     // Quote master
     $stmt = $pdo->prepare("
@@ -52,6 +53,11 @@ try {
     if (!$quote) {
         http_response_code(404);
         exit('Quotation not found.');
+    }
+    if (!empty($quote['approval_token'])) {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $approveUrl = $host ? $scheme . '://' . $host . '/approve.php?token=' . urlencode($quote['approval_token']) : '';
     }
 
     // Quote items (try a couple of likely tables; prefer generic quote_items if exists)
@@ -127,7 +133,7 @@ $canUseMpdf = class_exists('\\Mpdf\\Mpdf');
 
 if ($canUseMpdf) {
     // Build HTML via template if exists, else inline template
-    $html = (function() use ($quote, $guillotines, $slidings, $company, $assemblyText, $paymentText, $validityText) {
+    $html = (function() use ($quote, $guillotines, $slidings, $company, $assemblyText, $paymentText, $validityText, $items, $approveUrl) {
         $tpl = __DIR__ . '/templates/quotation.tpl.php';
         if (is_file($tpl)) {
             // The template should read $quote, $items, $company, etc.
@@ -197,6 +203,7 @@ h1 { font-size: 16pt; margin: 0 0 8pt; }
   '.($assemblyText ? '<div class="small">Montaj: '.h($assemblyText).'</div>' : '').'
   '.($paymentText ? '<div class="small">Ödeme: '.h($paymentText).'</div>' : '').'
   '.($validityText ? '<div class="small">Geçerlilik: '.h($validityText).'</div>' : '').'
+  '.($approveUrl ? '<div class="small">Onay: <a href="'.h($approveUrl).'">'.h($approveUrl).'</a></div>' : '').'
   <br>
   <h3>Giyotin Sistemleri</h3>
   '.($gRows ? '<table class="table"><thead><tr><th>Sistem</th><th>En</th><th>Boy</th><th>Adet</th><th>Cam</th><th>Motor</th><th>RAL</th><th class="text-right">Toplam</th></tr></thead><tbody>'.$gRows.'</tbody></table>' : '<p>Giyotin sistemi bulunamadı.</p>').'
@@ -233,6 +240,8 @@ $pdf->Cell(0, 6, enc('Müşteri: ' . $customerFull), 0, 1);
 if (!empty($assemblyText)) { $pdf->Cell(0, 6, enc('Montaj: ' . $assemblyText), 0, 1); }
 if (!empty($paymentText))  { $pdf->Cell(0, 6, enc('Ödeme: ' . $paymentText), 0, 1); }
 if (!empty($validityText)) { $pdf->Cell(0, 6, enc('Geçerlilik: ' . $validityText), 0, 1); }
+$haveApprove = !empty($approveUrl);
+if ($haveApprove) { $pdf->Cell(0, 6, enc('Onay: ' . $approveUrl), 0, 1); }
 $pdf->Ln(2);
 
 $total = 0.0;
