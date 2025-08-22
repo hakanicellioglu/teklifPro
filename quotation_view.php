@@ -444,7 +444,7 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
 </nav>
 <?php
 $actions = '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary" data-bs-toggle="tooltip" title="Düzenle"><i class="bi bi-pencil"></i></a>';
-$actions .= ' <a href="pdf/render_quotation_pdf.php?id=' . e((string)$offer['id']) . '" class="btn btn-secondary btn-icon"><i class="bi bi-file-earmark-pdf"></i>PDF İndir</a>';
+$actions .= ' <a href="pdf/render_quotation_pdf.php?id=' . e((string)$offer['id']) . '&csrf_token=' . e($csrfToken) . '" class="btn btn-secondary" data-bs-toggle="tooltip" title="Download PDF"><i class="bi bi-file-earmark-pdf"></i></a>';
 page_header('Teklif #' . e((string)$offer['id']), $actions);
 ?>
 <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
