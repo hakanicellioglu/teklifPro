@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
-require __DIR__ . '/header.php';
-require __DIR__ . '/components/page_header.php';
+require BASE_PATH . '/header.php';
+require BASE_PATH . '/components/page_header.php';
 $pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_turkish_ci');
 
 if (empty($_SESSION['csrf_token'])) {
@@ -312,4 +312,4 @@ $baseParams['per_page'] = $perPage;
     </div>
   </div>
 </div>
-<?php require __DIR__ . '/footer.php'; ?>
+<?php require BASE_PATH . '/footer.php'; ?>

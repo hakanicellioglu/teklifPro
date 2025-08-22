@@ -12,7 +12,7 @@ if (empty($_SESSION['user_id']) || !filter_var($_SESSION['user_id'], FILTER_VALI
     exit('Forbidden');
 }
 
-require __DIR__ . '/../config.php';
+require __DIR__ . '/../config/config.php';
 
 function h(?string $v): string
 {
@@ -74,7 +74,7 @@ try {
     if (!empty($quote['approval_token'])) {
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? '';
-        $approveUrl = $host ? $scheme . '://' . $host . '/public/approve.php?token=' . urlencode($quote['approval_token']) : '';
+        $approveUrl = $host ? $scheme . '://' . $host . '/approve.php?token=' . urlencode($quote['approval_token']) : '';
     }
 } catch (Throwable $e) {
     error_log($e->getMessage());

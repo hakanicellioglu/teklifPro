@@ -9,7 +9,7 @@ if (empty($_SESSION['user_id'])) {
     echo json_encode(['ok' => false, 'message' => 'Yetkisiz.']);
     exit;
 }
-require __DIR__ . '/config.php';
+require BASE_PATH . '/config/config.php';
 header('Content-Type: application/json; charset=utf-8');
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);

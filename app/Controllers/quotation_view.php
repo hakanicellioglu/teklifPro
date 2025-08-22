@@ -1,7 +1,7 @@
 <?php
-require __DIR__ . '/header.php';
-require __DIR__ . '/components/page_header.php';
-require_once __DIR__ . '/test.php';
+require BASE_PATH . '/header.php';
+require BASE_PATH . '/components/page_header.php';
+require_once BASE_PATH . '/test.php';
 
 function e(?string $v): string
 {
@@ -270,7 +270,7 @@ $approveUrl = '';
 if (!empty($offer['approval_token'])) {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host   = $_SERVER['HTTP_HOST'] ?? '';
-    $approveUrl = $host ? $scheme . '://' . $host . '/public/approve.php?token=' . urlencode($offer['approval_token']) : '';
+    $approveUrl = $host ? $scheme . '://' . $host . '/approve.php?token=' . urlencode($offer['approval_token']) : '';
 }
 
 $gDel = ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_guillotine' && $role === 'admin');
@@ -758,4 +758,4 @@ document.querySelectorAll('.recalc-lines').forEach(function (link) {
 });
 
 </script>
-<?php require __DIR__ . '/footer.php'; ?>
+<?php require BASE_PATH . '/footer.php'; ?>
