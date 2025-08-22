@@ -84,7 +84,7 @@ function calculateGuillotineTotals(array $input): array
 
     if ($includeGlassStrips) {
         $rules[] = ['name' => 'Yatay Tek Cam Çıtası', 'measure' => fn($w,$h,$q) => ($w - 185) - 52,      'qty' => fn($w,$h,$q) => 11 * $q];
-        $rules[] = ['name' => 'Dikey Tek Cam Çıtası', 'measure' => fn($w,$h,$q) => (($h - 290) / 3) - 5, 'qty' => fn($w,$h,$q) => 11 * $q];
+        $rules[] = ['name' => 'Dikey Tek Cam Çıtası', 'measure' => fn($w,$h,$q) => (($h - 290) / 3) - 6, 'qty' => fn($w,$h,$q) => 11 * $q];
     }
 
     $rules = array_merge($rules, [
