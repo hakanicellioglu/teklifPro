@@ -14,8 +14,9 @@ if (empty($_SESSION['user_id'])) {
     exit('Forbidden');
 }
 
-require __DIR__ . '/../config.php';
+require __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/helpers.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
@@ -131,7 +132,6 @@ foreach ($systems as $sys) {
 }
 
 define('FPDF_FONTPATH', __DIR__ . '/Roboto/');
-require __DIR__ . '/../libs/fpdf.php';
 // if (!file_exists(__DIR__.'/Roboto/Roboto-Regular.php')) die('Roboto-Regular.php yok');
 // if (!file_exists(__DIR__.'/Roboto/Roboto-Regular.z'))  die('Roboto-Regular.z yok');
 

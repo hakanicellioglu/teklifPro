@@ -23,6 +23,7 @@ The project was initiated to eliminate the inefficient manual Excel workflow. By
    ```bash
    composer install
    ```
+   > The `vendor/` directory is excluded from version control via `.gitignore`. After verifying this, run `composer install` to regenerate `vendor/` on your local environment.
 3. Copy the example environment file and adjust configuration:
    ```bash
    cp .env.example .env
