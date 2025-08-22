@@ -208,10 +208,18 @@ h1 { font-size: 16pt; margin: 0 0 8pt; }
         }
     })();
 
-    $mpdf = new \Mpdf\Mpdf(['tempDir' => __DIR__ . '/../storage/tmp']);
-    $mpdf->WriteHTML($html);
-    $mpdf->Output('teklif.pdf', \Mpdf\Output\Destination::INLINE);
-    exit;
+    try {
+        $mpdfTemp = __DIR__ . '/../storage/mpdf_tmp';
+        if (!is_dir($mpdfTemp)) {
+            mkdir($mpdfTemp, 0777, true);
+        }
+        $mpdf = new \Mpdf\Mpdf(['tempDir' => $mpdfTemp]);
+        $mpdf->WriteHTML($html);
+        $mpdf->Output('teklif.pdf', \Mpdf\Output\Destination::INLINE);
+        exit;
+    } catch (Throwable $e) {
+        error_log('mPDF render error: ' . $e->getMessage());
+    }
 }
 
 // ---- FPDF fallback ----
