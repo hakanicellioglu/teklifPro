@@ -215,19 +215,28 @@ h1 { font-size: 16pt; margin: 0 0 8pt; }
 }
 
 // ---- FPDF fallback ----
+define('FPDF_FONTPATH', __DIR__ . '/Roboto/');
 require __DIR__ . '/../libs/fpdf.php';
 
 header('Content-Type: application/pdf');
-header('Content-Disposition: inline; filename=\"teklif.pdf\"');
+header('Content-Disposition: inline; filename="teklif.pdf"');
 
 $pdf = new FPDF();
+$fontFile = __DIR__ . '/Roboto/Roboto-Regular.php';
+if (is_file($fontFile)) {
+    $pdf->AddFont('Roboto', '', 'Roboto-Regular.php');
+    $fontName = 'Roboto';
+} else {
+    $fontName = 'Arial';
+}
+$pdf->SetTitle(enc('TEKLİF #' . (string)$quote['id']));
 $pdf->AddPage();
 $pdf->SetAutoPageBreak(true, 15);
 
 // Header
-$pdf->SetFont('Arial', 'B', 14);
+$pdf->SetFont($fontName, 'B', 14);
 $pdf->Cell(0, 8, enc('TEKLİF #' . (string)$quote['id']), 0, 1);
-$pdf->SetFont('Arial', '', 11);
+$pdf->SetFont($fontName, '', 11);
 $customerFull = trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''));
 $pdf->Cell(0, 6, enc('Müşteri: ' . $customerFull), 0, 1);
 if (!empty($assemblyText)) { $pdf->Cell(0, 6, enc('Montaj: ' . $assemblyText), 0, 1); }
@@ -238,10 +247,10 @@ $pdf->Ln(2);
 $total = 0.0;
 
 // Guillotine table
-$pdf->SetFont('Arial', 'B', 10);
+$pdf->SetFont($fontName, 'B', 10);
 $pdf->Cell(0, 6, enc('Giyotin Sistemleri'), 0, 1);
 if ($guillotines) {
-    $pdf->SetFont('Arial', 'B', 9);
+    $pdf->SetFont($fontName, 'B', 9);
     $pdf->Cell(25, 7, enc('Sistem'), 1, 0);
     $pdf->Cell(20, 7, enc('En'), 1, 0, 'R');
     $pdf->Cell(20, 7, enc('Boy'), 1, 0, 'R');
@@ -250,7 +259,7 @@ if ($guillotines) {
     $pdf->Cell(25, 7, enc('Motor'), 1, 0);
     $pdf->Cell(20, 7, enc('RAL'), 1, 0);
     $pdf->Cell(35, 7, enc('Toplam'), 1, 1, 'R');
-    $pdf->SetFont('Arial', '', 9);
+    $pdf->SetFont($fontName, '', 9);
     foreach ($guillotines as $g) {
         $line = (float)($g['total_amount'] ?? 0);
         $total += $line;
@@ -264,16 +273,16 @@ if ($guillotines) {
         $pdf->Cell(35, 6, number_format($line, 2, ',', '.'), 1, 1, 'R');
     }
 } else {
-    $pdf->SetFont('Arial', '', 9);
+    $pdf->SetFont($fontName, '', 9);
     $pdf->Cell(0, 6, enc('Giyotin sistemi bulunamadı.'), 1, 1);
 }
 $pdf->Ln(4);
 
 // Sliding table
-$pdf->SetFont('Arial', 'B', 10);
+$pdf->SetFont($fontName, 'B', 10);
 $pdf->Cell(0, 6, enc('Sürme Sistemleri'), 0, 1);
 if ($slidings) {
-    $pdf->SetFont('Arial', 'B', 9);
+    $pdf->SetFont($fontName, 'B', 9);
     $pdf->Cell(25, 7, enc('Sistem'), 1, 0);
     $pdf->Cell(20, 7, enc('En'), 1, 0, 'R');
     $pdf->Cell(20, 7, enc('Boy'), 1, 0, 'R');
@@ -282,7 +291,7 @@ if ($slidings) {
     $pdf->Cell(25, 7, enc('Kanat'), 1, 0);
     $pdf->Cell(20, 7, enc('RAL'), 1, 0);
     $pdf->Cell(35, 7, enc('Toplam'), 1, 1, 'R');
-    $pdf->SetFont('Arial', '', 9);
+    $pdf->SetFont($fontName, '', 9);
     foreach ($slidings as $s) {
         $line = (float)($s['total_amount'] ?? 0);
         $total += $line;
@@ -296,12 +305,18 @@ if ($slidings) {
         $pdf->Cell(35, 6, number_format($line, 2, ',', '.'), 1, 1, 'R');
     }
 } else {
-    $pdf->SetFont('Arial', '', 9);
+    $pdf->SetFont($fontName, '', 9);
     $pdf->Cell(0, 6, enc('Sürme sistemi bulunamadı.'), 1, 1);
 }
 $pdf->Ln(4);
 
-$pdf->SetFont('Arial', 'B', 11);
+$pdf->SetFont($fontName, 'B', 11);
 $pdf->Cell(0, 8, enc('Genel Toplam: ' . number_format($total, 2, ',', '.')), 0, 1, 'R');
 
-$pdf->Output('I', 'teklif.pdf');
+try {
+    $pdf->Output('I', 'teklif.pdf');
+} catch (Throwable $e) {
+    error_log('PDF Output error: ' . $e->getMessage());
+    http_response_code(500);
+    echo 'PDF oluşturulurken bir hata oluştu.';
+}
