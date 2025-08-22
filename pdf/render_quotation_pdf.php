@@ -237,7 +237,8 @@ require __DIR__ . '/../libs/fpdf.php';
 
 $pdf = new FPDF();
 $fontFile = __DIR__ . '/Roboto/Roboto-Regular.php';
-if (is_file($fontFile)) {
+$fontMissing = !is_file($fontFile);
+if (!$fontMissing) {
     $pdf->AddFont('Roboto', '', 'Roboto-Regular.php');
     $fontName = 'Roboto';
 } else {
@@ -246,6 +247,17 @@ if (is_file($fontFile)) {
 $pdf->SetTitle(enc('TEKLİF #' . (string)$quote['id']));
 $pdf->SetAutoPageBreak(true, 15);
 $pdf->AddPage();
+
+if ($fontMissing) {
+    // Bootstrap-like warning informing the user that Roboto is missing
+    $pdf->SetFillColor(255, 243, 205); // bg-warning
+    $pdf->SetDrawColor(255, 238, 186); // border-warning
+    $pdf->SetTextColor(133, 100, 4);   // text-warning
+    $pdf->SetFont('Arial', '', 10);
+    $pdf->MultiCell(0, 8, enc('Roboto fontu bulunamadı. Arial fontu kullanıldı.'), 1, 'L', true);
+    $pdf->Ln(4);
+    $pdf->SetTextColor(0, 0, 0); // reset text color
+}
 
 // Header
 $pdf->SetFont($fontName, 'B', 14);
