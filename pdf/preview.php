@@ -28,10 +28,11 @@ if (!$id) {
 $quote = null;
 $guillotines = [];
 $slidings = [];
+$systems = [];
 $error = null;
 
 try {
-    $stmt = $pdo->prepare('SELECT g.*, c.first_name, c.last_name, c.company AS customer_company, co.name AS company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id LEFT JOIN company co ON g.company_id = co.id WHERE g.id = :id');
+    $stmt = $pdo->prepare('SELECT g.*, c.first_name, c.last_name, c.company_name AS customer_company, c.email AS customer_email, c.phone AS customer_phone, c.address AS customer_address, co.name AS company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id LEFT JOIN company co ON g.company_id = co.id WHERE g.id = :id');
     $stmt->execute([':id' => $id]);
     $quote = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$quote) {
@@ -47,14 +48,19 @@ try {
     $sStmt->execute([':id' => $id]);
     $slidings = $sStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $company = ['name' => '', 'logo' => null];
+    $company = ['name' => '', 'logo' => null, 'email' => '', 'phone' => '', 'address' => '', 'bank_account' => ''];
     try {
-        $cStmt = $pdo->query('SELECT name, logo FROM company LIMIT 1');
+        $cStmt = $pdo->query('SELECT name, logo, email, phone, address, bank_account FROM company LIMIT 1');
         if ($cStmt) {
-            $company = $cStmt->fetch(PDO::FETCH_ASSOC) ?: $company;
+            $company = array_merge($company, $cStmt->fetch(PDO::FETCH_ASSOC) ?: []);
         }
     } catch (Throwable $e) {
-        // ignore company fetch errors
+        try {
+            $cStmt = $pdo->query('SELECT name, logo, email, phone, address FROM company LIMIT 1');
+            if ($cStmt) {
+                $company = array_merge($company, $cStmt->fetch(PDO::FETCH_ASSOC) ?: []);
+            }
+        } catch (Throwable $e2) { /* ignore */ }
     }
 
     $uStmt = $pdo->prepare('SELECT TRIM(CONCAT(first_name, " ", last_name)) AS full_name, username FROM users WHERE id = :id');
@@ -73,21 +79,64 @@ $paymentLabels = [
     'installment' => 'Taksitli',
     'other' => 'Diğer',
 ];
-
 $paymentText = $paymentLabels[$quote['payment_method'] ?? ''] ?? ($quote['payment_method'] ?? '');
 
-$gTotal = 0.0;
-foreach ($guillotines as $g) { $gTotal += (float)($g['total_amount'] ?? 0); }
-$sTotal = 0.0;
-foreach ($slidings as $s) { $sTotal += (float)($s['total_amount'] ?? 0); }
-$grandTotal = $gTotal + $sTotal;
-$subTotal = $grandTotal / 1.2;
-$vatAmount = $grandTotal - $subTotal;
+$areaCalc = fn($w, $h) => (max(0, (float)$w) * max(0, (float)$h)) / 1000000;
+$grossTotal = 0.0;
 
-$firstItem = $guillotines[0] ?? ($slidings[0] ?? null);
-$summaryWidth = $firstItem['width'] ?? '';
-$summaryHeight = $firstItem['height'] ?? '';
-$summaryQty = $firstItem['quantity'] ?? '';
+foreach ($guillotines as $g) {
+    $line = (float)($g['total_amount'] ?? 0);
+    $area = $areaCalc($g['width'] ?? 0, $g['height'] ?? 0);
+    $systems[] = [
+        'ral'        => $g['ral_code'] ?? '',
+        'glass'      => $g['glass_color'] ?? '',
+        'system'     => $g['system_type'] ?? '',
+        'desc'       => trim(($g['glass_type'] ?? '') . ' ' . ($g['motor_system'] ?? '')),
+        'qty'        => (float)($g['quantity'] ?? 0),
+        'width'      => (float)($g['width'] ?? 0),
+        'height'     => (float)($g['height'] ?? 0),
+        'area'       => $area,
+        'total_area' => $area * (float)($g['quantity'] ?? 0),
+        'total'      => $line,
+    ];
+    $grossTotal += $line;
+}
+
+foreach ($slidings as $s) {
+    $line = (float)($s['total_amount'] ?? 0);
+    $area = $areaCalc($s['width'] ?? 0, $s['height'] ?? 0);
+    $systems[] = [
+        'ral'        => $s['ral_code'] ?? '',
+        'glass'      => $s['glass_color'] ?? '',
+        'system'     => $s['system_type'] ?? '',
+        'desc'       => trim(($s['glass_type'] ?? '') . ' ' . ($s['wing_type'] ?? '')),
+        'qty'        => (float)($s['quantity'] ?? 0),
+        'width'      => (float)($s['width'] ?? 0),
+        'height'     => (float)($s['height'] ?? 0),
+        'area'       => $area,
+        'total_area' => $area * (float)($s['quantity'] ?? 0),
+        'total'      => $line,
+    ];
+    $grossTotal += $line;
+}
+
+$discountAmount = (float)($quote['discount_amount'] ?? 0);
+if (!$discountAmount && isset($quote['discount_rate'])) {
+    $discountAmount = $grossTotal * ((float)$quote['discount_rate']) / 100;
+}
+$subTotal = $grossTotal - $discountAmount;
+
+$vatRate = (float)($quote['vat_rate'] ?? 0);
+$vatAmount = (float)($quote['vat_amount'] ?? 0);
+if (!$vatAmount && $vatRate) {
+    $vatAmount = $subTotal * $vatRate / 100;
+}
+$grandTotal = $subTotal + $vatAmount;
+
+$validUntil = '';
+if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
+    $validUntil = date('Y-m-d', strtotime($quote['offer_date'] . ' +' . ((int)$quote['validity_days']) . ' days'));
+}
 
 ?>
 <!DOCTYPE html>
@@ -114,152 +163,117 @@ $summaryQty = $firstItem['quantity'] ?? '';
 <?php if ($error): ?>
     <div class="alert alert-danger"><?= h($error) ?></div>
 <?php else: ?>
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="d-flex align-items-center gap-2">
-            <?php if (!empty($company['logo'])): ?><img src="<?= h($company['logo']) ?>" alt="<?= h($company['name']) ?>" style="height:60px;" class="me-2"><?php endif; ?>
-            <div class="fw-bold"><?= h($company['name']) ?></div>
-        </div>
-        <div class="text-end">
-            <div class="fw-bold">Teklif No: <?= h($quote['quote_no'] ?? '') ?></div>
-            <div>Tarih: <?= h($quote['offer_date'] ?? '') ?></div>
-        </div>
-    </div>
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-6"><strong>Müşteri:</strong> <?= h(trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''))) ?></div>
-                <div class="col-md-6"><strong>Proje/Saha:</strong> <?= h($quote['quote_no'] ?? '') ?></div>
-                <div class="col-md-6"><strong>Hazırlayan:</strong> <?= h($preparedBy) ?></div>
-                <div class="col-md-6"><strong>Geçerlilik Tarihi:</strong> <?php
-                    $valid = '';
-                    if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
-                        $valid = date('Y-m-d', strtotime($quote['offer_date'].' +'.((int)$quote['validity_days']).' days'));
-                    }
-                    echo h($valid);
-                ?></div>
+    <div class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center mb-2">
+                    <?php if (!empty($company['logo'])): ?>
+                        <img src="<?= h($company['logo']) ?>" alt="<?= h($company['name']) ?>" style="height:60px;" class="me-2">
+                    <?php endif; ?>
+                    <div>
+                        <div class="fw-bold"><?= h($company['name']) ?></div>
+                        <div><?= nl2br(h($company['address'])) ?></div>
+                        <div><?= h($company['email']) ?> • <?= h($company['phone']) ?></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <div><strong>Teklif No:</strong> <?= h($quote['quote_no'] ?? '') ?></div>
+                <div><strong>Tarih:</strong> <?= h($quote['offer_date'] ?? '') ?></div>
+                <div><strong>Hazırlayan:</strong> <?= h($preparedBy) ?></div>
+                <div><strong>E-posta:</strong> <?= h($company['email']) ?></div>
             </div>
         </div>
     </div>
-    <h5 class="mb-3">Teklif Özeti</h5>
-    <div class="row row-cols-2 row-cols-md-4 g-2 mb-4">
-        <div class="col"><div class="card h-100"><div class="card-body"><div class="small text-muted">Genişlik</div><div><?= h((string)$summaryWidth) ?></div></div></div></div>
-        <div class="col"><div class="card h-100"><div class="card-body"><div class="small text-muted">Yükseklik</div><div><?= h((string)$summaryHeight) ?></div></div></div></div>
-        <div class="col"><div class="card h-100"><div class="card-body"><div class="small text-muted">Adet</div><div><?= h((string)$summaryQty) ?></div></div></div></div>
-        <div class="col"><div class="card h-100"><div class="card-body"><div class="small text-muted">Ödeme Yöntemi</div><div><?= h($paymentText) ?></div></div></div></div>
-        <div class="col"><div class="card h-100"><div class="card-body"><div class="small text-muted">Para Birimi</div><div>TRY</div></div></div></div>
-        <div class="col"><div class="card h-100"><div class="card-body"><div class="small text-muted">Ara Toplam</div><div><?= number_format($subTotal,2,',','.') ?> ₺</div></div></div></div>
-        <div class="col"><div class="card h-100"><div class="card-body"><div class="small text-muted">KDV</div><div><?= number_format($vatAmount,2,',','.') ?> ₺</div></div></div></div>
-        <div class="col"><div class="card h-100"><div class="card-body"><div class="small text-muted">Genel Toplam</div><div><?= number_format($grandTotal,2,',','.') ?> ₺</div></div></div></div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h5>Müşteri Bilgileri</h5>
+            <div><strong>Firma:</strong> <?= h($quote['customer_company'] ?? '') ?></div>
+            <div><strong>İlgili:</strong> <?= h(trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''))) ?></div>
+            <div><strong>Telefon:</strong> <?= h($quote['customer_phone'] ?? '') ?></div>
+            <div><strong>Adres:</strong> <?= nl2br(h($quote['customer_address'] ?? '')) ?></div>
+            <div><strong>E-posta:</strong> <?= h($quote['customer_email'] ?? '') ?></div>
+        </div>
+        <div class="col-md-6">
+            <h5>Teklif Bilgileri</h5>
+            <div><strong>Teslimat:</strong> <?= h($quote['delivery_time'] ?? '') ?></div>
+            <div><strong>Ödeme:</strong> <?= h($paymentText) ?></div>
+            <div><strong>Vade:</strong> <?= h($quote['payment_term'] ?? '') ?></div>
+            <div><strong>Geçerlilik:</strong> <?= h($validUntil) ?></div>
+        </div>
     </div>
 
-    <h5 class="mt-4">Giyotin Teklifi</h5>
     <div class="table-responsive mb-4">
-    <table class="table table-sm table-striped table-bordered">
-        <thead>
-            <tr>
-                <th>Kategori</th>
-                <th>Ürün</th>
-                <th>Ölçü</th>
-                <th>Birim</th>
-                <th class="text-end">Adet</th>
-                <th class="text-end">Birim Fiyatı</th>
-                <th class="text-end">KDV %</th>
-                <th class="text-end">Tutar</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php if ($guillotines): foreach ($guillotines as $g): ?>
-            <?php $line = (float)($g['total_amount'] ?? 0); $unit = $line / max(1,(float)$g['quantity']); ?>
-            <tr>
-                <td><?= h($g['system_type'] ?? '') ?></td>
-                <td><?= h(trim(($g['glass_type'] ?? '') . ' ' . ($g['glass_color'] ?? ''))) ?></td>
-                <td><?= h(($g['width'] ?? '') . ' x ' . ($g['height'] ?? '')) ?></td>
-                <td>Adet</td>
-                <td class="text-end"><?= h((string)($g['quantity'] ?? '')) ?></td>
-                <td class="text-end"><?= number_format($unit,2,',','.') ?></td>
-                <td class="text-end">20</td>
-                <td class="text-end"><?= number_format($line,2,',','.') ?></td>
-            </tr>
-        <?php endforeach; else: ?>
-            <tr><td colspan="8" class="text-center">Kayıt bulunamadı.</td></tr>
-        <?php endif; ?>
-        </tbody>
-        <?php if ($guillotines): ?>
-        <tfoot>
-            <tr>
-                <th colspan="7" class="text-end">Ara Toplam</th>
-                <th class="text-end"><?= number_format($gTotal/1.2,2,',','.') ?></th>
-            </tr>
-            <tr>
-                <th colspan="7" class="text-end">KDV</th>
-                <th class="text-end"><?= number_format($gTotal - $gTotal/1.2,2,',','.') ?></th>
-            </tr>
-            <tr>
-                <th colspan="7" class="text-end">Toplam</th>
-                <th class="text-end"><?= number_format($gTotal,2,',','.') ?></th>
-            </tr>
-        </tfoot>
-        <?php endif; ?>
-    </table>
+        <table class="table table-sm table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>RAL</th>
+                    <th>Cam Rengi</th>
+                    <th>Sistem</th>
+                    <th>Açıklama</th>
+                    <th class="text-end">Adet</th>
+                    <th class="text-end">Genişlik</th>
+                    <th class="text-end">Yükseklik</th>
+                    <th class="text-end">m²</th>
+                    <th class="text-end">Toplam m²</th>
+                    <th class="text-end">Tutar</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php if ($systems): foreach ($systems as $row): ?>
+                <tr>
+                    <td><?= h($row['ral']) ?></td>
+                    <td><?= h($row['glass']) ?></td>
+                    <td><?= h($row['system']) ?></td>
+                    <td><?= h($row['desc']) ?></td>
+                    <td class="text-end"><?= h((string)$row['qty']) ?></td>
+                    <td class="text-end"><?= h(number_format($row['width'], 2, ',', '.')) ?></td>
+                    <td class="text-end"><?= h(number_format($row['height'], 2, ',', '.')) ?></td>
+                    <td class="text-end"><?= h(number_format($row['area'], 2, ',', '.')) ?></td>
+                    <td class="text-end"><?= h(number_format($row['total_area'], 2, ',', '.')) ?></td>
+                    <td class="text-end"><?= number_format($row['total'], 2, ',', '.') ?></td>
+                </tr>
+            <?php endforeach; else: ?>
+                <tr><td colspan="10" class="text-center">Kayıt bulunamadı.</td></tr>
+            <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 
-    <h5 class="mt-4">Sürme Teklifi</h5>
-    <div class="table-responsive mb-4">
-    <table class="table table-sm table-striped table-bordered">
-        <thead>
-            <tr>
-                <th>Kategori</th>
-                <th>Ürün</th>
-                <th>Ölçü</th>
-                <th>Birim</th>
-                <th class="text-end">Adet</th>
-                <th class="text-end">Birim Fiyatı</th>
-                <th class="text-end">KDV %</th>
-                <th class="text-end">Tutar</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php if ($slidings): foreach ($slidings as $s): ?>
-            <?php $line = (float)($s['total_amount'] ?? 0); $unit = $line / max(1,(float)$s['quantity']); ?>
-            <tr>
-                <td><?= h($s['system_type'] ?? '') ?></td>
-                <td><?= h(trim(($s['glass_type'] ?? '') . ' ' . ($s['glass_color'] ?? ''))) ?></td>
-                <td><?= h(($s['width'] ?? '') . ' x ' . ($s['height'] ?? '')) ?></td>
-                <td>Adet</td>
-                <td class="text-end"><?= h((string)($s['quantity'] ?? '')) ?></td>
-                <td class="text-end"><?= number_format($unit,2,',','.') ?></td>
-                <td class="text-end">20</td>
-                <td class="text-end"><?= number_format($line,2,',','.') ?></td>
-            </tr>
-        <?php endforeach; else: ?>
-            <tr><td colspan="8" class="text-center">Kayıt bulunamadı.</td></tr>
-        <?php endif; ?>
-        </tbody>
-        <?php if ($slidings): ?>
-        <tfoot>
-            <tr>
-                <th colspan="7" class="text-end">Ara Toplam</th>
-                <th class="text-end"><?= number_format($sTotal/1.2,2,',','.') ?></th>
-            </tr>
-            <tr>
-                <th colspan="7" class="text-end">KDV</th>
-                <th class="text-end"><?= number_format($sTotal - $sTotal/1.2,2,',','.') ?></th>
-            </tr>
-            <tr>
-                <th colspan="7" class="text-end">Toplam</th>
-                <th class="text-end"><?= number_format($sTotal,2,',','.') ?></th>
-            </tr>
-        </tfoot>
-        <?php endif; ?>
-    </table>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h6>Notlar</h6>
+            <div class="border rounded p-2" style="min-height:5rem; white-space:pre-wrap;"><?= h($quote['notes'] ?? '') ?></div>
+            <h6 class="mt-3">Açıklamalar</h6>
+            <div class="border rounded p-2" style="min-height:5rem; white-space:pre-wrap;"><?= h($quote['remarks'] ?? '') ?></div>
+            <?php if (!empty($company['bank_account'])): ?>
+            <h6 class="mt-3">Banka Bilgileri</h6>
+            <div class="border rounded p-2" style="white-space:pre-wrap;"><?= nl2br(h($company['bank_account'])) ?></div>
+            <?php endif; ?>
+        </div>
+        <div class="col-md-6">
+            <table class="table table-sm">
+                <tr>
+                    <th>Ara Toplam</th>
+                    <td class="text-end"><?= number_format($subTotal, 2, ',', '.') ?> ₺</td>
+                </tr>
+                <tr>
+                    <th>İskonto</th>
+                    <td class="text-end"><?= number_format($discountAmount, 2, ',', '.') ?> ₺</td>
+                </tr>
+                <tr>
+                    <th>KDV</th>
+                    <td class="text-end"><?= number_format($vatAmount, 2, ',', '.') ?> ₺</td>
+                </tr>
+                <tr class="table-light">
+                    <th>Genel Toplam</th>
+                    <td class="text-end"><strong><?= number_format($grandTotal, 2, ',', '.') ?> ₺</strong></td>
+                </tr>
+            </table>
+        </div>
     </div>
 
-    <h5 class="mt-4">Açıklama Alanı</h5>
-    <div class="mb-4">
-        <div class="form-control" readonly style="min-height:6rem; white-space:pre-wrap;"><?= h($quote['notes'] ?? '') ?></div>
-    </div>
-
-    <h5 class="mt-4">Onay Alanı</h5>
     <div class="card mb-5">
         <div class="card-body">
             <div class="form-check mb-3">
