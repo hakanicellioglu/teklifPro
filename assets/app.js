@@ -7,6 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
   });
 
+  document.querySelectorAll('[data-bs-toggle="tooltip"], .edit-guillotine[title]').forEach(el => {
+    new bootstrap.Tooltip(el);
+  });
+
   const confirmModalEl = document.getElementById('confirmModal');
   const confirmModal = confirmModalEl ? new bootstrap.Modal(confirmModalEl) : null;
   let confirmAction = null;
