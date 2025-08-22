@@ -62,3 +62,7 @@ input[type=number],
 .form-control[type=number] {
   text-align: left !important;
 }
+
+.share-btn {
+  margin-left: .5rem;
+}
