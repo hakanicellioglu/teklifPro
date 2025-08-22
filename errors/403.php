@@ -9,7 +9,7 @@ require __DIR__ . '/../bootstrap.php';
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>403 Forbidden</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<?= url('assets/app.css') ?>">
+    <link rel="stylesheet" href="<?= url('public/assets/app.css') ?>">
 </head>
 <body class="bg-light">
 <div class="container py-5 text-center">
