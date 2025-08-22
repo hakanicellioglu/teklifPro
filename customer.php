@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 require __DIR__ . '/header.php';
-require __DIR__ . '/components/page_header.php';
+require __DIR__ . '/resources/views/partials/page_header.php';
 $pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_turkish_ci');
 
 if (empty($_SESSION['csrf_token'])) {

@@ -19,7 +19,7 @@ if (!in_array($uri, $publicRoutes, true) && empty($_SESSION['user_id'])) {
         ob_clean();
     }
     http_response_code(403);
-    include __DIR__ . '/errors/403.php';
+    view('errors/403');
     exit;
 }
 
@@ -34,5 +34,5 @@ if (ob_get_length()) {
     ob_clean();
 }
 http_response_code(404);
-include __DIR__ . '/errors/404.php';
+view('errors/404');
 exit;

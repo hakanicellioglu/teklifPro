@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/header.php';
-require __DIR__ . '/components/page_header.php';
+require __DIR__ . '/resources/views/partials/page_header.php';
 require_once __DIR__ . '/test.php';
 
 function e(?string $v): string

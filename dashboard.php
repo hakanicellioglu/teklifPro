@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/header.php';
-require __DIR__ . '/components/page_header.php';
-require __DIR__ . '/components/stat_card.php';
+require __DIR__ . '/resources/views/partials/page_header.php';
+require __DIR__ . '/resources/views/partials/stat_card.php';
 
 try {
     $stmt = $pdo->prepare('SELECT first_name FROM users WHERE id = :id');

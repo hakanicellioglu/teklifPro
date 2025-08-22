@@ -15,6 +15,15 @@ if (!defined('BOOTSTRAP_LOADED')) {
         return number_format($v, 2, ',', '.');
     }
 
+    function view(string $path, array $data = []): void
+    {
+        extract($data, EXTR_SKIP);
+        if (substr($path, -4) !== '.php') {
+            $path .= '.php';
+        }
+        include __DIR__ . '/resources/views/' . ltrim($path, '/');
+    }
+
     set_error_handler(function ($severity, $message, $file, $line) {
         if (!(error_reporting() & $severity)) {
             return false;
@@ -28,7 +37,7 @@ if (!defined('BOOTSTRAP_LOADED')) {
             ob_clean();
         }
         http_response_code(500);
-        include __DIR__ . '/errors/500.php';
+        view('errors/500');
         exit;
     });
 }
