@@ -443,7 +443,7 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
   </ol>
 </nav>
 <?php
-$actions = '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary btn-icon"><i class="bi bi-pencil"></i>Düzenle</a>';
+$actions = '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary" data-bs-toggle="tooltip" title="Düzenle"><i class="bi bi-pencil"></i></a>';
 $actions .= ' <a href="pdf/render_quotation_pdf.php?id=' . e((string)$offer['id']) . '" class="btn btn-secondary btn-icon"><i class="bi bi-file-earmark-pdf"></i>PDF İndir</a>';
 page_header('Teklif #' . e((string)$offer['id']), $actions);
 ?>
@@ -457,7 +457,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
                 <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                <button type="submit" class="btn btn-danger btn-sm" data-confirm="Bu teklifi silmek istediğinize emin misiniz?">Sil</button>
+                <button type="submit" class="btn btn-danger btn-sm" data-confirm="Bu teklifi silmek istediğinize emin misiniz?" data-bs-toggle="tooltip" title="Sil"><i class="bi bi-trash"></i></button>
             </form>
         <?php endif; ?>
     </div>
@@ -539,7 +539,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                     <td><?= e($g['ral_code']) ?></td>
                                     <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
                                     <td class="text-end">
-                                        <a href="test.php?quote_id=<?= e((string)$g['id']) ?>" class="btn btn-sm btn-info recalc-lines" data-gid="<?= e((string)$g['id']) ?>">Kalemler</a>
+                                        <a href="test.php?quote_id=<?= e((string)$g['id']) ?>" class="btn btn-sm btn-info recalc-lines" data-gid="<?= e((string)$g['id']) ?>" data-bs-toggle="tooltip" title="Kalemler"><i class="bi bi-list-ul"></i></a>
                                         <button type="button" class="btn btn-sm btn-secondary edit-guillotine" data-bs-toggle="modal" data-bs-target="#addGuillotineModal"
                                             data-id="<?= e((string)$g['id']) ?>"
                                             data-width="<?= e((string)$g['width']) ?>"
@@ -550,15 +550,16 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                             data-glass-color="<?= e($g['glass_color']) ?>"
                                             data-remote="<?= e((string)$g['remote_quantity']) ?>"
                                             data-ral="<?= e($g['ral_code']) ?>"
-                                            data-profit="<?= e((string)$g['profit_margin']) ?>">
-                                            Düzenle
+                                            data-profit="<?= e((string)$g['profit_margin']) ?>"
+                                            title="Düzenle">
+                                            <i class="bi bi-pencil"></i>
                                         </button>
                                         <?php if ($role === 'admin' && strtolower((string)$g['system_type']) === 'guillotine'): ?>
                                             <form method="post" class="d-inline" target="_blank">
                                                 <input type="hidden" name="action" value="optimize_guillotine">
                                                 <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
                                                 <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                                <button type="submit" class="btn btn-sm btn-secondary"><i class="bi bi-gear"></i> Optimize</button>
+                                                <button type="submit" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" title="Optimize"><i class="bi bi-calculator"></i></button>
                                             </form>
                                         <?php endif; ?>
                                         <?php if ($role === 'admin'): ?>
@@ -566,7 +567,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                                 <input type="hidden" name="action" value="delete_guillotine">
                                                 <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
                                                 <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                                <button type="submit" class="btn btn-sm btn-danger">Sil</button>
+                                                <button type="submit" class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Sil"><i class="bi bi-trash"></i></button>
                                             </form>
                                         <?php endif; ?>
                                     </td>
