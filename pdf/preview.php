@@ -336,16 +336,12 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
     </div>
     <div class="action-bar d-print-none border-top bg-light">
         <div class="container py-2 d-flex gap-2">
-            <a href="render_quotation_pdf.php?id=<?= h((string)$id) ?>" class="btn btn-primary" aria-label="PDF indir" data-bs-toggle="tooltip" title="PDF indir"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
-            <button class="btn btn-secondary" onclick="window.print()" aria-label="Yazdır" data-bs-toggle="tooltip" title="Yazdır"><i class="bi bi-printer me-1"></i>Yazdır</button>
+            <a href="render_quotation_pdf.php?id=<?= h((string)$id) ?>" class="btn btn-primary" aria-label="PDF indir"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+            <button class="btn btn-secondary" onclick="window.print()" aria-label="Yazdır"><i class="bi bi-printer me-1"></i>Yazdır</button>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/app.js"></script>
-    <script>
-        const tooltipTriggerList=[...document.querySelectorAll('[data-bs-toggle=\"tooltip\"]')];
-        tooltipTriggerList.forEach(t=>new bootstrap.Tooltip(t));
-    </script>
 </body>
 
 </html>
