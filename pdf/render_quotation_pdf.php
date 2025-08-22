@@ -13,14 +13,7 @@ require __DIR__ . '/../config.php';
 
 require_once __DIR__ . '/helpers.php';
 
-/**
- * Composer is OPTIONAL. If present and mPDF is installed, we will render HTML template.
- * Otherwise we fall back to FPDF and draw a clean, data-driven layout.
- */
-$autoload = __DIR__ . '/../vendor/autoload.php';
-if (file_exists($autoload)) {
-    require $autoload;
-}
+require __DIR__ . '/../vendor/autoload.php';
 
 function h(?string $v): string {
     return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
@@ -220,9 +213,6 @@ h1 { font-size: 16pt; margin: 0 0 8pt; }
     $mpdf->Output('teklif.pdf', \Mpdf\Output\Destination::INLINE);
     exit;
 }
-
-// ---- FPDF fallback ----
-require __DIR__ . '/../libs/fpdf.php';
 
 header('Content-Type: application/pdf');
 header('Content-Disposition: inline; filename=\"teklif.pdf\"');
