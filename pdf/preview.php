@@ -150,41 +150,14 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Teklif Önizleme</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body {
-            font-size: 0.85rem;
-        }
-
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            font-size: 1rem;
-        }
-
-        @media print {
-            .d-print-none {
-                display: none !important;
-            }
-
-            @page {
-                margin: 10mm;
-            }
-
-            table {
-                page-break-inside: auto;
-            }
-
-            tr {
-                page-break-inside: avoid;
-                page-break-after: auto;
-            }
-        }
-
-        .signature-box {
-            height: 60px;
+        .signature-box{height:60px;}
+        .action-bar{position:sticky;bottom:0;z-index:1020;}
+        @media print{
+            .d-print-none{display:none!important;}
+            thead{display:table-header-group;}
+            @page{margin:10mm;}
         }
     </style>
 </head>
@@ -192,57 +165,65 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
 <body class="bg-white">
     <div class="container my-2">
         <?php if ($error): ?>
-            <div class="alert alert-danger"><?= h($error) ?></div>
+            <div class="alert alert-danger" role="alert"><?= h($error) ?></div>
         <?php else: ?>
-            <div class="mb-3">
-                <div class="row">
-
-                    <!-- Müşteri Bilgileri -->
-                    <div class="col-md-4">
-                        <h5>Müşteri Bilgileri</h5>
-                        <div class=""><strong>Firma:</strong> <?= h($quote['customer_company'] ?? '') ?></div>
-                        <div class=""><strong>İlgili:</strong> <?= h(trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''))) ?></div>
-                        <div class=""><strong>Telefon:</strong> <?= h($quote['customer_phone'] ?? '') ?></div>
-                        <div class=""><strong>Adres:</strong> <?= nl2br(h($quote['customer_address'] ?? '')) ?></div>
-                        <div class=""><strong>E-posta:</strong> <?= h($quote['customer_email'] ?? '') ?></div>
+            <div class="row row-cols-1 row-cols-md-3 g-3 mb-3">
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold">Müşteri Bilgileri</div>
+                        <div class="card-body small">
+                            <div><span class="fw-semibold">Firma:</span> <?= h($quote['customer_company'] ?? '') ?></div>
+                            <div><span class="fw-semibold">İlgili:</span> <?= h(trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''))) ?></div>
+                            <div><span class="fw-semibold">Telefon:</span> <?= h($quote['customer_phone'] ?? '') ?></div>
+                            <div><span class="fw-semibold">Adres:</span> <?= nl2br(h($quote['customer_address'] ?? '')) ?></div>
+                            <div><span class="fw-semibold">E-posta:</span> <?= h($quote['customer_email'] ?? '') ?></div>
+                        </div>
                     </div>
-                    <!-- Teklif Detayları -->
-                    <div class="col-md-4">
-                        <h5>Teklif Bilgileri</h5>
-                        <div class=""><strong>Teslimat:</strong> <?= h($quote['delivery_time'] ?? '') ?></div>
-                        <div class=""><strong>Ödeme:</strong> <?= h($paymentText) ?></div>
-                        <div class=""><strong>Vade:</strong> <?= h($quote['payment_term'] ?? '') ?></div>
-                        <div class=""><strong>Geçerlilik:</strong> <?= h($validUntil) ?></div>
+                </div>
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold">Teklif Bilgileri</div>
+                        <div class="card-body small">
+                            <div><span class="fw-semibold">Teslimat:</span> <?= h($quote['delivery_time'] ?? '') ?></div>
+                            <div><span class="fw-semibold">Ödeme:</span> <span class="badge bg-info text-dark"><?= h($paymentText) ?></span></div>
+                            <div><span class="fw-semibold">Vade:</span> <?= h($quote['payment_term'] ?? '') ?></div>
+                            <div><span class="fw-semibold">Geçerlilik:</span> <?= h($validUntil) ?></div>
+                        </div>
                     </div>
-                    <!-- Teklif No / Genel -->
-                    <div class="col-md-4 text-end">
-                        <div class=""><strong>Teklif No:</strong> <?= h($quote['quote_no'] ?? '') ?></div>
-                        <div class=""><strong>Tarih:</strong> <?= h($quote['offer_date'] ?? '') ?></div>
-                        <div class=""><strong>Hazırlayan:</strong> <?= h($preparedBy) ?></div>
-                        <div class=""><strong>E-posta:</strong> <?= h($company['email']) ?></div>
+                </div>
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold">Genel Bilgiler</div>
+                        <div class="card-body small">
+                            <div><span class="fw-semibold">Teklif No:</span> <?= h($quote['quote_no'] ?? '') ?></div>
+                            <div><span class="fw-semibold">Tarih:</span> <?= h($quote['offer_date'] ?? '') ?></div>
+                            <div><span class="fw-semibold">Hazırlayan:</span> <?= h($preparedBy) ?></div>
+                            <div><span class="fw-semibold">E-posta:</span> <?= h($company['email']) ?></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
 
-            <div class="table-responsive mb-3">
-                <table class="table table-sm table-bordered table-striped">
-                    <thead class="table-light">
+            <?php if ($systems): ?>
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm table-striped align-middle" aria-label="Sistem Tablosu">
+                        <thead class="table-light sticky-top" style="top:0;z-index:1;">
                         <tr>
-                            <th>RAL</th>
-                            <th>Cam Rengi</th>
-                            <th>Sistem</th>
-                            <th>Açıklama</th>
-                            <th class="text-end">Adet</th>
-                            <th class="text-end">Genişlik</th>
-                            <th class="text-end">Yükseklik</th>
-                            <th class="text-end">m²</th>
-                            <th class="text-end">Toplam m²</th>
-                            <th class="text-end">Tutar</th>
+                            <th scope="col">RAL</th>
+                            <th scope="col">Cam Rengi</th>
+                            <th scope="col">Sistem</th>
+                            <th scope="col">Açıklama</th>
+                            <th scope="col" class="text-end">Adet</th>
+                            <th scope="col" class="text-end">Genişlik</th>
+                            <th scope="col" class="text-end">Yükseklik</th>
+                            <th scope="col" class="text-end">m²</th>
+                            <th scope="col" class="text-end">Toplam m²</th>
+                            <th scope="col" class="text-end">Tutar</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <?php if ($systems): foreach ($systems as $row): ?>
+                        <tbody>
+                            <?php foreach ($systems as $row): ?>
                                 <tr>
                                     <td><?= h($row['ral']) ?></td>
                                     <td><?= h($row['glass']) ?></td>
@@ -255,44 +236,67 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
                                     <td class="text-end"><?= h(number_format($row['total_area'], 2, ',', '.')) ?></td>
                                     <td class="text-end"><?= number_format($row['total'], 2, ',', '.') ?></td>
                                 </tr>
-                            <?php endforeach;
-                        else: ?>
-                            <tr>
-                                <td colspan="10" class="text-center">Kayıt bulunamadı.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <h6>Açıklamalar</h6>
-                    <div class="border rounded p-2" style="min-height:5rem; white-space:pre-wrap;"><?= h($quote['remarks'] ?? '') ?></div>
-                    <?php if (!empty($company['bank_account'])): ?>
-                        <h6 class="mt-2">Banka Bilgileri</h6>
-                        <div class="border rounded p-2" style="white-space:pre-wrap;"><?= nl2br(h($company['bank_account'])) ?></div>
-                    <?php endif; ?>
-                </div>
-                <div class="col-md-6">
-                    <table class="table table-sm">
-                        <tr>
-                            <th>Ara Toplam</th>
-                            <td class="text-end"><?= number_format($subTotal, 2, ',', '.') ?> ₺</td>
-                        </tr>
-                        <tr>
-                            <th>İskonto</th>
-                            <td class="text-end"><?= number_format($discountAmount, 2, ',', '.') ?> ₺</td>
-                        </tr>
-                        <tr>
-                            <th>KDV</th>
-                            <td class="text-end"><?= number_format($vatAmount, 2, ',', '.') ?> ₺</td>
-                        </tr>
-                        <tr class="table-light">
-                            <th>Genel Toplam</th>
-                            <td class="text-end"><strong><?= number_format($grandTotal, 2, ',', '.') ?> ₺</strong></td>
-                        </tr>
+                            <?php endforeach; ?>
+                        </tbody>
                     </table>
+                </div>
+            <?php else: ?>
+                <div class="alert alert-info" role="alert">Sistem bulunamadı.</div>
+            <?php endif; ?>
+
+            <div class="row row-cols-1 row-cols-md-3 g-3 mb-3">
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold">Açıklamalar</div>
+                        <div class="card-body small">
+                            <?php if (trim($quote['remarks'] ?? '') !== ''): ?>
+                                <div class="text-break" style="white-space:pre-wrap;"><?= h($quote['remarks'] ?? '') ?></div>
+                            <?php else: ?>
+                                <div class="alert alert-secondary mb-0" role="alert">Açıklama bulunmamaktadır.</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold">Banka Bilgileri</div>
+                        <div class="card-body small">
+                            <?php if (!empty($company['bank_account'])): ?>
+                                <div class="text-break" style="white-space:pre-wrap;"><?= nl2br(h($company['bank_account'])) ?></div>
+                            <?php else: ?>
+                                <div class="alert alert-secondary mb-0" role="alert">Banka bilgisi bulunmamaktadır.</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold">Tutar Özeti</div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm mb-0">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">Ara Toplam</th>
+                                        <td class="text-end"><?= number_format($subTotal, 2, ',', '.') ?> ₺</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">İskonto</th>
+                                        <td class="text-end"><?= number_format($discountAmount, 2, ',', '.') ?> ₺</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">KDV</th>
+                                        <td class="text-end"><?= number_format($vatAmount, 2, ',', '.') ?> ₺</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <th scope="row">Genel Toplam</th>
+                                        <td class="text-end fw-bold"><?= number_format($grandTotal, 2, ',', '.') ?> ₺</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -304,29 +308,33 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
                     </div>
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label">Onaylayan Adı</label>
-                            <input type="text" class="form-control" />
+                            <label class="form-label" for="approverName">Onaylayan Adı</label>
+                            <input type="text" class="form-control" id="approverName" />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Tarih</label>
-                            <input type="date" class="form-control" value="<?= h(date('Y-m-d')) ?>" />
+                            <label class="form-label" for="approvalDate">Tarih</label>
+                            <input type="date" class="form-control" id="approvalDate" value="<?= h(date('Y-m-d')) ?>" />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">İmza</label>
-                            <div class="border signature-box"></div>
+                            <label class="form-label" for="signatureBox">İmza</label>
+                            <div id="signatureBox" class="border signature-box"></div>
                         </div>
                     </div>
                 </div>
             </div>
         <?php endif; ?>
     </div>
-    <div class="d-print-none border-top bg-light position-sticky bottom-0 py-2">
-        <div class="container d-flex gap-2">
-            <a href="render_quotation_pdf.php?id=<?= h((string)$id) ?>" class="btn btn-primary">PDF İndir</a>
-            <button class="btn btn-secondary" onclick="window.print()">Yazdır</button>
+    <div class="action-bar d-print-none border-top bg-light">
+        <div class="container py-2 d-flex gap-2">
+            <a href="render_quotation_pdf.php?id=<?= h((string)$id) ?>" class="btn btn-primary" aria-label="PDF indir" data-bs-toggle="tooltip" title="PDF indir"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+            <button class="btn btn-secondary" onclick="window.print()" aria-label="Yazdır" data-bs-toggle="tooltip" title="Yazdır"><i class="bi bi-printer me-1"></i>Yazdır</button>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const tooltipTriggerList=[...document.querySelectorAll('[data-bs-toggle=\"tooltip\"]')];
+        tooltipTriggerList.forEach(t=>new bootstrap.Tooltip(t));
+    </script>
 </body>
 
 </html>
