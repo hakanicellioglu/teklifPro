@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/header.php';
+require BASE_PATH . '/header.php';
 
 function e(?string $v): string {
     return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');

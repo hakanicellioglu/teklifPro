@@ -14,7 +14,7 @@ if (empty($_SESSION['user_id'])) {
     exit('Forbidden');
 }
 
-require __DIR__ . '/../config.php';
+require __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/helpers.php';
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);

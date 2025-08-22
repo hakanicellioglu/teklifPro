@@ -1,7 +1,7 @@
 <?php
-require __DIR__ . '/header.php';
-require __DIR__ . '/resources/views/partials/page_header.php';
-require __DIR__ . '/resources/views/partials/stat_card.php';
+require BASE_PATH . '/header.php';
+require BASE_PATH . '/components/page_header.php';
+require BASE_PATH . '/components/stat_card.php';
 
 try {
     $stmt = $pdo->prepare('SELECT first_name FROM users WHERE id = :id');
@@ -77,4 +77,4 @@ try {
 const qCtx = document.getElementById('quotationChart');
 new Chart(qCtx,{type:'doughnut',data:{labels:<?= json_encode(array_keys($quotationStatuses)) ?>,datasets:[{data:<?= json_encode(array_values($quotationStatuses)) ?>,backgroundColor:['#0d6efd','#ffc107','#198754']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
 </script>
-<?php require __DIR__ . '/footer.php'; ?>
+<?php require BASE_PATH . '/footer.php'; ?>

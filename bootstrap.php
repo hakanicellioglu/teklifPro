@@ -1,6 +1,9 @@
 <?php
 if (!defined('BOOTSTRAP_LOADED')) {
     define('BOOTSTRAP_LOADED', true);
+    if (!defined('BASE_PATH')) {
+        define('BASE_PATH', __DIR__);
+    }
 
     ini_set('display_errors', '0');
     ini_set('log_errors', '1');

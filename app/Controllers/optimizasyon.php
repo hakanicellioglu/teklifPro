@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/header.php';
+require BASE_PATH . '/header.php';
 
 function e(?string $v): string
 {
@@ -10,7 +10,7 @@ function e(?string $v): string
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
     echo '<div class="container py-4"><div class="alert alert-danger">Teklif bulunamadı.</div></div>';
-    require __DIR__ . '/footer.php';
+    require BASE_PATH . '/footer.php';
     exit;
 }
 
@@ -21,7 +21,7 @@ $systems = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if (!$systems) {
     echo '<div class="container py-4"><div class="alert alert-warning">Bu teklife ait giyotin sistemi bulunamadı.</div></div>';
-    require __DIR__ . '/footer.php';
+    require BASE_PATH . '/footer.php';
     exit;
 }
 
@@ -138,4 +138,4 @@ foreach ($systems as $sys) {
         <?php endforeach; ?>
     </div>
 </div>
-<?php require __DIR__ . '/footer.php';
+<?php require BASE_PATH . '/footer.php';

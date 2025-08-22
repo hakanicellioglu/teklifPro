@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/header.php';
+require BASE_PATH . '/header.php';
 
 $toasts = [];
 
