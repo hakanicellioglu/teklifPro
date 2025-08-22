@@ -21,11 +21,7 @@ if (!in_array($uri, $publicRoutes, true) && empty($_SESSION['user_id'])) {
         ob_clean();
     }
     http_response_code(403);
-<<<<<<< HEAD:index.php
-    view('errors/403');
-=======
     include BASE_PATH . '/errors/403.php';
->>>>>>> b7779a509e60ebc893c2898b28d007c9e855e950:public/index.php
     exit;
 }
 
@@ -40,9 +36,5 @@ if (ob_get_length()) {
     ob_clean();
 }
 http_response_code(404);
-<<<<<<< HEAD:index.php
-view('errors/404');
-=======
 include BASE_PATH . '/errors/404.php';
->>>>>>> b7779a509e60ebc893c2898b28d007c9e855e950:public/index.php
 exit;
