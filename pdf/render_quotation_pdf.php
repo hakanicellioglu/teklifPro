@@ -1,68 +1,60 @@
 <?php
 declare(strict_types=1);
 
+// Bootstrap application (session, DB, helpers)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
 if (empty($_SESSION['user_id'])) {
     http_response_code(403);
     exit('Forbidden');
 }
 
 require __DIR__ . '/../config.php';
-
 require_once __DIR__ . '/helpers.php';
 
-/**
- * Composer is OPTIONAL. If present and mPDF is installed, we will render HTML template.
- * Otherwise we fall back to FPDF and draw a clean, data-driven layout.
- */
-$autoload = __DIR__ . '/../vendor/autoload.php';
-if (file_exists($autoload)) {
-    require $autoload;
+// --- CSRF check -----------------------------------------------------------
+$sessionToken = $_SESSION['csrf_token'] ?? '';
+$token = filter_input(INPUT_GET, 'csrf_token', FILTER_SANITIZE_STRING);
+if (!$token || !$sessionToken || !hash_equals($sessionToken, $token)) {
+    http_response_code(403);
+    exit('Invalid CSRF token');
 }
 
-function h(?string $v): string {
-    return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-// ---- Fetch data ----
+// --- Fetch quotation ------------------------------------------------------
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
-    http_response_code(400);
-    exit('Missing or invalid quotation id.');
+    http_response_code(404);
+    exit('Quotation not found');
 }
 
 try {
-    // Quote master
-    $stmt = $pdo->prepare("
-        SELECT q.*,
-               c.first_name, c.last_name, c.email AS customer_email, c.phone AS customer_phone,
-               COALESCE(c.company_name, '') AS company_name
-          FROM generaloffers q
-          LEFT JOIN customers c ON c.id = q.customer_id
-          
-         WHERE q.id = :id
-         LIMIT 1
-    ");
+    // Master quotation data
+    $stmt = $pdo->prepare(
+        "SELECT g.*, c.first_name, c.last_name, c.company_name, c.email, c.phone, c.address
+           FROM generaloffers g
+           LEFT JOIN customers c ON c.id = g.customer_id
+          WHERE g.id = :id
+          LIMIT 1"
+    );
     $stmt->execute([':id' => $id]);
     $quote = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$quote) {
         http_response_code(404);
-        exit('Quotation not found.');
+        exit('Quotation not found');
     }
 
-    // Quote items (try a couple of likely tables; prefer generic quote_items if exists)
+    // Line items (try multiple table names)
     $items = [];
     $tables = [
-        "SELECT qi.*, p.code AS product_code, p.name AS product_name 
-           FROM quote_items qi 
+        "SELECT qi.*, p.code, p.name, p.unit
+           FROM quote_items qi
            LEFT JOIN products p ON p.id = qi.product_id
           WHERE qi.quote_id = :id
           ORDER BY qi.id",
-        // fallback (if a different table name is used)
-        "SELECT qi.*, p.code AS product_code, p.name AS product_name 
-           FROM quotation_items qi 
+        "SELECT qi.*, p.code, p.name, p.unit
+           FROM quotation_items qi
            LEFT JOIN products p ON p.id = qi.product_id
           WHERE qi.quotation_id = :id
           ORDER BY qi.id",
@@ -72,34 +64,28 @@ try {
             $st = $pdo->prepare($sql);
             $st->execute([':id' => $id]);
             $rows = $st->fetchAll(PDO::FETCH_ASSOC);
-            if ($rows && count($rows) > 0) {
+            if ($rows) {
                 $items = $rows;
                 break;
             }
         } catch (Throwable $e) {
-            // ignore and try next
+            // try next
         }
     }
-
-    // Company profile (logo/name) if available
-    $company = ['name' => '', 'email' => '', 'phone' => '', 'logo' => null, 'address' => ''];
-    try {
-        $st = $pdo->query("SELECT name, email, phone, logo, address FROM company LIMIT 1");
-        if ($st) { $company = $st->fetch(PDO::FETCH_ASSOC) ?: $company; }
-    } catch (Throwable $e) { /* optional */ }
-
 } catch (Throwable $e) {
+    error_log($e->getMessage());
     http_response_code(500);
-    exit('DB error: ' . h($e->getMessage()));
+    exit('Server error');
 }
 
-// Label maps
-$assemblyLabels = [
+// --- Maps and helpers -----------------------------------------------------
+$assemblyMap = [
     'demonte' => 'Demonte',
     'musteri' => 'Müşteri Montajlı',
     'bayi'    => 'Bayi Montajlı',
 ];
-$paymentLabels = [
+
+$paymentMap = [
     'cash'          => 'Peşin',
     'bank_transfer' => 'Havale/EFT',
     'credit_card'   => 'Kredi Kartı',
@@ -107,144 +93,138 @@ $paymentLabels = [
     'other'         => 'Diğer',
 ];
 
-$assemblyText = $assemblyLabels[$quote['assembly_type'] ?? ''] ?? ($quote['assembly_type'] ?? '');
-$paymentText  = $paymentLabels[$quote['payment_method'] ?? ''] ?? ($quote['payment_method'] ?? '');
-$validityText = isset($quote['validity_days']) && $quote['validity_days'] !== null && $quote['validity_days'] !== '' ? ((int)$quote['validity_days']).' gün' : '';
-
-// Try to render with mPDF if available
-$canUseMpdf = class_exists('\\Mpdf\\Mpdf');
-
-if ($canUseMpdf) {
-    // Build HTML via template if exists, else inline template
-    $html = (function() use ($quote, $items, $company, $assemblyText, $paymentText, $validityText) {
-        $tpl = __DIR__ . '/templates/quotation.tpl.php';
-        if (is_file($tpl)) {
-            // The template should read $quote, $items, $company, etc.
-            ob_start();
-            include $tpl;
-            return ob_get_clean();
-        } else {
-            // Minimal inline HTML
-            $customerFull = trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''));
-            $dateStr = $quote['created_at'] ?? date('Y-m-d');
-            $title = 'Teklif #' . (int)$quote['id'];
-            $rows = '';
-            $total = 0.0;
-            foreach ($items as $i => $it) {
-                $qty = (float)($it['quantity'] ?? $it['qty'] ?? 0);
-                $price = (float)($it['unit_price'] ?? $it['price'] ?? 0);
-                $line = $qty * $price;
-                $total += $line;
-                $rows .= '<tr>
-                    <td>'.($i+1).'</td>
-                    <td>'.h($it['product_code'] ?? '').'</td>
-                    <td>'.h($it['product_name'] ?? $it['name'] ?? '').'</td>
-                    <td style="text-align:right">'.number_format($qty, 2, ',', '.').'</td>
-                    <td style="text-align:right">'.number_format($price, 2, ',', '.').'</td>
-                    <td style="text-align:right">'.number_format($line, 2, ',', '.').'</td>
-                </tr>';
-            }
-            return '
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<style>
-body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 11pt; }
-h1 { font-size: 16pt; margin: 0 0 8pt; }
-.table { width:100%; border-collapse: collapse; }
-.table th, .table td { border:1px solid #888; padding:6px; }
-.text-right { text-align:right; }
-.small { font-size: 9pt; color:#333; }
-</style>
-</head>
-<body>
-  <h1>'.h($title).'</h1>
-  <div class="small">Tarih: '.h($dateStr).'</div>
-  <div class="small">Müşteri: '.h($customerFull).'</div>
-  '.($assemblyText ? '<div class="small">Montaj: '.h($assemblyText).'</div>' : '').'
-  '.($paymentText ? '<div class="small">Ödeme: '.h($paymentText).'</div>' : '').'
-  '.($validityText ? '<div class="small">Geçerlilik: '.h($validityText).'</div>' : '').'
-
-  <br>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Kod</th>
-        <th>Ürün</th>
-        <th class="text-right">Adet</th>
-        <th class="text-right">Birim Fiyat</th>
-        <th class="text-right">Tutar</th>
-      </tr>
-    </thead>
-    <tbody>
-      '.$rows.'
-    </tbody>
-  </table>
-  <p class="text-right"><strong>Genel Toplam: ' . number_format($total, 2, ',', '.') . ' </strong></p>
-</body>
-</html>';
-        }
-    })();
-
-    $mpdf = new \Mpdf\Mpdf(['tempDir' => __DIR__ . '/../storage/tmp']);
-    $mpdf->WriteHTML($html);
-    $mpdf->Output('teklif.pdf', \Mpdf\Output\Destination::INLINE);
-    exit;
+// Currency formatter
+function money_tr(float $v): string {
+    return number_format($v, 2, ',', '.') . ' ₺';
 }
 
-// ---- FPDF fallback ----
+// --- Totals ---------------------------------------------------------------
+$subTotal = 0.0;
+$discountTotal = 0.0;
+$vatTotal = 0.0;
+$grandTotal = 0.0;
+
+foreach ($items as &$it) {
+    $qty  = (float)($it['quantity'] ?? $it['qty'] ?? 0);
+    $price = (float)($it['unit_price'] ?? $it['price'] ?? 0);
+    $discRate = (float)($it['discount_rate'] ?? 0);
+    $vatRate  = (float)($it['vat_rate'] ?? 0);
+
+    $line = $qty * $price;
+    $disc = $line * $discRate / 100;
+    $net  = $line - $disc;
+    $vat  = $net * $vatRate / 100;
+    $total = $net + $vat;
+
+    $it['qty'] = $qty;
+    $it['unit_price'] = $price;
+    $it['disc_rate'] = $discRate;
+    $it['vat_rate'] = $vatRate;
+    $it['line_total'] = $total;
+
+    $subTotal     += $line;
+    $discountTotal += $disc;
+    $vatTotal     += $vat;
+    $grandTotal   += $total;
+}
+unset($it);
+
+// --- PDF generation using FPDF (same pipeline as optimization PDF) -------
+define('FPDF_FONTPATH', __DIR__ . '/Roboto/');
 require __DIR__ . '/../libs/fpdf.php';
 
-header('Content-Type: application/pdf');
-header('Content-Disposition: inline; filename=\"teklif.pdf\"');
-
 $pdf = new FPDF();
+$fontFile = __DIR__ . '/Roboto/Roboto-Regular.php';
+if (is_file($fontFile)) {
+    $pdf->AddFont('Roboto', '', 'Roboto-Regular.php');
+    $font = 'Roboto';
+} else {
+    $font = 'Arial';
+}
+
+$marginPx = 50; // match optimization PDF
+$pageMargin = $marginPx / 3.78;
+$pdf->SetMargins($pageMargin, $pageMargin, $pageMargin);
+$pdf->SetAutoPageBreak(true, $pageMargin);
 $pdf->AddPage();
-$pdf->SetAutoPageBreak(true, 15);
 
 // Header
-$pdf->SetFont('Arial', 'B', 14);
-$pdf->Cell(0, 8, enc('TEKLİF #' . (string)$quote['id']), 0, 1);
-$pdf->SetFont('Arial', '', 11);
-$customerFull = trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''));
-$pdf->Cell(0, 6, enc('Müşteri: ' . $customerFull), 0, 1);
-if (!empty($assemblyText)) { $pdf->Cell(0, 6, enc('Montaj: ' . $assemblyText), 0, 1); }
-if (!empty($paymentText))  { $pdf->Cell(0, 6, enc('Ödeme: ' . $paymentText), 0, 1); }
-if (!empty($validityText)) { $pdf->Cell(0, 6, enc('Geçerlilik: ' . $validityText), 0, 1); }
+$title = 'Teklif #' . ($quote['quote_no'] ?? $quote['id']);
+$pdf->SetFont($font, '', 12);
+$pdf->Cell(0, 8, enc($title), 0, 1, 'C');
 $pdf->Ln(2);
 
+$customer = trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''));
+if (!empty($quote['company_name'])) {
+    $customer = $quote['company_name'];
+}
+$pdf->SetFont($font, '', 9);
+$pdf->Cell(0, 5, enc('Müşteri: ' . $customer), 0, 1);
+$pdf->Cell(0, 5, enc('Tarih: ' . date('d.m.Y', strtotime($quote['offer_date'] ?? 'now'))), 0, 1);
+$assembly = $assemblyMap[$quote['assembly_type'] ?? ''] ?? '';
+if ($assembly) {
+    $pdf->Cell(0, 5, enc('Montaj: ' . $assembly), 0, 1);
+}
+$payment = $paymentMap[$quote['payment_method'] ?? ''] ?? '';
+if ($payment) {
+    $pdf->Cell(0, 5, enc('Ödeme: ' . $payment), 0, 1);
+}
+if (!empty($quote['validity_days'])) {
+    $pdf->Cell(0, 5, enc('Geçerlilik: ' . (int)$quote['validity_days'] . ' gün'), 0, 1);
+}
+$pdf->Ln(3);
+
 // Table header
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(10, 8, '#', 1, 0, 'C');
-$pdf->Cell(30, 8, enc('Kod'), 1, 0);
-$pdf->Cell(80, 8, enc('Ürün'), 1, 0);
-$pdf->Cell(20, 8, enc('Adet'), 1, 0, 'R');
-$pdf->Cell(25, 8, enc('Birim'), 1, 0, 'R');
+$pdf->SetFont($font, 'B', 9);
+$pdf->Cell(8, 8, '#', 1, 0, 'C');
+$pdf->Cell(28, 8, enc('Kod'), 1, 0);
+$pdf->Cell(60, 8, enc('Ürün'), 1, 0);
+$pdf->Cell(14, 8, enc('Birim'), 1, 0, 'C');
+$pdf->Cell(18, 8, enc('Adet'), 1, 0, 'R');
+$pdf->Cell(26, 8, enc('Birim Fiyat'), 1, 0, 'R');
+$pdf->Cell(15, 8, enc('KDV%'), 1, 0, 'R');
 $pdf->Cell(25, 8, enc('Tutar'), 1, 1, 'R');
 
-$pdf->SetFont('Arial', '', 10);
-$total = 0.0;
+$pdf->SetFont($font, '', 9);
 $index = 1;
 foreach ($items as $it) {
-    $qty   = (float)($it['quantity'] ?? $it['qty'] ?? 0);
-    $price = (float)($it['unit_price'] ?? $it['price'] ?? 0);
-    $line  = $qty * $price;
-    $total += $line;
-
-    $pdf->Cell(10, 7, (string)$index, 1, 0, 'C');
-    $pdf->Cell(30, 7, enc((string)($it['product_code'] ?? '')), 1, 0);
-    $pdf->Cell(80, 7, enc((string)($it['product_name'] ?? $it['name'] ?? '')), 1, 0);
-    $pdf->Cell(20, 7, number_format($qty, 2, ',', '.'), 1, 0, 'R');
-    $pdf->Cell(25, 7, number_format($price, 2, ',', '.'), 1, 0, 'R');
-    $pdf->Cell(25, 7, number_format($line, 2, ',', '.'), 1, 1, 'R');
+    $pdf->Cell(8, 7, (string)$index, 1, 0, 'C');
+    $pdf->Cell(28, 7, enc((string)($it['code'] ?? '')), 1, 0);
+    $pdf->Cell(60, 7, enc((string)($it['name'] ?? '')), 1, 0);
+    $pdf->Cell(14, 7, enc((string)($it['unit'] ?? '')), 1, 0, 'C');
+$pdf->Cell(18, 7, number_format($it['qty'], 2, ',', '.'), 1, 0, 'R');
+$pdf->Cell(26, 7, number_format($it['unit_price'], 2, ',', '.') . ' ₺', 1, 0, 'R');
+$pdf->Cell(15, 7, number_format($it['vat_rate'], 2, ',', '.'), 1, 0, 'R');
+$pdf->Cell(25, 7, number_format($it['line_total'], 2, ',', '.') . ' ₺', 1, 1, 'R');
     $index++;
 }
 
-// Total
-$pdf->SetFont('Arial', 'B', 11);
-$pdf->Cell(165, 8, enc('Genel Toplam'), 1, 0, 'R');
-$pdf->Cell(25, 8, number_format($total, 2, ',', '.'), 1, 1, 'R');
+// Totals
+$pdf->SetFont($font, 'B', 9);
+$pdf->Cell(155, 7, enc('Ara Toplam'), 1, 0, 'R');
+$pdf->Cell(25, 7, number_format($subTotal, 2, ',', '.') . ' ₺', 1, 1, 'R');
+$pdf->Cell(155, 7, enc('İskonto'), 1, 0, 'R');
+$pdf->Cell(25, 7, number_format($discountTotal, 2, ',', '.') . ' ₺', 1, 1, 'R');
+$pdf->Cell(155, 7, enc('KDV'), 1, 0, 'R');
+$pdf->Cell(25, 7, number_format($vatTotal, 2, ',', '.') . ' ₺', 1, 1, 'R');
+$pdf->Cell(155, 7, enc('Genel Toplam'), 1, 0, 'R');
+$pdf->Cell(25, 7, number_format($grandTotal, 2, ',', '.') . ' ₺', 1, 1, 'R');
 
-$pdf->Output('I', 'teklif.pdf');
+if (!empty($quote['notes'])) {
+    $pdf->Ln(4);
+    $pdf->SetFont($font, '', 9);
+    $pdf->MultiCell(0, 5, enc('Notlar: ' . $quote['notes']));
+}
+
+// --- Output ---------------------------------------------------------------
+$custSafe = preg_replace('/[^A-Za-z0-9_-]+/', '_', $customer ?: 'Musteri');
+$quoteNoSafe = preg_replace('/[^A-Za-z0-9_-]+/', '_', (string)($quote['quote_no'] ?? $quote['id']));
+$fileName = 'Teklif_' . $quoteNoSafe . '_' . $custSafe . '_' . date('Ymd') . '.pdf';
+
+$pdfContent = $pdf->Output('S');
+header('Content-Type: application/pdf');
+header('Content-Disposition: attachment; filename="' . $fileName . '"');
+header('Content-Length: ' . strlen($pdfContent));
+echo $pdfContent;
+exit;
+
