@@ -163,46 +163,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
 <?php if ($error): ?>
     <div class="alert alert-danger"><?= h($error) ?></div>
 <?php else: ?>
-    <div class="mb-3">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="d-flex align-items-center mb-2">
-                    <?php if (!empty($company['logo'])): ?>
-                        <img src="<?= h($company['logo']) ?>" alt="<?= h($company['name']) ?>" style="height:60px;" class="me-2">
-                    <?php endif; ?>
-                    <div>
-                        <div class="fw-bold"><?= h($company['name']) ?></div>
-                        <div><?= nl2br(h($company['address'])) ?></div>
-                        <div><?= h($company['email']) ?> • <?= h($company['phone']) ?></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 text-end">
-                <div><strong>Teklif No:</strong> <?= h($quote['quote_no'] ?? '') ?></div>
-                <div><strong>Tarih:</strong> <?= h($quote['offer_date'] ?? '') ?></div>
-                <div><strong>Hazırlayan:</strong> <?= h($preparedBy) ?></div>
-                <div><strong>E-posta:</strong> <?= h($company['email']) ?></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <h5>Müşteri Bilgileri</h5>
-            <div><strong>Firma:</strong> <?= h($quote['customer_company'] ?? '') ?></div>
-            <div><strong>İlgili:</strong> <?= h(trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''))) ?></div>
-            <div><strong>Telefon:</strong> <?= h($quote['customer_phone'] ?? '') ?></div>
-            <div><strong>Adres:</strong> <?= nl2br(h($quote['customer_address'] ?? '')) ?></div>
-            <div><strong>E-posta:</strong> <?= h($quote['customer_email'] ?? '') ?></div>
-        </div>
-        <div class="col-md-6">
-            <h5>Teklif Bilgileri</h5>
-            <div><strong>Teslimat:</strong> <?= h($quote['delivery_time'] ?? '') ?></div>
-            <div><strong>Ödeme:</strong> <?= h($paymentText) ?></div>
-            <div><strong>Vade:</strong> <?= h($quote['payment_term'] ?? '') ?></div>
-            <div><strong>Geçerlilik:</strong> <?= h($validUntil) ?></div>
-        </div>
-    </div>
+    <div class="mb-3"><div class="row"><div class="col-md-6"><div class="d-flex align-items-center mb-2"><?php if (!empty($company['logo'])): ?><img src="<?= h($company['logo']) ?>" alt="<?= h($company['name']) ?>" style="height:60px;" class="me-2"><?php endif; ?><div><div class="fw-bold"><?= h($company['name']) ?></div><div><?= nl2br(h($company['address'])) ?></div><div><?= h($company['email']) ?> • <?= h($company['phone']) ?></div></div></div></div><div class="col-md-6 text-end"><div><strong>Teklif No:</strong> <?= h($quote['quote_no'] ?? '') ?></div><div><strong>Tarih:</strong> <?= h($quote['offer_date'] ?? '') ?></div><div><strong>Hazırlayan:</strong> <?= h($preparedBy) ?></div><div><strong>E-posta:</strong> <?= h($company['email']) ?></div></div></div></div><div class="row mb-3"><div class="col-md-6"><h5>Müşteri Bilgileri</h5><div><strong>Firma:</strong> <?= h($quote['customer_company'] ?? '') ?></div><div><strong>İlgili:</strong> <?= h(trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''))) ?></div><div><strong>Telefon:</strong> <?= h($quote['customer_phone'] ?? '') ?></div><div><strong>Adres:</strong> <?= nl2br(h($quote['customer_address'] ?? '')) ?></div><div><strong>E-posta:</strong> <?= h($quote['customer_email'] ?? '') ?></div></div><div class="col-md-6"><h5>Teklif Bilgileri</h5><div><strong>Teslimat:</strong> <?= h($quote['delivery_time'] ?? '') ?></div><div><strong>Ödeme:</strong> <?= h($paymentText) ?></div><div><strong>Vade:</strong> <?= h($quote['payment_term'] ?? '') ?></div><div><strong>Geçerlilik:</strong> <?= h($validUntil) ?></div></div></div>
 
     <div class="table-responsive mb-3">
         <table class="table table-sm table-bordered table-striped">
