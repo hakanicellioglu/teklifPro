@@ -147,11 +147,11 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
     <title>Teklif Önizleme</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { font-size:0.95rem; }
-        h1,h2,h3,h4,h5 { font-size:1.15rem; }
+        body { font-size:0.85rem; }
+        h1,h2,h3,h4,h5,h6 { font-size:1rem; }
         @media print {
             .d-print-none { display:none !important; }
-            @page { margin:15mm; }
+            @page { margin:10mm; }
             table { page-break-inside:auto; }
             tr { page-break-inside:avoid; page-break-after:auto; }
         }
@@ -159,11 +159,11 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
     </style>
 </head>
 <body class="bg-white">
-<div class="container my-3">
+<div class="container my-2">
 <?php if ($error): ?>
     <div class="alert alert-danger"><?= h($error) ?></div>
 <?php else: ?>
-    <div class="mb-4">
+    <div class="mb-3">
         <div class="row">
             <div class="col-md-6">
                 <div class="d-flex align-items-center mb-2">
@@ -186,7 +186,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
         </div>
     </div>
 
-    <div class="row mb-4">
+    <div class="row mb-3">
         <div class="col-md-6">
             <h5>Müşteri Bilgileri</h5>
             <div><strong>Firma:</strong> <?= h($quote['customer_company'] ?? '') ?></div>
@@ -204,7 +204,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
         </div>
     </div>
 
-    <div class="table-responsive mb-4">
+    <div class="table-responsive mb-3">
         <table class="table table-sm table-bordered table-striped">
             <thead class="table-light">
                 <tr>
@@ -241,14 +241,12 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
         </table>
     </div>
 
-    <div class="row mb-4">
+    <div class="row mb-3">
         <div class="col-md-6">
-            <h6>Notlar</h6>
-            <div class="border rounded p-2" style="min-height:5rem; white-space:pre-wrap;"><?= h($quote['notes'] ?? '') ?></div>
-            <h6 class="mt-3">Açıklamalar</h6>
+            <h6>Açıklamalar</h6>
             <div class="border rounded p-2" style="min-height:5rem; white-space:pre-wrap;"><?= h($quote['remarks'] ?? '') ?></div>
             <?php if (!empty($company['bank_account'])): ?>
-            <h6 class="mt-3">Banka Bilgileri</h6>
+            <h6 class="mt-2">Banka Bilgileri</h6>
             <div class="border rounded p-2" style="white-space:pre-wrap;"><?= nl2br(h($company['bank_account'])) ?></div>
             <?php endif; ?>
         </div>
@@ -274,7 +272,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
         </div>
     </div>
 
-    <div class="card mb-5">
+    <div class="card mb-3">
         <div class="card-body">
             <div class="form-check mb-3">
                 <input class="form-check-input" type="checkbox" id="confirmBox">
