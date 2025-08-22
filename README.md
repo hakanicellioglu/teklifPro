@@ -60,6 +60,18 @@ teklifPro/
 └── vendor/           # Composer dependencies
 ```
 
+## Runtime Directories
+The application writes temporary and user-uploaded files to several folders. These
+directories are created automatically at runtime if they do not already exist:
+
+- `storage/app/`
+- `storage/framework/`
+- `storage/logs/`
+- `uploads/products/`
+- `uploads/quotations/`
+
+Ensure the web server has write permissions to these locations.
+
 ## Usage
 1. Log in using your credentials.
 2. Create or select a customer.

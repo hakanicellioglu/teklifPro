@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
         if (!in_array($mime, $allowed, true)) {
           $errors[] = 'Yalnızca JPG, PNG, GIF veya WebP dosyaları kabul edilir.';
         } else {
-          $uploadDir = __DIR__ . '/uploads/';
+          $uploadDir = __DIR__ . '/uploads/products/';
           if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0777, true);
           }
@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
             if ($imageUrl && file_exists(__DIR__ . '/' . $imageUrl)) {
               @unlink(__DIR__ . '/' . $imageUrl);
             }
-            $imageUrl = 'uploads/' . $filename;
+            $imageUrl = 'uploads/products/' . $filename;
           }
         }
       }
@@ -232,7 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
         if (!in_array($mime, $allowed, true)) {
           $errors[] = 'Yalnızca JPG, PNG, GIF veya WebP dosyaları kabul edilir.';
         } else {
-          $uploadDir = __DIR__ . '/uploads/';
+          $uploadDir = __DIR__ . '/uploads/products/';
           if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0777, true);
           }
@@ -242,7 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
           if (!move_uploaded_file($_FILES['product_image']['tmp_name'], $targetPath)) {
             $errors[] = 'Görsel kaydedilemedi.';
           } else {
-            $imageUrl = 'uploads/' . $filename;
+            $imageUrl = 'uploads/products/' . $filename;
           }
         }
       }
