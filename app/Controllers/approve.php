@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/../config.php';
+require BASE_PATH . '/config/config.php';
 
 function h(?string $v): string
 {

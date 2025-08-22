@@ -32,7 +32,7 @@
     btn.addEventListener('click', () => {
       const id = btn.dataset.id;
       resetCustomerForm();
-      fetch(`customers_get.php?id=${id}`)
+      fetch(`customers_get?id=${id}`)
         .then(r => r.json())
         .then(d => {
           if(d.ok){
@@ -53,11 +53,11 @@
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Kaydediliyor';
     const fd = new FormData(form);
-    fetch('customers_save.php',{method:'POST',body:fd})
+    fetch('customers_save',{method:'POST',body:fd})
       .then(r=>r.json())
       .then(data=>{
         if(data.ok){
-          fetch(`customers_get.php?id=${data.id}`)
+          fetch(`customers_get?id=${data.id}`)
             .then(r=>r.json())
             .then(resp=>{
               if(resp.ok){
@@ -126,7 +126,7 @@
       tbody.prepend(tr);
       tr.querySelector('.editCustomerBtn').addEventListener('click', () => {
         resetCustomerForm();
-        fetch(`customers_get.php?id=${c.id}`)
+        fetch(`customers_get?id=${c.id}`)
           .then(r=>r.json())
           .then(d=>{
             if(d.ok){

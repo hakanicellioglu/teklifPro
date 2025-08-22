@@ -1,6 +1,6 @@
 <?php
 http_response_code(403);
-require __DIR__ . '/../bootstrap.php';
+require __DIR__ . '/../../../bootstrap.php';
 ?>
 <!doctype html>
 <html lang="tr">

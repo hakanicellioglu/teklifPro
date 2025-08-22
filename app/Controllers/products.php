@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/config.php';
+require_once BASE_PATH . '/config/config.php';
 if (session_status() === PHP_SESSION_NONE) {
   session_start();
 }
@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
         if (!in_array($mime, $allowed, true)) {
           $errors[] = 'Yalnızca JPG, PNG, GIF veya WebP dosyaları kabul edilir.';
         } else {
-          $uploadDir = __DIR__ . '/uploads/';
+          $uploadDir = BASE_PATH . '/uploads/';
           if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0777, true);
           }
@@ -135,8 +135,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
           if (!move_uploaded_file($_FILES['product_image']['tmp_name'], $targetPath)) {
             $errors[] = 'Görsel kaydedilemedi.';
           } else {
-            if ($imageUrl && file_exists(__DIR__ . '/' . $imageUrl)) {
-              @unlink(__DIR__ . '/' . $imageUrl);
+            if ($imageUrl && file_exists(BASE_PATH . '/' . $imageUrl)) {
+              @unlink(BASE_PATH . '/' . $imageUrl);
             }
             $imageUrl = 'uploads/' . $filename;
           }
@@ -232,7 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
         if (!in_array($mime, $allowed, true)) {
           $errors[] = 'Yalnızca JPG, PNG, GIF veya WebP dosyaları kabul edilir.';
         } else {
-          $uploadDir = __DIR__ . '/uploads/';
+          $uploadDir = BASE_PATH . '/uploads/';
           if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0777, true);
           }
@@ -294,7 +294,7 @@ if ($hasDimensions) {
 $stmt = $pdo->query("SELECT $fields FROM products ORDER BY id DESC");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $productCount = count($products);
-require __DIR__ . '/header.php';
+require BASE_PATH . '/header.php';
 ?>
 <style>
   .image-upload-area {
@@ -699,4 +699,4 @@ require __DIR__ . '/header.php';
     select.addEventListener('change', toggleUnitValue);
   });
 </script>
-<?php require __DIR__ . '/footer.php'; ?>
+<?php require BASE_PATH . '/footer.php'; ?>

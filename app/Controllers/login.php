@@ -2,7 +2,7 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-require __DIR__ . '/config.php';
+require BASE_PATH . '/config/config.php';
 
 $errors = [];
 

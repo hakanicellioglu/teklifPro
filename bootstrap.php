@@ -1,6 +1,9 @@
 <?php
 if (!defined('BOOTSTRAP_LOADED')) {
     define('BOOTSTRAP_LOADED', true);
+    if (!defined('BASE_PATH')) {
+        define('BASE_PATH', __DIR__);
+    }
 
     ini_set('display_errors', '0');
     ini_set('log_errors', '1');
@@ -13,6 +16,15 @@ if (!defined('BOOTSTRAP_LOADED')) {
     function tr_money(float $v): string
     {
         return number_format($v, 2, ',', '.');
+    }
+
+    function view(string $path, array $data = []): void
+    {
+        extract($data, EXTR_SKIP);
+        if (substr($path, -4) !== '.php') {
+            $path .= '.php';
+        }
+        include __DIR__ . '/resources/views/' . ltrim($path, '/');
     }
 
     set_error_handler(function ($severity, $message, $file, $line) {
@@ -28,7 +40,7 @@ if (!defined('BOOTSTRAP_LOADED')) {
             ob_clean();
         }
         http_response_code(500);
-        include __DIR__ . '/errors/500.php';
+        view('errors/500');
         exit;
     });
 }

@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['ok' => false, 'message' => 'Yöntem desteklenmiyor.']);
     exit;
 }
-require __DIR__ . '/config.php';
+require BASE_PATH . '/config/config.php';
 header('Content-Type: application/json; charset=utf-8');
 
 $csrf = $_POST['csrf_token'] ?? '';
