@@ -218,9 +218,6 @@ h1 { font-size: 16pt; margin: 0 0 8pt; }
 define('FPDF_FONTPATH', __DIR__ . '/Roboto/');
 require __DIR__ . '/../libs/fpdf.php';
 
-header('Content-Type: application/pdf');
-header('Content-Disposition: inline; filename="teklif.pdf"');
-
 $pdf = new FPDF();
 $fontFile = __DIR__ . '/Roboto/Roboto-Regular.php';
 if (is_file($fontFile)) {
@@ -230,8 +227,8 @@ if (is_file($fontFile)) {
     $fontName = 'Arial';
 }
 $pdf->SetTitle(enc('TEKLİF #' . (string)$quote['id']));
-$pdf->AddPage();
 $pdf->SetAutoPageBreak(true, 15);
+$pdf->AddPage();
 
 // Header
 $pdf->SetFont($fontName, 'B', 14);
@@ -314,6 +311,9 @@ $pdf->SetFont($fontName, 'B', 11);
 $pdf->Cell(0, 8, enc('Genel Toplam: ' . number_format($total, 2, ',', '.')), 0, 1, 'R');
 
 try {
+    if (ob_get_length()) {
+        ob_end_clean();
+    }
     $pdf->Output('I', 'teklif.pdf');
 } catch (Throwable $e) {
     error_log('PDF Output error: ' . $e->getMessage());
