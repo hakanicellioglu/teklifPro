@@ -206,7 +206,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
                             <div><span class="fw-semibold">Tarih:</span> <?= h($quote['offer_date'] ?? '') ?></div>
                             <div><span class="fw-semibold">Hazırlayan:</span> <?= h($preparedBy) ?></div>
                             <?php if ($approveUrl): ?>
-                            <div><span class="fw-semibold">Onay:</span> <a href="<?= h($approveUrl) ?>"><?= h($approveUrl) ?></a><button type="button" class="btn btn-sm btn-outline-secondary share-btn ms-2" data-url="<?= h($approveUrl) ?>">Paylaş</button></div>
+                            <div class="d-print-none"><span class="fw-semibold">Onay:</span> <a href="<?= h($approveUrl) ?>"><?= h($approveUrl) ?></a><button type="button" class="btn btn-sm btn-outline-secondary share-btn ms-2" data-url="<?= h($approveUrl) ?>">Paylaş</button></div>
                             <?php endif; ?>
                             <div><span class="fw-semibold">E-posta:</span> <?= h($company['email']) ?></div>
                         </div>
