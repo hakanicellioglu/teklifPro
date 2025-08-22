@@ -179,6 +179,69 @@ if (
     }
 }
 
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    ($_POST['action'] ?? '') === 'recalc_guillotine' &&
+    $role === 'admin'
+) {
+    $token = $_POST['csrf_token'] ?? '';
+    $gId   = filter_input(INPUT_POST, 'guillotine_id', FILTER_VALIDATE_INT);
+    if (!hash_equals($csrfToken, $token) || !$gId) {
+        http_response_code(400);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Geçersiz CSRF tokenı.']);
+        exit;
+    }
+    try {
+        $pdo->beginTransaction();
+        $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE id = :gid AND general_offer_id = :goid');
+        $gFetch->execute([':gid' => $gId, ':goid' => $id]);
+        if ($row = $gFetch->fetch(PDO::FETCH_ASSOC)) {
+            if ((float)($row['width'] ?? 0) <= 0 || (float)($row['height'] ?? 0) <= 0 || (int)($row['quantity'] ?? 0) <= 0) {
+                throw new Exception('Geçersiz giyotin satırı.');
+            }
+            $totals = calculateGuillotineTotals([
+                'width'       => $row['width'],
+                'height'      => $row['height'],
+                'quantity'    => $row['quantity'],
+                'glass_type'  => $row['glass_type'] ?? '',
+                'profit_rate' => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
+                'provider'    => $productProvider,
+            ]);
+            $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
+            $gUpd->execute([
+                ':pamount' => $totals['totals']['profit'],
+                ':tamount' => $totals['totals']['grand_total'],
+                ':id'      => $gId,
+            ]);
+
+            $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
+            $gSumStmt->execute([':id' => $id]);
+            $gSum = (float)$gSumStmt->fetchColumn();
+            $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
+            $sSumStmt->execute([':id' => $id]);
+            $sSum = (float)$sSumStmt->fetchColumn();
+            $overall = $gSum + $sSum;
+            $upd = $pdo->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id');
+            $upd->execute([':t' => $overall, ':id' => $id]);
+
+            $pdo->commit();
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true]);
+            exit;
+        } else {
+            throw new Exception('Giyotin satırı bulunamadı.');
+        }
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        header('Content-Type: application/json', true, 500);
+        echo json_encode(['error' => 'Hesaplama hatası.']);
+        exit;
+    }
+}
+
 try {
     $stmt = $pdo->prepare('
         SELECT g.*, c.first_name, c.last_name, c.company AS customer_company, co.name AS company_name
@@ -476,7 +539,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                     <td><?= e($g['ral_code']) ?></td>
                                     <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
                                     <td class="text-end">
-                                        <a href="test.php?quote_id=<?= e((string)$g['id']) ?>" class="btn btn-sm btn-info">Kalemler</a>
+                                        <a href="test.php?quote_id=<?= e((string)$g['id']) ?>" class="btn btn-sm btn-info recalc-lines" data-gid="<?= e((string)$g['id']) ?>">Kalemler</a>
                                         <button type="button" class="btn btn-sm btn-secondary edit-guillotine" data-bs-toggle="modal" data-bs-target="#addGuillotineModal"
                                             data-id="<?= e((string)$g['id']) ?>"
                                             data-width="<?= e((string)$g['width']) ?>"
@@ -656,6 +719,28 @@ document.getElementById('addGuillotineModal').addEventListener('show.bs.modal', 
         form.querySelector('#guillotine_id').value = '';
         this.querySelector('.modal-title').textContent = 'Add Guillotine System Offer';
     }
+});
+
+document.querySelectorAll('.recalc-lines').forEach(function (link) {
+    link.addEventListener('click', async function (e) {
+        e.preventDefault();
+        const url = this.href;
+        const gid = this.dataset.gid;
+        try {
+            await fetch('quotation_view.php?id=<?= e((string)$offer['id']) ?>', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: new URLSearchParams({
+                    action: 'recalc_guillotine',
+                    guillotine_id: gid,
+                    csrf_token: '<?= e($csrfToken) ?>'
+                })
+            });
+        } catch (err) {
+            // ignore errors and proceed to navigation
+        }
+        window.location.href = url;
+    });
 });
 
 </script>
