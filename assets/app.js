@@ -75,4 +75,25 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 5000);
     });
   });
+
+  document.querySelectorAll('.share-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const url = btn.getAttribute('data-url');
+      if (!url) return;
+      if (navigator.share) {
+        try {
+          await navigator.share({ url });
+        } catch (e) {
+          /* ignore */
+        }
+      } else {
+        try {
+          await navigator.clipboard.writeText(url);
+          window.showToast && window.showToast('Bağlantı panoya kopyalandı', 'info');
+        } catch (e) {
+          window.showToast && window.showToast('Bağlantı kopyalanamadı', 'danger');
+        }
+      }
+    });
+  });
 });

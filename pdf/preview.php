@@ -157,6 +157,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
     <title>Teklif Önizleme</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../assets/app.css" rel="stylesheet">
     <style>
         .signature-box{height:60px;}
         .action-bar{position:sticky;bottom:0;z-index:1020;}
@@ -205,7 +206,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
                             <div><span class="fw-semibold">Tarih:</span> <?= h($quote['offer_date'] ?? '') ?></div>
                             <div><span class="fw-semibold">Hazırlayan:</span> <?= h($preparedBy) ?></div>
                             <?php if ($approveUrl): ?>
-                            <div><span class="fw-semibold">Onay:</span> <a href="<?= h($approveUrl) ?>"><?= h($approveUrl) ?></a></div>
+                            <div><span class="fw-semibold">Onay:</span> <a href="<?= h($approveUrl) ?>"><?= h($approveUrl) ?></a><button type="button" class="btn btn-sm btn-outline-secondary share-btn ms-2" data-url="<?= h($approveUrl) ?>">Paylaş</button></div>
                             <?php endif; ?>
                             <div><span class="fw-semibold">E-posta:</span> <?= h($company['email']) ?></div>
                         </div>
@@ -340,6 +341,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/app.js"></script>
     <script>
         const tooltipTriggerList=[...document.querySelectorAll('[data-bs-toggle=\"tooltip\"]')];
         tooltipTriggerList.forEach(t=>new bootstrap.Tooltip(t));

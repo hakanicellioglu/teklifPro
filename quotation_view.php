@@ -266,6 +266,13 @@ if (!$offer) {
     exit;
 }
 
+$approveUrl = '';
+if (!empty($offer['approval_token'])) {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host   = $_SERVER['HTTP_HOST'] ?? '';
+    $approveUrl = $host ? $scheme . '://' . $host . '/approve.php?token=' . urlencode($offer['approval_token']) : '';
+}
+
 $gDel = ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_guillotine' && $role === 'admin');
 if ($gDel) {
     $token = $_POST['csrf_token'] ?? '';
@@ -468,6 +475,9 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                     <div class="mb-2"><strong>Teklif Tarihi:</strong> <?= e(date('d.m.Y', strtotime($offer['offer_date']))) ?></div>
                     <?php if (!empty($offer['payment_method'])): ?>
                         <div class="mb-2"><strong>Ödeme:</strong> <?= e($paymentLabels[$offer['payment_method']] ?? $offer['payment_method']) ?></div>
+                    <?php endif; ?>
+                    <?php if ($approveUrl): ?>
+                        <div class="mb-2"><strong>Onay:</strong> <a href="<?= e($approveUrl) ?>"><?= e($approveUrl) ?></a><button type="button" class="btn btn-sm btn-outline-secondary share-btn ms-2" data-url="<?= e($approveUrl) ?>">Paylaş</button></div>
                     <?php endif; ?>
                     <div class="mb-2">
                         <?php if ($role === 'admin'): ?>
