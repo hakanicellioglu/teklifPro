@@ -23,6 +23,7 @@ The project was initiated to eliminate the inefficient manual Excel workflow. By
    ```bash
    composer install
    ```
+   > The `vendor/` directory is excluded from version control via `.gitignore`. After verifying this, run `composer install` to regenerate `vendor/` on your local environment.
 3. Copy the example environment file and adjust configuration:
    ```bash
    cp .env.example .env
@@ -59,6 +60,18 @@ teklifPro/
 ├── tests/            # Automated tests
 └── vendor/           # Composer dependencies
 ```
+
+## Runtime Directories
+The application writes temporary and user-uploaded files to several folders. These
+directories are created automatically at runtime if they do not already exist:
+
+- `storage/app/`
+- `storage/framework/`
+- `storage/logs/`
+- `uploads/products/`
+- `uploads/quotations/`
+
+Ensure the web server has write permissions to these locations.
 
 ## Usage
 1. Log in using your credentials.

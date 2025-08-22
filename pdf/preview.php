@@ -12,7 +12,7 @@ if (empty($_SESSION['user_id']) || !filter_var($_SESSION['user_id'], FILTER_VALI
     exit('Forbidden');
 }
 
-require __DIR__ . '/../config.php';
+require __DIR__ . '/../config/config.php';
 
 function h(?string $v): string
 {
@@ -74,7 +74,7 @@ try {
     if (!empty($quote['approval_token'])) {
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? '';
-        $approveUrl = $host ? $scheme . '://' . $host . '/public/approve.php?token=' . urlencode($quote['approval_token']) : '';
+        $approveUrl = $host ? $scheme . '://' . $host . '/approve.php?token=' . urlencode($quote['approval_token']) : '';
     }
 } catch (Throwable $e) {
     error_log($e->getMessage());
@@ -157,7 +157,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
     <title>Teklif Önizleme</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="../assets/app.css" rel="stylesheet">
+    <link href="../public/assets/app.css" rel="stylesheet">
     <style>
         .signature-box{height:60px;}
         .action-bar{position:sticky;bottom:0;z-index:1020;}
@@ -341,7 +341,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../assets/app.js"></script>
+    <script src="../public/assets/app.js"></script>
 </body>
 
 </html>
