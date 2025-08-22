@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
             if ($imageUrl && file_exists(BASE_PATH . '/' . $imageUrl)) {
               @unlink(BASE_PATH . '/' . $imageUrl);
             }
-            $imageUrl = 'uploads/' . $filename;
+            $imageUrl = 'uploads/products/' . $filename;
           }
         }
       }
@@ -242,7 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
           if (!move_uploaded_file($_FILES['product_image']['tmp_name'], $targetPath)) {
             $errors[] = 'Görsel kaydedilemedi.';
           } else {
-            $imageUrl = 'uploads/' . $filename;
+            $imageUrl = 'uploads/products/' . $filename;
           }
         }
       }
