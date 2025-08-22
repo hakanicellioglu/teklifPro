@@ -286,7 +286,7 @@ function calculateGuillotineTotals(array $input): array
 }
 
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
-    require __DIR__ . '/header.php';
+    require BASE_PATH . '/header.php';
 
     function e(?string $v): string
     {
@@ -325,7 +325,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $id = filter_input(INPUT_GET, 'quote_id', FILTER_VALIDATE_INT);
     if (!$id) {
         echo '<div class="container mt-4"><div class="alert alert-danger">Geçersiz giyotin.</div></div>';
-        require __DIR__ . '/footer.php';
+        require BASE_PATH . '/footer.php';
         exit;
     }
 
@@ -334,7 +334,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
         echo '<div class="container mt-4"><div class="alert alert-danger">Giyotin satırı bulunamadı.</div></div>';
-        require __DIR__ . '/footer.php';
+        require BASE_PATH . '/footer.php';
         exit;
     }
 
@@ -351,7 +351,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         ]);
     } catch (Throwable $e) {
         echo '<div class="container mt-4"><div class="alert alert-danger">Hesaplama hatası: ' . e($e->getMessage()) . '</div></div>';
-        require __DIR__ . '/footer.php';
+        require BASE_PATH . '/footer.php';
         exit;
     }
 
@@ -457,6 +457,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '</div>';
     echo '</div>';
 
-    require __DIR__ . '/footer.php';
+    require BASE_PATH . '/footer.php';
 }
 

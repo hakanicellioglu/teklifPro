@@ -1,6 +1,6 @@
 <?php
-require __DIR__ . '/header.php';
-require __DIR__ . '/components/page_header.php';
+require BASE_PATH . '/header.php';
+require BASE_PATH . '/components/page_header.php';
 
 function e(?string $v): string { return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8'); }
 
@@ -185,4 +185,4 @@ function toggleVadeliFields() {
 document.querySelector('select[name="payment_method"]').addEventListener('change', toggleVadeliFields);
 toggleVadeliFields();
 </script>
-<?php require __DIR__ . '/footer.php'; ?>
+<?php require BASE_PATH . '/footer.php'; ?>
