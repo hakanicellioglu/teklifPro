@@ -1,22 +1,24 @@
 <?php
 declare(strict_types=1);
 
+if (ob_get_level() === 0) {
+    ob_start();
+}
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
 if (empty($_SESSION['user_id'])) {
     http_response_code(403);
-    exit('Forbidden');
+    exit;
 }
 
-require __DIR__ . '/../config.php';
+mb_internal_encoding('UTF-8');
 
+require __DIR__ . '/../config.php';
 require_once __DIR__ . '/helpers.php';
 
-/**
- * Composer is OPTIONAL. If present and mPDF is installed, we will render HTML template.
- * Otherwise we fall back to FPDF and draw a clean, data-driven layout.
- */
 $autoload = __DIR__ . '/../vendor/autoload.php';
 if (file_exists($autoload)) {
     require $autoload;
@@ -26,282 +28,315 @@ function h(?string $v): string {
     return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-// ---- Fetch data ----
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
     http_response_code(400);
-    exit('Missing or invalid quotation id.');
+    exit('Invalid quotation id');
 }
 
-$guillotines = [];
-$slidings    = [];
 try {
-    // Quote master
-    $stmt = $pdo->prepare("
-        SELECT q.*,
-               c.first_name, c.last_name, c.email AS customer_email, c.phone AS customer_phone,
-               COALESCE(c.company_name, '') AS company_name
-          FROM generaloffers q
-          LEFT JOIN customers c ON c.id = q.customer_id
-          
-         WHERE q.id = :id
-         LIMIT 1
-    ");
+    $stmt = $pdo->prepare(
+        "SELECT q.*, c.first_name, c.last_name, c.company_name, u.username AS prepared_by
+         FROM generaloffers q
+         LEFT JOIN customers c ON c.id = q.customer_id
+         LEFT JOIN users u ON u.id = q.user_id
+         WHERE q.id = :id LIMIT 1"
+    );
     $stmt->execute([':id' => $id]);
     $quote = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$quote) {
         http_response_code(404);
-        exit('Quotation not found.');
+        exit('Quotation not found');
     }
 
-    // Quote items (try a couple of likely tables; prefer generic quote_items if exists)
-    $items = [];
-    $tables = [
-        "SELECT qi.*, p.code AS product_code, p.name AS product_name 
-           FROM quote_items qi 
-           LEFT JOIN products p ON p.id = qi.product_id
-          WHERE qi.quote_id = :id
-          ORDER BY qi.id",
-        // fallback (if a different table name is used)
-        "SELECT qi.*, p.code AS product_code, p.name AS product_name 
-           FROM quotation_items qi 
-           LEFT JOIN products p ON p.id = qi.product_id
-          WHERE qi.quotation_id = :id
-          ORDER BY qi.id",
-    ];
-    foreach ($tables as $sql) {
-        try {
-            $st = $pdo->prepare($sql);
-            $st->execute([':id' => $id]);
-            $rows = $st->fetchAll(PDO::FETCH_ASSOC);
-            if ($rows && count($rows) > 0) {
-                $items = $rows;
-                break;
-            }
-        } catch (Throwable $e) {
-            // ignore and try next
-        }
-    }
-
-    // Fetch guillotine and sliding systems
-    $gStmt = $pdo->prepare('SELECT system_type, width, height, quantity, motor_system, ral_code, glass_type, glass_color, total_amount FROM guillotinesystems WHERE general_offer_id = :id');
+    $gStmt = $pdo->prepare(
+        'SELECT system_type, width, height, quantity, motor_system, ral_code, glass_type, glass_color, total_amount
+         FROM guillotinesystems WHERE general_offer_id = :id'
+    );
     $gStmt->execute([':id' => $id]);
     $guillotines = $gStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $sStmt = $pdo->prepare('SELECT system_type, width, height, quantity, wing_type, ral_code, glass_type, glass_color, total_amount FROM slidingsystems WHERE general_offer_id = :id');
+    $sStmt = $pdo->prepare(
+        'SELECT system_type, width, height, quantity, wing_type, ral_code, glass_type, glass_color, total_amount
+         FROM slidingsystems WHERE general_offer_id = :id'
+    );
     $sStmt->execute([':id' => $id]);
     $slidings = $sStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Company profile (logo/name) if available
-    $company = ['name' => '', 'email' => '', 'phone' => '', 'logo' => null, 'address' => ''];
-    try {
-        $st = $pdo->query("SELECT name, email, phone, logo, address FROM company LIMIT 1");
-        if ($st) { $company = $st->fetch(PDO::FETCH_ASSOC) ?: $company; }
-    } catch (Throwable $e) { /* optional */ }
-
+    $company = ['name' => '', 'logo' => null];
+    $cStmt   = $pdo->query('SELECT name, logo FROM company LIMIT 1');
+    if ($cStmt) {
+        $company = $cStmt->fetch(PDO::FETCH_ASSOC) ?: $company;
+    }
 } catch (Throwable $e) {
     http_response_code(500);
-    exit('DB error: ' . h($e->getMessage()));
+    exit('DB error');
 }
 
-// Label maps
-$assemblyLabels = [
-    'demonte' => 'Demonte',
-    'musteri' => 'Müşteri Montajlı',
-    'bayi'    => 'Bayi Montajlı',
-];
-$paymentLabels = [
-    'cash'          => 'Peşin',
-    'bank_transfer' => 'Havale/EFT',
-    'credit_card'   => 'Kredi Kartı',
-    'installment'   => 'Taksitli',
-    'other'         => 'Diğer',
+$summary = [
+    'customer'    => trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? '')),
+    'project'     => $quote['company_name'] ?? '',
+    'quote_no'    => $quote['quote_no'] ?? (string) $quote['id'],
+    'date'        => $quote['offer_date'] ?? date('Y-m-d'),
+    'prepared_by' => $quote['prepared_by'] ?? '',
+    'currency'    => 'TRY',
 ];
 
-$assemblyText = $assemblyLabels[$quote['assembly_type'] ?? ''] ?? ($quote['assembly_type'] ?? '');
-$paymentText  = $paymentLabels[$quote['payment_method'] ?? ''] ?? ($quote['payment_method'] ?? '');
-$validityText = isset($quote['validity_days']) && $quote['validity_days'] !== null && $quote['validity_days'] !== '' ? ((int)$quote['validity_days']).' gün' : '';
+$vatRate = (float) ($quote['vat_rate'] ?? 0);
 
-// Try to render with mPDF if available
+$gSubtotal = 0.0;
+foreach ($guillotines as &$g) {
+    $amt             = (float) ($g['total_amount'] ?? 0);
+    $qty             = (float) ($g['quantity'] ?? 0);
+    $g['unit']       = 'adet';
+    $g['unit_price'] = $qty > 0 ? $amt / $qty : $amt;
+    $g['vat']        = $vatRate;
+    $gSubtotal      += $amt;
+}
+unset($g);
+$gVat   = $gSubtotal * $vatRate / 100;
+$gTotal = $gSubtotal + $gVat;
+
+$sSubtotal = 0.0;
+foreach ($slidings as &$s) {
+    $amt             = (float) ($s['total_amount'] ?? 0);
+    $qty             = (float) ($s['quantity'] ?? 0);
+    $s['unit']       = 'adet';
+    $s['unit_price'] = $qty > 0 ? $amt / $qty : $amt;
+    $s['vat']        = $vatRate;
+    $sSubtotal      += $amt;
+}
+unset($s);
+$sVat   = $sSubtotal * $vatRate / 100;
+$sTotal = $sSubtotal + $sVat;
+
+$summary['subtotal']    = $gSubtotal + $sSubtotal;
+$summary['vat_total']   = $gVat + $sVat;
+$summary['grand_total'] = $summary['subtotal'] + $summary['vat_total'];
+
+$filename = 'teklif_' . $id . '.pdf';
+
 $canUseMpdf = class_exists('\\Mpdf\\Mpdf');
 
 if ($canUseMpdf) {
-    // Build HTML via template if exists, else inline template
-    $html = (function() use ($quote, $guillotines, $slidings, $company, $assemblyText, $paymentText, $validityText) {
-        $tpl = __DIR__ . '/templates/quotation.tpl.php';
-        if (is_file($tpl)) {
-            // The template should read $quote, $items, $company, etc.
-            ob_start();
-            include $tpl;
-            return ob_get_clean();
-        } else {
-            // Minimal inline HTML
-            $customerFull = trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''));
-            $dateStr = $quote['offer_date'] ?? ($quote['created_at'] ?? date('Y-m-d'));
-            $title = 'Teklif #' . (int)$quote['id'];
+    $css  = @file_get_contents(__DIR__ . '/templates/quotation.css');
+    $mpdf = new \Mpdf\Mpdf(['mode' => 'utf-8', 'default_font' => 'DejaVuSans']);
+    $mpdf->SetAutoTopMargin    = 'stretch';
+    $mpdf->SetAutoBottomMargin = 'stretch';
+    if ($css) {
+        $mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
+    }
+    $mpdf->SetFooter('{PAGENO}/{nbpg}');
 
-            $gRows = '';
-            $gTotal = 0.0;
-            foreach ($guillotines as $g) {
-                $line = (float)($g['total_amount'] ?? 0);
-                $gTotal += $line;
-                $gRows .= '<tr>
-                    <td>'.h($g['system_type'] ?? '').'</td>
-                    <td>'.h($g['width'] ?? '').'</td>
-                    <td>'.h($g['height'] ?? '').'</td>
-                    <td>'.h($g['quantity'] ?? '').'</td>
-                    <td>'.h(trim(($g['glass_type'] ?? '').' '.($g['glass_color'] ?? ''))).'</td>
-                    <td>'.h($g['motor_system'] ?? '').'</td>
-                    <td>'.h($g['ral_code'] ?? '').'</td>
-                    <td style="text-align:right">'.number_format($line,2,',','.').'</td>
-                </tr>';
-            }
+    ob_start();
+    ?>
+    <div>
+        <h2><?=h($company['name'] ?? '')?></h2>
+        <div><?=h('Teklif No: ' . $summary['quote_no'])?></div>
+        <div><?=h('Tarih: ' . $summary['date'])?></div>
+    </div>
 
-            $sRows = '';
-            $sTotal = 0.0;
-            foreach ($slidings as $s) {
-                $line = (float)($s['total_amount'] ?? 0);
-                $sTotal += $line;
-                $sRows .= '<tr>
-                    <td>'.h($s['system_type'] ?? '').'</td>
-                    <td>'.h($s['width'] ?? '').'</td>
-                    <td>'.h($s['height'] ?? '').'</td>
-                    <td>'.h($s['quantity'] ?? '').'</td>
-                    <td>'.h(trim(($s['glass_type'] ?? '').' '.($s['glass_color'] ?? ''))).'</td>
-                    <td>'.h($s['wing_type'] ?? '').'</td>
-                    <td>'.h($s['ral_code'] ?? '').'</td>
-                    <td style="text-align:right">'.number_format($line,2,',','.').'</td>
-                </tr>';
-            }
+    <h3>Teklif Özeti</h3>
+    <table class="table zebra" style="page-break-inside:auto">
+        <tbody>
+        <tr><td>Ara Toplam</td><td class="num"><?=number_format($summary['subtotal'], 2, ',', '.') ?> ₺</td></tr>
+        <tr><td>KDV</td><td class="num"><?=number_format($summary['vat_total'], 2, ',', '.') ?> ₺</td></tr>
+        <tr><td>Genel Toplam</td><td class="num"><?=number_format($summary['grand_total'], 2, ',', '.') ?> ₺</td></tr>
+        </tbody>
+    </table>
 
-            $grand = $gTotal + $sTotal;
+    <?php if ($guillotines) { ?>
+    <h3>Giyotin Teklifi</h3>
+    <table class="table zebra" style="page-break-inside:auto">
+        <thead>
+        <tr>
+            <th>Kategori</th><th>Ürün</th><th>Ölçü</th><th>Birim</th><th>Adet</th>
+            <th>Birim Fiyatı</th><th>KDV %</th><th>Tutar</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($guillotines as $row): ?>
+            <tr>
+                <td><?=h($row['system_type'] ?? '')?></td>
+                <td><?=h($row['motor_system'] ?? '')?></td>
+                <td><?=h(($row['width'] ?? '') . 'x' . ($row['height'] ?? ''))?></td>
+                <td><?=h($row['unit'])?></td>
+                <td class="num"><?=h((string) $row['quantity'])?></td>
+                <td class="num"><?=number_format($row['unit_price'], 2, ',', '.') ?> ₺</td>
+                <td class="num"><?=number_format($row['vat'], 2, ',', '.')?></td>
+                <td class="num"><?=number_format((float) $row['total_amount'], 2, ',', '.') ?> ₺</td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+        <tfoot>
+        <tr><th colspan="7" class="num">Ara Toplam</th><th class="num"><?=number_format($gSubtotal, 2, ',', '.') ?> ₺</th></tr>
+        <tr><th colspan="7" class="num">KDV</th><th class="num"><?=number_format($gVat, 2, ',', '.') ?> ₺</th></tr>
+        <tr><th colspan="7" class="num">Toplam</th><th class="num"><?=number_format($gTotal, 2, ',', '.') ?> ₺</th></tr>
+        </tfoot>
+    </table>
+    <?php } ?>
 
-            return '
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<style>
-body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 11pt; }
-h1 { font-size: 16pt; margin: 0 0 8pt; }
-.table { width:100%; border-collapse: collapse; margin-bottom: 10px; }
-.table th, .table td { border:1px solid #888; padding:6px; }
-.text-right { text-align:right; }
-.small { font-size: 9pt; color:#333; }
-</style>
-</head>
-<body>
-  <h1>'.h($title).'</h1>
-  <div class="small">Tarih: '.h($dateStr).'</div>
-  <div class="small">Müşteri: '.h($customerFull).'</div>
-  '.($assemblyText ? '<div class="small">Montaj: '.h($assemblyText).'</div>' : '').'
-  '.($paymentText ? '<div class="small">Ödeme: '.h($paymentText).'</div>' : '').'
-  '.($validityText ? '<div class="small">Geçerlilik: '.h($validityText).'</div>' : '').'
-  <br>
-  <h3>Giyotin Sistemleri</h3>
-  '.($gRows ? '<table class="table"><thead><tr><th>Sistem</th><th>En</th><th>Boy</th><th>Adet</th><th>Cam</th><th>Motor</th><th>RAL</th><th class="text-right">Toplam</th></tr></thead><tbody>'.$gRows.'</tbody></table>' : '<p>Giyotin sistemi bulunamadı.</p>').'
-  <h3>Sürme Sistemleri</h3>
-  '.($sRows ? '<table class="table"><thead><tr><th>Sistem</th><th>En</th><th>Boy</th><th>Adet</th><th>Cam</th><th>Kanat</th><th>RAL</th><th class="text-right">Toplam</th></tr></thead><tbody>'.$sRows.'</tbody></table>' : '<p>Sürme sistemi bulunamadı.</p>').'
-  <p class="text-right"><strong>Genel Toplam: '.number_format($grand,2,',','.').' </strong></p>
-</body>
-</html>';
-        }
-    })();
+    <?php if ($slidings) { ?>
+    <h3>Sürme Teklifi</h3>
+    <table class="table zebra" style="page-break-inside:auto">
+        <thead>
+        <tr>
+            <th>Kategori</th><th>Ürün</th><th>Ölçü</th><th>Birim</th><th>Adet</th>
+            <th>Birim Fiyatı</th><th>KDV %</th><th>Tutar</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($slidings as $row): ?>
+            <tr>
+                <td><?=h($row['system_type'] ?? '')?></td>
+                <td><?=h($row['wing_type'] ?? '')?></td>
+                <td><?=h(($row['width'] ?? '') . 'x' . ($row['height'] ?? ''))?></td>
+                <td><?=h($row['unit'])?></td>
+                <td class="num"><?=h((string) $row['quantity'])?></td>
+                <td class="num"><?=number_format($row['unit_price'], 2, ',', '.') ?> ₺</td>
+                <td class="num"><?=number_format($row['vat'], 2, ',', '.')?></td>
+                <td class="num"><?=number_format((float) $row['total_amount'], 2, ',', '.') ?> ₺</td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+        <tfoot>
+        <tr><th colspan="7" class="num">Ara Toplam</th><th class="num"><?=number_format($sSubtotal, 2, ',', '.') ?> ₺</th></tr>
+        <tr><th colspan="7" class="num">KDV</th><th class="num"><?=number_format($sVat, 2, ',', '.') ?> ₺</th></tr>
+        <tr><th colspan="7" class="num">Toplam</th><th class="num"><?=number_format($sTotal, 2, ',', '.') ?> ₺</th></tr>
+        </tfoot>
+    </table>
+    <?php } ?>
+    <?php
+    $html = ob_get_clean();
+    $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
 
-    $mpdf = new \Mpdf\Mpdf(['tempDir' => __DIR__ . '/../storage/tmp']);
-    $mpdf->WriteHTML($html);
-    $mpdf->Output('teklif.pdf', \Mpdf\Output\Destination::INLINE);
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: inline; filename="' . $filename . '"');
+    echo $mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN);
     exit;
 }
 
-// ---- FPDF fallback ----
+define('FPDF_FONTPATH', __DIR__ . '/fonts/');
 require __DIR__ . '/../libs/fpdf.php';
 
-header('Content-Type: application/pdf');
-header('Content-Disposition: inline; filename=\"teklif.pdf\"');
+class PDF extends FPDF {
+    public string $logo = '';
+    public string $company = '';
+    public string $quoteNo = '';
+    public string $quoteDate = '';
 
-$pdf = new FPDF();
+    function Header(): void {
+        if ($this->logo && file_exists($this->logo)) {
+            $this->Image($this->logo, 15, 10, 30);
+        }
+        $this->SetFont('DejaVu', 'B', 12);
+        $this->Cell(0, 6, $this->company, 0, 1, 'R');
+        $this->SetFont('DejaVu', '', 10);
+        $this->Cell(0, 5, 'Teklif No: ' . $this->quoteNo, 0, 1, 'R');
+        $this->Cell(0, 5, 'Tarih: ' . $this->quoteDate, 0, 1, 'R');
+        $this->Ln(5);
+    }
+
+    function Footer(): void {
+        $this->SetY(-15);
+        $this->SetFont('DejaVu', '', 8);
+        $this->Cell(0, 10, $this->PageNo() . '/{nb}', 0, 0, 'C');
+    }
+}
+
+$pdf            = new PDF();
+$pdf->logo      = $company['logo'] ? __DIR__ . '/../' . ltrim((string) $company['logo'], '/') : '';
+$pdf->company   = $company['name'] ?? '';
+$pdf->quoteNo   = $summary['quote_no'];
+$pdf->quoteDate = $summary['date'];
+
+$pdf->AliasNbPages();
+$pdf->SetMargins(15, 40, 15);
+$pdf->AddFont('DejaVu', '', 'DejaVuSans.ttf', true);
 $pdf->AddPage();
-$pdf->SetAutoPageBreak(true, 15);
+$pdf->SetFont('DejaVu', '', 10);
 
-// Header
-$pdf->SetFont('Arial', 'B', 14);
-$pdf->Cell(0, 8, enc('TEKLİF #' . (string)$quote['id']), 0, 1);
-$pdf->SetFont('Arial', '', 11);
-$customerFull = trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''));
-$pdf->Cell(0, 6, enc('Müşteri: ' . $customerFull), 0, 1);
-if (!empty($assemblyText)) { $pdf->Cell(0, 6, enc('Montaj: ' . $assemblyText), 0, 1); }
-if (!empty($paymentText))  { $pdf->Cell(0, 6, enc('Ödeme: ' . $paymentText), 0, 1); }
-if (!empty($validityText)) { $pdf->Cell(0, 6, enc('Geçerlilik: ' . $validityText), 0, 1); }
-$pdf->Ln(2);
+$pdf->SetFillColor(240, 240, 240);
+$pdf->Cell(0, 6, 'Teklif Özeti', 0, 1);
+$pdf->Ln(1);
+$w = 80;
+$pdf->Cell($w, 6, 'Ara Toplam', 1, 0, 'L', true);
+$pdf->Cell($w, 6, number_format($summary['subtotal'], 2, ',', '.') . ' ₺', 1, 1, 'R', true);
+$pdf->Cell($w, 6, 'KDV', 1, 0, 'L');
+$pdf->Cell($w, 6, number_format($summary['vat_total'], 2, ',', '.') . ' ₺', 1, 1, 'R');
+$pdf->Cell($w, 6, 'Genel Toplam', 1, 0, 'L', true);
+$pdf->Cell($w, 6, number_format($summary['grand_total'], 2, ',', '.') . ' ₺', 1, 1, 'R', true);
+$pdf->Ln(4);
 
-$total = 0.0;
-
-// Guillotine table
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(0, 6, enc('Giyotin Sistemleri'), 0, 1);
 if ($guillotines) {
-    $pdf->SetFont('Arial', 'B', 9);
-    $pdf->Cell(25, 7, enc('Sistem'), 1, 0);
-    $pdf->Cell(20, 7, enc('En'), 1, 0, 'R');
-    $pdf->Cell(20, 7, enc('Boy'), 1, 0, 'R');
-    $pdf->Cell(15, 7, enc('Adet'), 1, 0, 'R');
-    $pdf->Cell(30, 7, enc('Cam'), 1, 0);
-    $pdf->Cell(25, 7, enc('Motor'), 1, 0);
-    $pdf->Cell(20, 7, enc('RAL'), 1, 0);
-    $pdf->Cell(35, 7, enc('Toplam'), 1, 1, 'R');
-    $pdf->SetFont('Arial', '', 9);
-    foreach ($guillotines as $g) {
-        $line = (float)($g['total_amount'] ?? 0);
-        $total += $line;
-        $pdf->Cell(25, 6, enc((string)($g['system_type'] ?? '')), 1, 0);
-        $pdf->Cell(20, 6, enc((string)($g['width'] ?? '')), 1, 0, 'R');
-        $pdf->Cell(20, 6, enc((string)($g['height'] ?? '')), 1, 0, 'R');
-        $pdf->Cell(15, 6, enc((string)($g['quantity'] ?? '')), 1, 0, 'R');
-        $pdf->Cell(30, 6, enc(trim(($g['glass_type'] ?? '') . ' ' . ($g['glass_color'] ?? ''))), 1, 0);
-        $pdf->Cell(25, 6, enc((string)($g['motor_system'] ?? '')), 1, 0);
-        $pdf->Cell(20, 6, enc((string)($g['ral_code'] ?? '')), 1, 0);
-        $pdf->Cell(35, 6, number_format($line, 2, ',', '.'), 1, 1, 'R');
+    $pdf->SetFont('DejaVu', 'B', 10);
+    $pdf->Cell(0, 6, 'Giyotin Teklifi', 0, 1);
+    $pdf->SetFont('DejaVu', '', 9);
+    $headers = ['Kategori', 'Ürün', 'Ölçü', 'Birim', 'Adet', 'Birim Fiyatı', 'KDV %', 'Tutar'];
+    $widths  = [25, 30, 25, 15, 15, 25, 15, 30];
+    foreach ($headers as $i => $hcell) {
+        $pdf->Cell($widths[$i], 7, $hcell, 1, 0, 'C', true);
     }
-} else {
-    $pdf->SetFont('Arial', '', 9);
-    $pdf->Cell(0, 6, enc('Giyotin sistemi bulunamadı.'), 1, 1);
+    $pdf->Ln();
+    $fill = false;
+    foreach ($guillotines as $row) {
+        $pdf->Cell($widths[0], 6, $row['system_type'], 1, 0, 'L', $fill);
+        $pdf->Cell($widths[1], 6, $row['motor_system'], 1, 0, 'L', $fill);
+        $pdf->Cell($widths[2], 6, $row['width'] . 'x' . $row['height'], 1, 0, 'L', $fill);
+        $pdf->Cell($widths[3], 6, $row['unit'], 1, 0, 'L', $fill);
+        $pdf->Cell($widths[4], 6, (string) $row['quantity'], 1, 0, 'R', $fill);
+        $pdf->Cell($widths[5], 6, number_format($row['unit_price'], 2, ',', '.') . ' ₺', 1, 0, 'R', $fill);
+        $pdf->Cell($widths[6], 6, number_format($row['vat'], 2, ',', '.'), 1, 0, 'R', $fill);
+        $pdf->Cell($widths[7], 6, number_format((float) $row['total_amount'], 2, ',', '.') . ' ₺', 1, 1, 'R', $fill);
+        $fill = !$fill;
+    }
+    $pdf->Cell(array_sum($widths) - $widths[7], 6, 'Ara Toplam', 1, 0, 'R', true);
+    $pdf->Cell($widths[7], 6, number_format($gSubtotal, 2, ',', '.') . ' ₺', 1, 1, 'R', true);
+    $pdf->Cell(array_sum($widths) - $widths[7], 6, 'KDV', 1, 0, 'R');
+    $pdf->Cell($widths[7], 6, number_format($gVat, 2, ',', '.') . ' ₺', 1, 1, 'R');
+    $pdf->Cell(array_sum($widths) - $widths[7], 6, 'Toplam', 1, 0, 'R', true);
+    $pdf->Cell($widths[7], 6, number_format($gTotal, 2, ',', '.') . ' ₺', 1, 1, 'R', true);
+    $pdf->Ln(4);
 }
-$pdf->Ln(4);
 
-// Sliding table
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(0, 6, enc('Sürme Sistemleri'), 0, 1);
 if ($slidings) {
-    $pdf->SetFont('Arial', 'B', 9);
-    $pdf->Cell(25, 7, enc('Sistem'), 1, 0);
-    $pdf->Cell(20, 7, enc('En'), 1, 0, 'R');
-    $pdf->Cell(20, 7, enc('Boy'), 1, 0, 'R');
-    $pdf->Cell(15, 7, enc('Adet'), 1, 0, 'R');
-    $pdf->Cell(30, 7, enc('Cam'), 1, 0);
-    $pdf->Cell(25, 7, enc('Kanat'), 1, 0);
-    $pdf->Cell(20, 7, enc('RAL'), 1, 0);
-    $pdf->Cell(35, 7, enc('Toplam'), 1, 1, 'R');
-    $pdf->SetFont('Arial', '', 9);
-    foreach ($slidings as $s) {
-        $line = (float)($s['total_amount'] ?? 0);
-        $total += $line;
-        $pdf->Cell(25, 6, enc((string)($s['system_type'] ?? '')), 1, 0);
-        $pdf->Cell(20, 6, enc((string)($s['width'] ?? '')), 1, 0, 'R');
-        $pdf->Cell(20, 6, enc((string)($s['height'] ?? '')), 1, 0, 'R');
-        $pdf->Cell(15, 6, enc((string)($s['quantity'] ?? '')), 1, 0, 'R');
-        $pdf->Cell(30, 6, enc(trim(($s['glass_type'] ?? '') . ' ' . ($s['glass_color'] ?? ''))), 1, 0);
-        $pdf->Cell(25, 6, enc((string)($s['wing_type'] ?? '')), 1, 0);
-        $pdf->Cell(20, 6, enc((string)($s['ral_code'] ?? '')), 1, 0);
-        $pdf->Cell(35, 6, number_format($line, 2, ',', '.'), 1, 1, 'R');
+    $pdf->SetFont('DejaVu', 'B', 10);
+    $pdf->Cell(0, 6, 'Sürme Teklifi', 0, 1);
+    $pdf->SetFont('DejaVu', '', 9);
+    $headers = ['Kategori', 'Ürün', 'Ölçü', 'Birim', 'Adet', 'Birim Fiyatı', 'KDV %', 'Tutar'];
+    $widths  = [25, 30, 25, 15, 15, 25, 15, 30];
+    foreach ($headers as $i => $hcell) {
+        $pdf->Cell($widths[$i], 7, $hcell, 1, 0, 'C', true);
     }
-} else {
-    $pdf->SetFont('Arial', '', 9);
-    $pdf->Cell(0, 6, enc('Sürme sistemi bulunamadı.'), 1, 1);
+    $pdf->Ln();
+    $fill = false;
+    foreach ($slidings as $row) {
+        $pdf->Cell($widths[0], 6, $row['system_type'], 1, 0, 'L', $fill);
+        $pdf->Cell($widths[1], 6, $row['wing_type'], 1, 0, 'L', $fill);
+        $pdf->Cell($widths[2], 6, $row['width'] . 'x' . $row['height'], 1, 0, 'L', $fill);
+        $pdf->Cell($widths[3], 6, $row['unit'], 1, 0, 'L', $fill);
+        $pdf->Cell($widths[4], 6, (string) $row['quantity'], 1, 0, 'R', $fill);
+        $pdf->Cell($widths[5], 6, number_format($row['unit_price'], 2, ',', '.') . ' ₺', 1, 0, 'R', $fill);
+        $pdf->Cell($widths[6], 6, number_format($row['vat'], 2, ',', '.'), 1, 0, 'R', $fill);
+        $pdf->Cell($widths[7], 6, number_format((float) $row['total_amount'], 2, ',', '.') . ' ₺', 1, 1, 'R', $fill);
+        $fill = !$fill;
+    }
+    $pdf->Cell(array_sum($widths) - $widths[7], 6, 'Ara Toplam', 1, 0, 'R', true);
+    $pdf->Cell($widths[7], 6, number_format($sSubtotal, 2, ',', '.') . ' ₺', 1, 1, 'R', true);
+    $pdf->Cell(array_sum($widths) - $widths[7], 6, 'KDV', 1, 0, 'R');
+    $pdf->Cell($widths[7], 6, number_format($sVat, 2, ',', '.') . ' ₺', 1, 1, 'R');
+    $pdf->Cell(array_sum($widths) - $widths[7], 6, 'Toplam', 1, 0, 'R', true);
+    $pdf->Cell($widths[7], 6, number_format($sTotal, 2, ',', '.') . ' ₺', 1, 1, 'R', true);
 }
-$pdf->Ln(4);
 
-$pdf->SetFont('Arial', 'B', 11);
-$pdf->Cell(0, 8, enc('Genel Toplam: ' . number_format($total, 2, ',', '.')), 0, 1, 'R');
+while (ob_get_level() > 0) {
+    ob_end_clean();
+}
+header('Content-Type: application/pdf');
+header('Content-Disposition: inline; filename="' . $filename . '"');
+echo $pdf->Output('S');
+exit;
 
-$pdf->Output('I', 'teklif.pdf');

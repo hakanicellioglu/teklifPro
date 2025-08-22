@@ -1,5 +1,5 @@
-body { font-family: 'DejaVu Sans', sans-serif; font-size: 11px; }
-header, footer { font-size: 10px; }
+body { font-family: 'DejaVu Sans', sans-serif; font-size: 11pt; }
+header, footer { font-size: 10pt; }
 header { height: 42mm; }
 footer { height: 18mm; }
 
@@ -29,3 +29,9 @@ tfoot { display: table-footer-group; }
 .approval { margin-top: 6mm; }
 .approval .signatures { display: flex; justify-content: space-between; margin-top: 10mm; }
 .approval .signatures div { width: 45%; border-top: 0.1mm solid #000; text-align: center; padding-top: 2mm; }
+
+/* Generic zebra table style */
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { border: 0.1mm solid #ccc; padding: 2mm; }
+.table thead th { background: #f0f0f0; }
+.table.zebra tbody tr:nth-child(odd) { background: #f9f9f9; }
