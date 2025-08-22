@@ -57,7 +57,7 @@ try {
     if (!empty($quote['approval_token'])) {
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? '';
-        $approveUrl = $host ? $scheme . '://' . $host . '/approve.php?token=' . urlencode($quote['approval_token']) : '';
+        $approveUrl = $host ? $scheme . '://' . $host . '/public/approve.php?token=' . urlencode($quote['approval_token']) : '';
     }
 
     // Quote items (try a couple of likely tables; prefer generic quote_items if exists)

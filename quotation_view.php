@@ -270,7 +270,7 @@ $approveUrl = '';
 if (!empty($offer['approval_token'])) {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host   = $_SERVER['HTTP_HOST'] ?? '';
-    $approveUrl = $host ? $scheme . '://' . $host . '/approve.php?token=' . urlencode($offer['approval_token']) : '';
+    $approveUrl = $host ? $scheme . '://' . $host . '/public/approve.php?token=' . urlencode($offer['approval_token']) : '';
 }
 
 $gDel = ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_guillotine' && $role === 'admin');
