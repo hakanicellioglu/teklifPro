@@ -4,6 +4,12 @@ declare(strict_types=1);
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+// Capture any stray output to avoid corrupting the PDF stream
+if (ob_get_level() === 0) {
+    ob_start();
+}
+
 if (empty($_SESSION['user_id'])) {
     http_response_code(403);
     exit('Forbidden');
@@ -215,6 +221,9 @@ h1 { font-size: 16pt; margin: 0 0 8pt; }
         }
         $mpdf = new \Mpdf\Mpdf(['tempDir' => $mpdfTemp]);
         $mpdf->WriteHTML($html);
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
         $mpdf->Output('teklif.pdf', \Mpdf\Output\Destination::INLINE);
         exit;
     } catch (Throwable $e) {
@@ -323,6 +332,7 @@ try {
         ob_end_clean();
     }
     $pdf->Output('I', 'teklif.pdf');
+    exit;
 } catch (Throwable $e) {
     error_log('PDF Output error: ' . $e->getMessage());
     http_response_code(500);
