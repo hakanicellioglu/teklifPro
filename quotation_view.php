@@ -516,16 +516,6 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
 
                                             <?php if ($role === 'admin'): ?>
                                                 <li>
-                                                    <form method="post" target="_blank" class="px-3 py-1">
-                                                        <input type="hidden" name="action" value="optimize_guillotine">
-                                                        <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
-                                                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                                        <button type="submit" class="dropdown-item">
-                                                            <i class="bi bi-calculator me-1"></i> Optimize
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                <li>
                                                     <form method="post" onsubmit="return confirm('Bu giyotin sistemini silmek istediğinize emin misiniz?');" class="px-3 py-1">
                                                         <input type="hidden" name="action" value="delete_guillotine">
                                                         <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
