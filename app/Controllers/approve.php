@@ -13,13 +13,13 @@ if ($token === '') {
     http_response_code(400);
     exit('Geçersiz bağlantı.');
 }
-
-$stmt = $pdo->prepare('SELECT g.*, c.first_name, c.last_name, c.company_name AS customer_company FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id WHERE g.approval_token = :t LIMIT 1');
+$stmt = $pdo->prepare('SELECT g.*, g.quote_no AS offer_title, c.first_name, c.last_name, c.company_name AS customer_company, co.name AS company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id LEFT JOIN company co ON g.company_id = co.id WHERE g.approval_token = :t LIMIT 1');
 $stmt->execute([':t' => $token]);
 $offer = $stmt->fetch(PDO::FETCH_ASSOC);
+$error = '';
 if (!$offer) {
     http_response_code(404);
-    exit('Teklif bulunamadı.');
+    $error = 'Teklif bulunamadı.';
 }
 
 $message = '';
@@ -48,34 +48,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if ($message): ?>
         <div class="alert alert-info"><?= h($message) ?></div>
     <?php endif; ?>
-    <div class="card mb-3">
-        <div class="card-body">
-            <div class="mb-2"><strong>Teklif No:</strong> <?= h($offer['quote_no'] ?? (string)$offer['id']) ?></div>
-            <div class="mb-2"><strong>Müşteri:</strong> <?= h(trim(($offer['first_name'] ?? '') . ' ' . ($offer['last_name'] ?? ''))) ?></div>
-            <?php if (!empty($offer['customer_company'])): ?>
-                <div class="mb-2"><strong>Firma:</strong> <?= h($offer['customer_company']) ?></div>
-            <?php endif; ?>
-            <div class="mb-2"><strong>Tarih:</strong> <?= h($offer['offer_date'] ?? '') ?></div>
-            <div class="mb-2"><strong>Durum:</strong> <?= h($offer['status']) ?></div>
-            <?php if (!empty($offer['approved_at'])): ?>
-                <div class="mb-2"><strong>Onay Tarihi:</strong> <?= h($offer['approved_at']) ?></div>
-            <?php endif; ?>
+    <?php if ($error): ?>
+        <div class="alert alert-danger"><?= h($error) ?></div>
+    <?php else: ?>
+        <div class="card mb-3">
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Şirket</dt>
+                    <dd class="col-sm-8"><?= h($offer['company_name'] ?? '') ?></dd>
+                    <dt class="col-sm-4">Teklif Başlığı</dt>
+                    <dd class="col-sm-8"><?= h($offer['offer_title'] ?? '') ?></dd>
+                    <dt class="col-sm-4">Teklif Tutarı</dt>
+                    <dd class="col-sm-8"><?= h($offer['total_amount']) ?></dd>
+                    <?php if (!empty($offer['offer_validity'])): ?>
+                        <dt class="col-sm-4">Geçerlilik Tarihi</dt>
+                        <dd class="col-sm-8"><?= h($offer['offer_validity']) ?></dd>
+                    <?php endif; ?>
+                    <dt class="col-sm-4">Müşteri</dt>
+                    <dd class="col-sm-8"><?= h(trim(($offer['first_name'] ?? '') . ' ' . ($offer['last_name'] ?? ''))) ?></dd>
+                    <?php if (!empty($offer['customer_company'])): ?>
+                        <dt class="col-sm-4">Müşteri Firma</dt>
+                        <dd class="col-sm-8"><?= h($offer['customer_company']) ?></dd>
+                    <?php endif; ?>
+                    <dt class="col-sm-4">Tarih</dt>
+                    <dd class="col-sm-8"><?= h($offer['offer_date'] ?? '') ?></dd>
+                    <dt class="col-sm-4">Durum</dt>
+                    <dd class="col-sm-8"><?= h($offer['status']) ?></dd>
+                    <?php if (!empty($offer['approved_at'])): ?>
+                        <dt class="col-sm-4">Onay Tarihi</dt>
+                        <dd class="col-sm-8"><?= h($offer['approved_at']) ?></dd>
+                    <?php endif; ?>
+                </dl>
+            </div>
         </div>
-    </div>
-    <?php if ($offer['status'] === 'pending'): ?>
-        <form method="post" class="d-flex gap-2">
-            <input type="hidden" name="token" value="<?= h($token) ?>">
-            <button type="submit" name="decision" value="accepted" class="btn btn-success">Onayla</button>
-            <button type="submit" name="decision" value="rejected" class="btn btn-danger">Reddet</button>
-        </form>
-    <?php elseif ($offer['status'] === 'accepted'): ?>
-        <div class="alert alert-success">
-            Bu teklif onaylanmıştır<?php if (!empty($offer['approved_at'])): ?> (<?= h($offer['approved_at']) ?>)<?php endif; ?>.
-        </div>
-    <?php elseif ($offer['status'] === 'rejected'): ?>
-        <div class="alert alert-danger">
-            Bu teklif reddedilmiştir<?php if (!empty($offer['approved_at'])): ?> (<?= h($offer['approved_at']) ?>)<?php endif; ?>.
-        </div>
+        <?php if ($offer['status'] === 'pending'): ?>
+            <form method="post" class="d-flex gap-2">
+                <input type="hidden" name="token" value="<?= h($token) ?>">
+                <button type="submit" name="decision" value="accepted" class="btn btn-success">Onayla</button>
+                <button type="submit" name="decision" value="rejected" class="btn btn-danger">Reddet</button>
+            </form>
+        <?php elseif ($offer['status'] === 'accepted'): ?>
+            <div class="alert alert-success">
+                Bu teklif onaylanmıştır<?php if (!empty($offer['approved_at'])): ?> (<?= h($offer['approved_at']) ?>)<?php endif; ?>.
+            </div>
+        <?php elseif ($offer['status'] === 'rejected'): ?>
+            <div class="alert alert-danger">
+                Bu teklif reddedilmiştir<?php if (!empty($offer['approved_at'])): ?> (<?= h($offer['approved_at']) ?>)<?php endif; ?>.
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 </body>
