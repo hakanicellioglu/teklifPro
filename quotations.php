@@ -274,7 +274,7 @@ unset($_SESSION['flash_error']);
   <?php foreach ($_GET as $k => $v): if (in_array($k, ['per_page', 'page', 'sort', 'dir', 'search', 'status'], true)) continue; ?>
     <input type="hidden" name="<?= e($k) ?>" value="<?= e((string)$v) ?>">
   <?php endforeach; ?>
-  
+
   <!-- Sayfa başına -->
   <div class="col-12 col-md-1">
     <select name="per_page" class="form-select d-inline-block w-auto" onchange="this.form.submit()">
@@ -326,7 +326,7 @@ unset($_SESSION['flash_error']);
     </thead>
     <tbody>
       <?php if ($offers): foreach ($offers as $o): ?>
-          <tr class="text-center">
+          <tr class="text-center quotation-row" data-href="quotation_view.php?id=<?= (int)$o['id'] ?>" style="cursor:pointer;">
             <td><?= (int)$o['id'] ?></td>
             <td>
               <?= e($o['customer']) ?>
@@ -519,6 +519,14 @@ $customers = $pdo->query('SELECT id, first_name, last_name, company_name AS comp
   }
   document.querySelector('#createModal select[name="payment_method"]').addEventListener('change', toggleVadeliFields);
   toggleVadeliFields();
+
+  document.querySelectorAll('.quotation-row').forEach(function(row) {
+    row.addEventListener('click', function(e) {
+      if (e.target.closest('a,button,form,input,select,textarea,label')) return;
+      window.location = this.dataset.href;
+    });
+  });
+
   <?php if ($createErrors): ?>
     var createModal = new bootstrap.Modal(document.getElementById('createModal'));
     createModal.show();
