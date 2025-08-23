@@ -62,11 +62,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
         </div>
     </div>
-    <form method="post" class="d-flex gap-2">
-        <input type="hidden" name="token" value="<?= h($token) ?>">
-        <button type="submit" name="decision" value="accepted" class="btn btn-success">Onayla</button>
-        <button type="submit" name="decision" value="rejected" class="btn btn-danger">Reddet</button>
-    </form>
+    <?php if ($offer['status'] === 'pending'): ?>
+        <form method="post" class="d-flex gap-2">
+            <input type="hidden" name="token" value="<?= h($token) ?>">
+            <button type="submit" name="decision" value="accepted" class="btn btn-success">Onayla</button>
+            <button type="submit" name="decision" value="rejected" class="btn btn-danger">Reddet</button>
+        </form>
+    <?php elseif ($offer['status'] === 'accepted'): ?>
+        <div class="alert alert-success">
+            Bu teklif onaylanmıştır<?php if (!empty($offer['approved_at'])): ?> (<?= h($offer['approved_at']) ?>)<?php endif; ?>.
+        </div>
+    <?php elseif ($offer['status'] === 'rejected'): ?>
+        <div class="alert alert-danger">
+            Bu teklif reddedilmiştir<?php if (!empty($offer['approved_at'])): ?> (<?= h($offer['approved_at']) ?>)<?php endif; ?>.
+        </div>
+    <?php endif; ?>
 </div>
 </body>
 </html>
