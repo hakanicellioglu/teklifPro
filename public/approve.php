@@ -23,10 +23,10 @@ if (!$offer) {
 }
 
 $message = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $offer['status'] === 'pending') {
     $decision = $_POST['decision'] ?? '';
     if (in_array($decision, ['accepted', 'rejected'], true)) {
-        $upd = $pdo->prepare('UPDATE generaloffers SET status = :st, approved_at = NOW() WHERE id = :id');
+        $upd = $pdo->prepare('UPDATE generaloffers SET status = :st, approved_at = NOW(), approval_token = NULL WHERE id = :id AND status = \'pending\'');
         $upd->execute([':st' => $decision, ':id' => $offer['id']]);
         $offer['status'] = $decision;
         $offer['approved_at'] = date('Y-m-d H:i:s');
@@ -64,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <form method="post" class="d-flex gap-2">
         <input type="hidden" name="token" value="<?= h($token) ?>">
-        <button type="submit" name="decision" value="accepted" class="btn btn-success">Onayla</button>
-        <button type="submit" name="decision" value="rejected" class="btn btn-danger">Reddet</button>
+        <button type="submit" name="decision" value="accepted" class="btn btn-success" <?= $offer['status'] !== 'pending' ? 'disabled' : '' ?>>Onayla</button>
+        <button type="submit" name="decision" value="rejected" class="btn btn-danger" <?= $offer['status'] !== 'pending' ? 'disabled' : '' ?>>Reddet</button>
     </form>
 </div>
 </body>
