@@ -411,7 +411,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                     <div class="mb-2"><strong>Ödeme:</strong> <?= e($paymentLabels[$offer['payment_method']] ?? $offer['payment_method']) ?></div>
                 <?php endif; ?>
                 <?php if ($approveUrl): ?>
-                    <div class="mb-2"><strong>Onay:</strong> <a href="<?= e($approveUrl) ?>"><?= e($approveUrl) ?></a><button type="button" class="btn btn-sm btn-outline-secondary share-btn ms-2" data-url="<?= e($approveUrl) ?>">Paylaş</button></div>
+                    <div class="mb-2"><strong>Onay:</strong> <a href="<?= e($approveUrl) ?>"><?= e($approveUrl) ?></a></div>
                 <?php endif; ?>
                 <div class="mb-2">
                     <?php if ($role === 'admin'): ?>
