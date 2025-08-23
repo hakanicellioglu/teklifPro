@@ -350,13 +350,22 @@ unset($_SESSION['flash_error']);
             <td><?= $o['approved_at'] ? e($o['approved_at']) : '' ?></td>
             <td><?= e($statusLabels[$o['status']] ?? $o['status']) ?></td>
             <td class="text-center">
-              <a href="quotation_view.php?id=<?= (int)$o['id'] ?>" class="btn btn-sm btn-outline-secondary" title="Görüntüle"><i class="bi bi-eye"></i></a>
-              <form method="post" class="d-inline">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
-                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                <button type="submit" class="btn btn-sm btn-outline-danger" data-confirm="Bu teklif silinsin mi?" title="Sil"><i class="bi bi-trash"></i></button>
-              </form>
+              <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-three-dots"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a href="quotation_view.php?id=<?= (int)$o['id'] ?>" class="dropdown-item">Görüntüle</a></li>
+                  <li>
+                    <form method="post">
+                      <input type="hidden" name="action" value="delete">
+                      <input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
+                      <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                      <button type="submit" class="dropdown-item text-danger" data-confirm="Bu teklif silinsin mi?">Sil</button>
+                    </form>
+                  </li>
+                </ul>
+              </div>
             </td>
           </tr>
         <?php endforeach;
