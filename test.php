@@ -379,11 +379,11 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '<h5>' . e($cat['title']) . '</h5>';
         echo '<div class="table-responsive">';
         echo '<table class="table table-sm table-striped mb-3">';
-        echo '<thead><tr><th>Ad</th><th>Ölçü (mm)</th><th>Miktar</th><th>Birim</th>';
+        echo '<thead><tr><th>Ad</th><th>Ölçü (mm)</th>';
         if ($isAlu) {
             echo '<th>Adet</th>';
         }
-        echo '<th class="text-end">Tutar</th></tr></thead><tbody>';
+        echo '<th>Miktar</th><th>Birim</th><th class="text-end">Tutar</th></tr></thead><tbody>';
         $qtySum   = 0.0;
         $totalSum = 0.0;
         $unit     = '';
@@ -392,11 +392,11 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             echo '<tr>';
             echo '<td>' . e($line['name']) . '</td>';
             echo '<td>' . e(number_format($line['measure'], 0, ',', '.')) . '</td>';
-            echo '<td>' . e(fmtUnit($line['quantity'], $line['unit'])) . '</td>';
-            echo '<td>' . e($line['unit']) . '</td>';
             if ($isAlu) {
                 echo '<td>' . e(number_format((int) ($line['pieces'] ?? 0), 0, ',', '.')) . '</td>';
             }
+            echo '<td>' . e(fmtUnit($line['quantity'], $line['unit'])) . '</td>';
+            echo '<td>' . e($line['unit']) . '</td>';
             echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ₺</td>';
             echo '</tr>';
             $qtySum   += $line['quantity'];
@@ -412,11 +412,11 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         }
         echo '<tr>';
         echo '<td colspan="2" class="text-end"><strong>Toplam</strong></td>';
-        echo '<td>' . e(fmtUnit($qtySum, $unit)) . '</td>';
-        echo '<td>' . e($unit) . '</td>';
         if ($isAlu) {
             echo '<td>' . e(number_format($pieceSum, 0, ',', '.')) . '</td>';
         }
+        echo '<td>' . e(fmtUnit($qtySum, $unit)) . '</td>';
+        echo '<td>' . e($unit) . '</td>';
         echo '<td class="text-end">' . e(number_format($totalSum, 2, ',', '.')) . ' ₺</td>';
         echo '</tr>';
         echo '</tbody></table></div>';
