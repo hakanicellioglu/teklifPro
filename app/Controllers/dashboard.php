@@ -1,7 +1,7 @@
 <?php
 require BASE_PATH . '/header.php';
-require BASE_PATH . '/components/page_header.php';
-require BASE_PATH . '/components/stat_card.php';
+require BASE_PATH . '/resources/views/partials/page_header.php';
+require BASE_PATH . '/resources/views/partials/stat_card.php';
 
 try {
     $stmt = $pdo->prepare('SELECT first_name FROM users WHERE id = :id');
