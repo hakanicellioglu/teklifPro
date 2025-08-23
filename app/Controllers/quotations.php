@@ -56,6 +56,7 @@ try {
   $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS grace_days INT NULL DEFAULT 0 AFTER monthly_installment");
   $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS approval_token VARCHAR(64) NULL AFTER profit_amount");
   $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS approved_at DATETIME NULL AFTER approval_token");
+  $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS note TEXT NULL AFTER approved_at");
 } catch (Exception $e) {
   // ignore migration errors
 }
@@ -124,6 +125,7 @@ $createData = [
   'installment_term' => '',
   'term_months' => '',
   'interest_value' => '',
+  'note' => '',
 ];
 
 $action = $_POST['action'] ?? '';
@@ -138,6 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
   $term       = trim($_POST['installment_term'] ?? '');
   $termMonths = trim($_POST['term_months'] ?? '');
   $interest   = trim($_POST['interest_value'] ?? '');
+  $note       = trim($_POST['note'] ?? '');
 
   $createData = [
     'customer_id'      => $customerId ? (string)$customerId : '',
@@ -148,6 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
     'installment_term' => $term,
     'term_months'      => $termMonths,
     'interest_value'   => $interest,
+    'note'             => $note,
   ];
 
   if (!hash_equals($csrfToken, $token)) {
@@ -189,10 +193,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
     $interest = '';
   }
 
+  if ($note !== '' && mb_strlen($note) > 1000) {
+    $createErrors['note'] = 'Not en fazla 1000 karakter olabilir.';
+  }
+
   if (!$createErrors) {
     try {
       $approvalToken = bin2hex(random_bytes(16));
-      $stmt = $pdo->prepare("INSERT INTO generaloffers (customer_id, offer_date, assembly_type, payment_method, validity_days, installment_term, term_months, interest_value, approval_token) VALUES (:customer_id, :offer_date, :assembly_type, :payment_method, :validity_days, :installment_term, :term_months, :interest_value, :approval_token)");
+      $stmt = $pdo->prepare("INSERT INTO generaloffers (customer_id, offer_date, assembly_type, payment_method, validity_days, installment_term, term_months, interest_value, note, approval_token) VALUES (:customer_id, :offer_date, :assembly_type, :payment_method, :validity_days, :installment_term, :term_months, :interest_value, :note, :approval_token)");
       $stmt->bindValue(':customer_id', $customerId, PDO::PARAM_INT);
       $stmt->bindValue(':offer_date', $offerDate);
       $stmt->bindValue(':assembly_type', $assembly);
@@ -201,6 +209,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
       $stmt->bindValue(':installment_term', $term !== '' ? $term : null, $term === '' ? PDO::PARAM_NULL : PDO::PARAM_STR);
       $stmt->bindValue(':term_months', $termMonths !== '' ? (int)$termMonths : null, $termMonths === '' ? PDO::PARAM_NULL : PDO::PARAM_INT);
       $stmt->bindValue(':interest_value', $interest !== '' ? $interest : null, $interest === '' ? PDO::PARAM_NULL : PDO::PARAM_STR);
+      $cleanNote = $note !== '' ? strip_tags($note) : null;
+      $stmt->bindValue(':note', $cleanNote, $cleanNote === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
       $stmt->bindValue(':approval_token', $approvalToken);
       $stmt->execute();
       $newId = (int)$pdo->lastInsertId();
@@ -485,6 +495,11 @@ $customers = $pdo->query('SELECT id, first_name, last_name, company_name AS comp
             <label class="form-label">Vade</label>
             <input type="text" name="installment_term" class="form-control <?= isset($createErrors['installment_term']) ? 'is-invalid' : '' ?>" value="<?= e($createData['installment_term']) ?>" placeholder="3 taksit (aylık)">
             <?php if (isset($createErrors['installment_term'])): ?><div class="invalid-feedback"><?= e($createErrors['installment_term']) ?></div><?php endif; ?>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Not</label>
+            <textarea name="note" rows="3" class="form-control <?= isset($createErrors['note']) ? 'is-invalid' : '' ?>"><?= e($createData['note']) ?></textarea>
+            <?php if (isset($createErrors['note'])): ?><div class="invalid-feedback"><?= e($createErrors['note']) ?></div><?php endif; ?>
           </div>
           <div class="mb-3">
             <label class="form-label">Teklif Tarihi</label>

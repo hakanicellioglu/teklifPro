@@ -124,6 +124,7 @@ CREATE TABLE `generaloffers` (
   `profit_amount` decimal(15,2) DEFAULT NULL,
   `approval_token` varchar(64) DEFAULT NULL,
   `approved_at` datetime DEFAULT NULL,
+  `note` text DEFAULT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'pending'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
@@ -131,9 +132,9 @@ CREATE TABLE `generaloffers` (
 -- Tablo döküm verisi `generaloffers`
 --
 
-INSERT INTO `generaloffers` (`id`, `quote_no`, `customer_id`, `company_id`, `offer_date`, `assembly_type`, `delivery_time`, `payment_method`, `validity_days`, `installment_term`, `payment_type`, `term_months`, `interest_mode`, `interest_value`, `interest_amount`, `total_with_interest`, `monthly_installment`, `grace_days`, `payment_term`, `offer_validity`, `maturity_period`, `discount_rate`, `discount_amount`, `vat_rate`, `vat_amount`, `total_amount`, `profit_percent`, `profit_amount`, `approval_token`, `approved_at`, `status`) VALUES
-(9, NULL, 1, NULL, '2025-08-14', 'demonte', NULL, 'cash', 10, '0', 'installment', 10, 'percent', 10.00, 0.00, 0.00, 0.00, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, NULL, NULL, 'pending'),
-(10, NULL, 1, NULL, '2025-08-15', 'demonte', NULL, 'cash', 10, '3', 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, 0.00, NULL, 0.00, 0.00, NULL, NULL, NULL, NULL, 'pending');
+INSERT INTO `generaloffers` (`id`, `quote_no`, `customer_id`, `company_id`, `offer_date`, `assembly_type`, `delivery_time`, `payment_method`, `validity_days`, `installment_term`, `payment_type`, `term_months`, `interest_mode`, `interest_value`, `interest_amount`, `total_with_interest`, `monthly_installment`, `grace_days`, `payment_term`, `offer_validity`, `maturity_period`, `discount_rate`, `discount_amount`, `vat_rate`, `vat_amount`, `total_amount`, `profit_percent`, `profit_amount`, `approval_token`, `approved_at`, `note`, `status`) VALUES
+(9, NULL, 1, NULL, '2025-08-14', 'demonte', NULL, 'cash', 10, '0', 'installment', 10, 'percent', 10.00, 0.00, 0.00, 0.00, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, NULL, NULL, NULL, 'pending'),
+(10, NULL, 1, NULL, '2025-08-15', 'demonte', NULL, 'cash', 10, '3', 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, 0.00, NULL, 0.00, 0.00, NULL, NULL, NULL, NULL, NULL, 'pending');
 
 -- --------------------------------------------------------
 
