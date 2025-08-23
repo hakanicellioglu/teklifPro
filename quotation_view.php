@@ -386,6 +386,7 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
 <?php
 $actions = '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary" data-bs-toggle="tooltip" title="Düzenle"><i class="bi bi-pencil"></i></a>';
 $actions .= ' <a href="/pdf/preview.php?id=' . e((string)$offer['id']) . '" class="btn btn-secondary btn-icon" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf"></i>PDF Önizleme</a>';
+$actions .= ' <a href="guillotine_optimize_view.php?id=' . e((string)$offer['id']) . '" class="btn btn-secondary btn-icon" target="_blank" rel="noopener"><i class="bi bi-list-check"></i>Optimizasyon</a>';
 page_header('Teklif #' . e((string)$offer['id']), $actions);
 ?>
 <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
