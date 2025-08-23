@@ -30,7 +30,7 @@ interface ProductProviderInterface
  * } $input
  *
  * @return array{
- *   lines: array<int, array{category:string,name:string,measure:float,unit:string,quantity:float,total:float}>,
+ *   lines: array<int, array{category:string,name:string,measure:float,unit:string,quantity:float,pieces:int,total:float}>,
  *   totals: array{
  *     alu_cost: float,
  *     glass_cost: float,
@@ -129,7 +129,7 @@ function calculateGuillotineTotals(array $input): array
 
     foreach ($rules as $rule) {
         $measure    = max(0.0, $rule['measure']($width, $height, $qty));
-        $rq         = max(0, $rule['qty']($width, $height, $qty));
+        $rq         = max(0, (int) $rule['qty']($width, $height, $qty));
         $ruleWidth  = isset($rule['width'])  ? max(0.0, $rule['width']($width, $height, $qty))  : $width;
         $ruleHeight = isset($rule['height']) ? max(0.0, $rule['height']($width, $height, $qty)) : $height;
         if ($measure <= 0 || $rq <= 0) {
@@ -225,6 +225,7 @@ function calculateGuillotineTotals(array $input): array
             'measure'  => $measure,
             'unit'     => $unit,
             'quantity' => $qtyDisplay,
+            'pieces'   => $rq,
             'total'    => $lineTotal,
         ];
     }
@@ -374,23 +375,35 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $glassInfo = $result['glass'] ?? null;
 
     foreach ($categories as $cat) {
+        $isAlu = strcasecmp($cat['title'], 'Alüminyum') === 0;
         echo '<h5>' . e($cat['title']) . '</h5>';
         echo '<div class="table-responsive">';
         echo '<table class="table table-sm table-striped mb-3">';
-        echo '<thead><tr><th>Ad</th><th>Ölçü (mm)</th><th>Miktar</th><th>Birim</th><th class="text-end">Tutar</th></tr></thead><tbody>';
+        echo '<thead><tr><th>Ad</th><th>Ölçü (mm)</th>';
+        if ($isAlu) {
+            echo '<th>Adet</th>';
+        }
+        echo '<th>Miktar</th><th>Birim</th><th class="text-end">Tutar</th></tr></thead><tbody>';
         $qtySum   = 0.0;
         $totalSum = 0.0;
         $unit     = '';
+        $pieceSum = 0;
         foreach ($cat['lines'] as $line) {
             echo '<tr>';
             echo '<td>' . e($line['name']) . '</td>';
             echo '<td>' . e(number_format($line['measure'], 0, ',', '.')) . '</td>';
+            if ($isAlu) {
+                echo '<td>' . e(number_format((int) ($line['pieces'] ?? 0), 0, ',', '.')) . '</td>';
+            }
             echo '<td>' . e(fmtUnit($line['quantity'], $line['unit'])) . '</td>';
             echo '<td>' . e($line['unit']) . '</td>';
             echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ₺</td>';
             echo '</tr>';
             $qtySum   += $line['quantity'];
             $totalSum += $line['total'];
+            if ($isAlu) {
+                $pieceSum += (int) ($line['pieces'] ?? 0);
+            }
             if ($unit === '') {
                 $unit = $line['unit'];
             } elseif ($unit !== $line['unit']) {
@@ -399,6 +412,9 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         }
         echo '<tr>';
         echo '<td colspan="2" class="text-end"><strong>Toplam</strong></td>';
+        if ($isAlu) {
+            echo '<td>' . e(number_format($pieceSum, 0, ',', '.')) . '</td>';
+        }
         echo '<td>' . e(fmtUnit($qtySum, $unit)) . '</td>';
         echo '<td>' . e($unit) . '</td>';
         echo '<td class="text-end">' . e(number_format($totalSum, 2, ',', '.')) . ' ₺</td>';
