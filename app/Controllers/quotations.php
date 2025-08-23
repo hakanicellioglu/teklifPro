@@ -139,17 +139,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
   $termMonths = trim($_POST['term_months'] ?? '');
   $interest   = trim($_POST['interest_value'] ?? '');
 
-  $createData = [
-    'customer_id'      => $customerId ? (string)$customerId : '',
-    'offer_date'       => $offerDate,
-    'assembly_type'    => $assembly,
-    'payment_method'   => $payment,
-    'validity_days'    => $validity,
-    'installment_term' => $term,
-    'term_months'      => $termMonths,
-    'interest_value'   => $interest,
-  ];
-
   if (!hash_equals($csrfToken, $token)) {
     $createErrors['form'] = 'Geçersiz CSRF tokenı.';
   }
@@ -173,11 +162,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
       $validityInt = (int)$validity;
     }
   }
-  if ($term !== '' && mb_strlen($term) > 100) {
-    $createErrors['installment_term'] = 'Vade en fazla 100 karakter olabilir.';
-  }
 
   if ($payment === 'vadeli') {
+    if ($term === '') {
+      $createErrors['installment_term'] = 'Vade zorunludur.';
+    } elseif (mb_strlen($term) > 100) {
+      $createErrors['installment_term'] = 'Vade en fazla 100 karakter olabilir.';
+    }
     if ($termMonths === '' || !ctype_digit($termMonths) || (int)$termMonths < 1) {
       $createErrors['term_months'] = 'Vade süresi geçerli bir sayı olmalıdır.';
     }
@@ -185,9 +176,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
       $createErrors['interest_value'] = 'Vade farkı geçerli bir sayı olmalıdır.';
     }
   } else {
+    $term = '';
     $termMonths = '';
     $interest = '';
   }
+
+  $createData = [
+    'customer_id'      => $customerId ? (string)$customerId : '',
+    'offer_date'       => $offerDate,
+    'assembly_type'    => $assembly,
+    'payment_method'   => $payment,
+    'validity_days'    => $validity,
+    'installment_term' => $term,
+    'term_months'      => $termMonths,
+    'interest_value'   => $interest,
+  ];
 
   if (!$createErrors) {
     try {
@@ -468,12 +471,12 @@ $customers = $pdo->query('SELECT id, first_name, last_name, company_name AS comp
           </div>
           <div class="mb-3 vadeli-fields" style="display:none;">
             <label class="form-label">Vade Süresi (ay)</label>
-            <input type="number" min="1" name="term_months" class="form-control <?= isset($createErrors['term_months']) ? 'is-invalid' : '' ?>" value="<?= e($createData['term_months']) ?>">
+            <input type="number" min="1" name="term_months" class="form-control <?= isset($createErrors['term_months']) ? 'is-invalid' : '' ?>" value="<?= e($createData['term_months']) ?>" disabled>
             <?php if (isset($createErrors['term_months'])): ?><div class="invalid-feedback"><?= e($createErrors['term_months']) ?></div><?php endif; ?>
           </div>
           <div class="mb-3 vadeli-fields" style="display:none;">
             <label class="form-label">Vade Farkı (aylık)</label>
-            <input type="number" step="0.01" name="interest_value" class="form-control <?= isset($createErrors['interest_value']) ? 'is-invalid' : '' ?>" value="<?= e($createData['interest_value']) ?>">
+            <input type="number" step="0.01" name="interest_value" class="form-control <?= isset($createErrors['interest_value']) ? 'is-invalid' : '' ?>" value="<?= e($createData['interest_value']) ?>" disabled>
             <?php if (isset($createErrors['interest_value'])): ?><div class="invalid-feedback"><?= e($createErrors['interest_value']) ?></div><?php endif; ?>
           </div>
           <div class="mb-3">
@@ -481,9 +484,9 @@ $customers = $pdo->query('SELECT id, first_name, last_name, company_name AS comp
             <input type="number" min="1" max="365" name="validity_days" class="form-control <?= isset($createErrors['validity_days']) ? 'is-invalid' : '' ?>" value="<?= e($createData['validity_days']) ?>" placeholder="örn. 15">
             <?php if (isset($createErrors['validity_days'])): ?><div class="invalid-feedback"><?= e($createErrors['validity_days']) ?></div><?php endif; ?>
           </div>
-          <div class="mb-3 installment-field">
+          <div class="mb-3 term-field" style="display:none;">
             <label class="form-label">Vade</label>
-            <input type="text" name="installment_term" class="form-control <?= isset($createErrors['installment_term']) ? 'is-invalid' : '' ?>" value="<?= e($createData['installment_term']) ?>" placeholder="3 taksit (aylık)">
+            <input type="text" name="installment_term" class="form-control <?= isset($createErrors['installment_term']) ? 'is-invalid' : '' ?>" value="<?= e($createData['installment_term']) ?>" placeholder="3 taksit (aylık)" disabled>
             <?php if (isset($createErrors['installment_term'])): ?><div class="invalid-feedback"><?= e($createErrors['installment_term']) ?></div><?php endif; ?>
           </div>
           <div class="mb-3">
@@ -504,10 +507,27 @@ $customers = $pdo->query('SELECT id, first_name, last_name, company_name AS comp
   function toggleVadeliFields() {
     var payment = document.querySelector('#createModal select[name="payment_method"]').value;
     document.querySelectorAll('#createModal .vadeli-fields').forEach(function(el) {
-      el.style.display = payment === 'vadeli' ? '' : 'none';
+      var input = el.querySelector('input');
+      if (payment === 'vadeli') {
+        el.style.display = '';
+        if (input) { input.disabled = false; }
+      } else {
+        el.style.display = 'none';
+        if (input) { input.disabled = true; input.value = ''; }
+      }
     });
-    var inst = document.querySelector('#createModal .installment-field');
-    if (inst) inst.style.display = payment === 'vadeli' ? 'none' : '';
+    var termField = document.querySelector('#createModal .term-field');
+    var termInput = document.querySelector('#createModal input[name="installment_term"]');
+    if (payment === 'vadeli') {
+      termField.style.display = '';
+      termInput.disabled = false;
+      termInput.required = true;
+    } else {
+      termField.style.display = 'none';
+      termInput.disabled = true;
+      termInput.required = false;
+      termInput.value = '';
+    }
   }
   document.querySelector('#createModal select[name="payment_method"]').addEventListener('change', toggleVadeliFields);
   toggleVadeliFields();

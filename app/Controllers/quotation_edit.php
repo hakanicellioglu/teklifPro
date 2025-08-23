@@ -74,17 +74,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   }
   if ($paymentMethod === 'vadeli') {
+    if ($installmentTerm === '') {
+      $errors['installment_term'] = 'Vade zorunludur.';
+    } elseif (mb_strlen($installmentTerm) > 100) {
+      $errors['installment_term'] = 'Vade en fazla 100 karakter olabilir.';
+    }
     if ($termMonths === '' || !ctype_digit($termMonths) || (int)$termMonths < 1) {
       $errors['term_months'] = 'Vade süresi geçerli bir sayı olmalıdır.';
     }
     if ($interestValue === '' || !is_numeric($interestValue)) {
       $errors['interest_value'] = 'Vade farkı geçerli bir sayı olmalıdır.';
     }
-    $installmentTerm = '';
   } else {
-    if ($installmentTerm !== '' && mb_strlen($installmentTerm) > 100) {
-      $errors['installment_term'] = 'Vade en fazla 100 karakter olabilir.';
-    }
+    $installmentTerm = '';
     $termMonths = '';
     $interestValue = '';
   }
@@ -158,12 +160,12 @@ page_header('Teklifi Düzenle');
   </div>
   <div class="mb-3 vadeli-fields" style="display:none;">
     <label class="form-label">Vade Süresi (ay)</label>
-    <input type="number" min="1" name="term_months" class="form-control <?= isset($errors['term_months']) ? 'is-invalid' : '' ?>" value="<?= e($offer['term_months'] !== null ? (string)(int)$offer['term_months'] : '') ?>">
+    <input type="number" min="1" name="term_months" class="form-control <?= isset($errors['term_months']) ? 'is-invalid' : '' ?>" value="<?= e($offer['term_months'] !== null ? (string)(int)$offer['term_months'] : '') ?>" disabled>
     <?php if (isset($errors['term_months'])): ?><div class="invalid-feedback"><?= e($errors['term_months']) ?></div><?php endif; ?>
   </div>
   <div class="mb-3 vadeli-fields" style="display:none;">
     <label class="form-label">Vade Farkı (aylık)</label>
-    <input type="number" step="0.01" name="interest_value" class="form-control <?= isset($errors['interest_value']) ? 'is-invalid' : '' ?>" value="<?= e($offer['interest_value']) ?>">
+    <input type="number" step="0.01" name="interest_value" class="form-control <?= isset($errors['interest_value']) ? 'is-invalid' : '' ?>" value="<?= e($offer['interest_value']) ?>" disabled>
     <?php if (isset($errors['interest_value'])): ?><div class="invalid-feedback"><?= e($errors['interest_value']) ?></div><?php endif; ?>
   </div>
   <div class="mb-3">
@@ -171,9 +173,9 @@ page_header('Teklifi Düzenle');
     <input type="number" min="1" max="365" name="validity_days" class="form-control <?= isset($errors['validity_days']) ? 'is-invalid' : '' ?>" value="<?= e($offer['validity_days'] !== null ? (string)(int)$offer['validity_days'] : '') ?>" placeholder="örn. 15">
     <?php if (isset($errors['validity_days'])): ?><div class="invalid-feedback"><?= e($errors['validity_days']) ?></div><?php endif; ?>
   </div>
-  <div class="mb-3 installment-field">
+  <div class="mb-3 term-field" style="display:none;">
     <label class="form-label">Vade</label>
-    <input type="text" name="installment_term" class="form-control <?= isset($errors['installment_term']) ? 'is-invalid' : '' ?>" value="<?= e($offer['installment_term'] ?? '') ?>" placeholder="3 taksit (aylık)">
+    <input type="text" name="installment_term" class="form-control <?= isset($errors['installment_term']) ? 'is-invalid' : '' ?>" value="<?= e($offer['installment_term'] ?? '') ?>" placeholder="3 taksit (aylık)" disabled>
     <?php if (isset($errors['installment_term'])): ?><div class="invalid-feedback"><?= e($errors['installment_term']) ?></div><?php endif; ?>
   </div>
   <div class="mb-3">
@@ -190,10 +192,27 @@ page_header('Teklifi Düzenle');
   function toggleVadeliFields() {
     var payment = document.querySelector('select[name="payment_method"]').value;
     document.querySelectorAll('.vadeli-fields').forEach(function(el) {
-      el.style.display = payment === 'vadeli' ? '' : 'none';
+      var input = el.querySelector('input');
+      if (payment === 'vadeli') {
+        el.style.display = '';
+        if (input) { input.disabled = false; }
+      } else {
+        el.style.display = 'none';
+        if (input) { input.disabled = true; input.value = ''; }
+      }
     });
-    var inst = document.querySelector('.installment-field');
-    if (inst) inst.style.display = payment === 'vadeli' ? 'none' : '';
+    var termField = document.querySelector('.term-field');
+    var termInput = document.querySelector('input[name="installment_term"]');
+    if (payment === 'vadeli') {
+      termField.style.display = '';
+      termInput.disabled = false;
+      termInput.required = true;
+    } else {
+      termField.style.display = 'none';
+      termInput.disabled = true;
+      termInput.required = false;
+      termInput.value = '';
+    }
   }
   document.querySelector('select[name="payment_method"]').addEventListener('change', toggleVadeliFields);
   toggleVadeliFields();
