@@ -552,37 +552,53 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                     <td><?= e($g['ral_code']) ?></td>
                                     <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
                                     <td class="text-end">
-                                        <a href="test.php?quote_id=<?= e((string)$g['id']) ?>" class="btn btn-sm btn-info recalc-lines" data-gid="<?= e((string)$g['id']) ?>" data-bs-toggle="tooltip" title="Kalemler"><i class="bi bi-list-ul"></i></a>
-                                        <button type="button" class="btn btn-sm btn-secondary edit-guillotine" data-bs-toggle="modal" data-bs-target="#addGuillotineModal"
-                                            data-id="<?= e((string)$g['id']) ?>"
-                                            data-width="<?= e((string)$g['width']) ?>"
-                                            data-height="<?= e((string)$g['height']) ?>"
-                                            data-quantity="<?= e((string)$g['quantity']) ?>"
-                                            data-motor="<?= e($g['motor_system']) ?>"
-                                            data-glass-type="<?= e($g['glass_type']) ?>"
-                                            data-glass-color="<?= e($g['glass_color']) ?>"
-                                            data-remote="<?= e((string)$g['remote_quantity']) ?>"
-                                            data-ral="<?= e($g['ral_code']) ?>"
-                                            data-profit="<?= e((string)$g['profit_margin']) ?>"
-                                            title="Düzenle">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <?php if ($role === 'admin' && strtolower((string)$g['system_type']) === 'guillotine'): ?>
-                                            <form method="post" class="d-inline" target="_blank">
-                                                <input type="hidden" name="action" value="optimize_guillotine">
-                                                <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
-                                                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                                <button type="submit" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" title="Optimize"><i class="bi bi-calculator"></i></button>
-                                            </form>
-                                        <?php endif; ?>
-                                        <?php if ($role === 'admin'): ?>
-                                            <form method="post" class="d-inline" onsubmit="return confirm('Bu giyotin sistemini silmek istediğinize emin misiniz?');">
-                                                <input type="hidden" name="action" value="delete_guillotine">
-                                                <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
-                                                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                                <button type="submit" class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Sil"><i class="bi bi-trash"></i></button>
-                                            </form>
-                                        <?php endif; ?>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-three-dots"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a href="test.php?quote_id=<?= e((string)$g['id']) ?>" class="dropdown-item recalc-lines" data-gid="<?= e((string)$g['id']) ?>">
+                                                        <i class="bi bi-list-ul me-1"></i> Kalemler
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <button type="button" class="dropdown-item edit-guillotine" data-bs-toggle="modal" data-bs-target="#addGuillotineModal"
+                                                        data-id="<?= e((string)$g['id']) ?>"
+                                                        data-width="<?= e((string)$g['width']) ?>"
+                                                        data-height="<?= e((string)$g['height']) ?>"
+                                                        data-quantity="<?= e((string)$g['quantity']) ?>"
+                                                        data-motor="<?= e($g['motor_system']) ?>"
+                                                        data-glass-type="<?= e($g['glass_type']) ?>"
+                                                        data-glass-color="<?= e($g['glass_color']) ?>"
+                                                        data-remote="<?= e((string)$g['remote_quantity']) ?>"
+                                                        data-ral="<?= e($g['ral_code']) ?>"
+                                                        data-profit="<?= e((string)$g['profit_margin']) ?>">
+                                                        <i class="bi bi-pencil me-1"></i> Düzenle
+                                                    </button>
+                                                </li>
+                                                <?php if ($role === 'admin' && strtolower((string)$g['system_type']) === 'guillotine'): ?>
+                                                <li>
+                                                    <form method="post" target="_blank">
+                                                        <input type="hidden" name="action" value="optimize_guillotine">
+                                                        <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                                        <button type="submit" class="dropdown-item"><i class="bi bi-calculator me-1"></i> Optimize</button>
+                                                    </form>
+                                                </li>
+                                                <?php endif; ?>
+                                                <?php if ($role === 'admin'): ?>
+                                                <li>
+                                                    <form method="post" onsubmit="return confirm('Bu giyotin sistemini silmek istediğinize emin misiniz?');">
+                                                        <input type="hidden" name="action" value="delete_guillotine">
+                                                        <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                                        <button type="submit" class="dropdown-item text-danger"><i class="bi bi-trash me-1"></i> Sil</button>
+                                                    </form>
+                                                </li>
+                                                <?php endif; ?>
+                                            </ul>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
