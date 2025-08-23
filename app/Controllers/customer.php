@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 require BASE_PATH . '/header.php';
-require BASE_PATH . '/components/page_header.php';
+require BASE_PATH . '/resources/views/partials/page_header.php';
 $pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_turkish_ci');
 
 if (empty($_SESSION['csrf_token'])) {

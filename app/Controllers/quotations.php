@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 require BASE_PATH . '/header.php';
-require BASE_PATH . '/components/page_header.php';
+require BASE_PATH . '/resources/views/partials/page_header.php';
 
 function e(?string $v): string
 {
