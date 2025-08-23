@@ -518,6 +518,9 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                     <div class="mb-2"><strong>Toplam Tutar:</strong> <?= e($totalFormatted) ?></div>
                 </div>
             </div>
+            <?php if (!empty($offer['note'])): ?>
+                <div class="mt-3"><strong>Not:</strong><br><?= nl2br(e($offer['note'])) ?></div>
+            <?php endif; ?>
         </div>
     </div>
 

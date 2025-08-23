@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $installmentTerm = trim($_POST['installment_term'] ?? '');
   $termMonths      = trim($_POST['term_months'] ?? '');
   $interestValue   = trim($_POST['interest_value'] ?? '');
+  $note            = trim($_POST['note'] ?? '');
 
   if ($customerId <= 0) {
     $errors['customer_id'] = 'Müşteri zorunludur.';
@@ -91,9 +92,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $interestValue = '';
   }
 
+  if ($note !== '' && mb_strlen($note) > 1000) {
+    $errors['note'] = 'Not en fazla 1000 karakter olabilir.';
+  }
+
   if (!$errors) {
     try {
-      $stmt = $pdo->prepare('UPDATE generaloffers SET customer_id=:customer_id, offer_date=:offer_date, assembly_type=:assembly_type, payment_method=:payment_method, validity_days=:validity_days, installment_term=:installment_term, term_months=:term_months, interest_value=:interest_value WHERE id=:id');
+      $stmt = $pdo->prepare('UPDATE generaloffers SET customer_id=:customer_id, offer_date=:offer_date, assembly_type=:assembly_type, payment_method=:payment_method, validity_days=:validity_days, installment_term=:installment_term, term_months=:term_months, interest_value=:interest_value, note=:note WHERE id=:id');
       $stmt->bindValue(':customer_id', $customerId, PDO::PARAM_INT);
       $stmt->bindValue(':offer_date', $offerDate);
       $stmt->bindValue(':assembly_type', $assemblyType);
@@ -102,6 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $stmt->bindValue(':installment_term', $installmentTerm !== '' ? $installmentTerm : null, $installmentTerm === '' ? PDO::PARAM_NULL : PDO::PARAM_STR);
       $stmt->bindValue(':term_months', $termMonths !== '' ? (int)$termMonths : null, $termMonths === '' ? PDO::PARAM_NULL : PDO::PARAM_INT);
       $stmt->bindValue(':interest_value', $interestValue !== '' ? $interestValue : null, $interestValue === '' ? PDO::PARAM_NULL : PDO::PARAM_STR);
+      $cleanNote = $note !== '' ? strip_tags($note) : null;
+      $stmt->bindValue(':note', $cleanNote, $cleanNote === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
       $stmt->bindValue(':id', $id, PDO::PARAM_INT);
       $stmt->execute();
       $success = 'Teklif güncellendi.';
@@ -114,6 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'installment_term' => $installmentTerm,
         'term_months'      => $termMonths !== '' ? (int)$termMonths : null,
         'interest_value'   => $interestValue !== '' ? $interestValue : null,
+        'note'             => $cleanNote,
       ]);
     } catch (Exception $e) {
       $errors['form'] = 'Güncellenemedi.';
@@ -177,6 +185,11 @@ page_header('Teklifi Düzenle');
     <label class="form-label">Vade</label>
     <input type="text" name="installment_term" class="form-control <?= isset($errors['installment_term']) ? 'is-invalid' : '' ?>" value="<?= e($offer['installment_term'] ?? '') ?>" placeholder="3 taksit (aylık)" disabled>
     <?php if (isset($errors['installment_term'])): ?><div class="invalid-feedback"><?= e($errors['installment_term']) ?></div><?php endif; ?>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Not</label>
+    <textarea name="note" rows="3" class="form-control <?= isset($errors['note']) ? 'is-invalid' : '' ?>"><?= e($offer['note'] ?? '') ?></textarea>
+    <?php if (isset($errors['note'])): ?><div class="invalid-feedback"><?= e($errors['note']) ?></div><?php endif; ?>
   </div>
   <div class="mb-3">
     <label class="form-label">Teklif Tarihi</label>
