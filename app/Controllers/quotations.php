@@ -118,6 +118,18 @@ $orderSql = $allowedSorts[$sort] . ' ' . $dir;
 $createErrors = [];
 $action = $_POST['action'] ?? '';
 
+$createData = [
+  'customer_id'      => '',
+  'offer_date'       => date('Y-m-d'),
+  'assembly_type'    => '',
+  'payment_method'   => '',
+  'validity_days'    => '',
+  'installment_term' => '',
+  'term_months'      => '',
+  'interest_value'   => '',
+  'note'             => '',
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
   $token      = $_POST['csrf_token'] ?? '';
   $customerId = (int)($_POST['customer_id'] ?? 0);
