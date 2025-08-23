@@ -8,18 +8,49 @@ function h(?string $v): string
     return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+function render_error(int $code, string $title, string $text): void
+{
+    http_response_code($code);
+    ?>
+    <!DOCTYPE html>
+    <html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title><?= h($title) ?></title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-light">
+    <div class="container py-5">
+        <div class="alert alert-danger" role="alert">
+            <h1 class="h4 mb-3"><?= h($title) ?></h1>
+            <p class="mb-0"><?= h($text) ?></p>
+        </div>
+    </div>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
 $token = $_GET['token'] ?? '';
 if ($token === '') {
-    http_response_code(400);
-    exit('Geçersiz bağlantı.');
+    render_error(
+        400,
+        'Geçersiz bağlantı',
+        'Onay bağlantısı hatalı veya eksik. Lütfen size gönderilen geçerli bağlantıyı kullanın ya da sistem yöneticisinden yeni bir bağlantı talep edin.'
+    );
 }
 
 $stmt = $pdo->prepare('SELECT g.*, c.first_name, c.last_name, c.company_name AS customer_company FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id WHERE g.approval_token = :t LIMIT 1');
 $stmt->execute([':t' => $token]);
 $offer = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$offer) {
-    http_response_code(404);
-    exit('Teklif bulunamadı.');
+    render_error(
+        404,
+        'Teklif bulunamadı',
+        'Talep ettiğiniz teklif mevcut değil veya onay süreci tamamlanmış olabilir. Doğru bağlantıyı kullandığınızdan emin olun ya da destek ekibinden yardım isteyin.'
+    );
 }
 
 $message = '';
