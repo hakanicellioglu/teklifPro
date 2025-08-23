@@ -10,9 +10,7 @@ function e(?string $v): string
 
 class PdoProductProvider implements ProductProviderInterface
 {
-    public function __construct(private PDO $pdo)
-    {
-    }
+    public function __construct(private PDO $pdo) {}
 
     public function getProduct(string $name): ?array
     {
@@ -380,10 +378,10 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
 
 ?>
 <nav aria-label="breadcrumb" class="mb-3">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="quotations.php">Teklifler</a></li>
-    <li class="breadcrumb-item active" aria-current="page">#<?= e((string)$offer['id']) ?></li>
-  </ol>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="quotations.php">Teklifler</a></li>
+        <li class="breadcrumb-item active" aria-current="page">#<?= e((string)$offer['id']) ?></li>
+    </ol>
 </nav>
 <?php
 $actions = '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary" data-bs-toggle="tooltip" title="Düzenle"><i class="bi bi-pencil"></i></a>';
@@ -404,180 +402,195 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
             </form>
         <?php endif; ?>
     </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-2"><strong>Müşteri:</strong> <?= e(trim($offer['first_name'] . ' ' . $offer['last_name'])) ?></div>
-                    <div class="mb-2"><strong>Teklif Tarihi:</strong> <?= e(date('d.m.Y', strtotime($offer['offer_date']))) ?></div>
-                    <?php if (!empty($offer['payment_method'])): ?>
-                        <div class="mb-2"><strong>Ödeme:</strong> <?= e($paymentLabels[$offer['payment_method']] ?? $offer['payment_method']) ?></div>
-                    <?php endif; ?>
-                    <?php if ($approveUrl): ?>
-                        <div class="mb-2"><strong>Onay:</strong> <a href="<?= e($approveUrl) ?>"><?= e($approveUrl) ?></a><button type="button" class="btn btn-sm btn-outline-secondary share-btn ms-2" data-url="<?= e($approveUrl) ?>">Paylaş</button></div>
-                    <?php endif; ?>
-                    <div class="mb-2">
-                        <?php if ($role === 'admin'): ?>
-                            <form method="post" class="d-flex align-items-center gap-2">
-                                <input type="hidden" name="action" value="update_status">
-                                <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
-                                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                <label class="form-label mb-0"><strong>Durum:</strong></label>
-                                <select name="status" class="form-select form-select-sm w-auto">
-                                    <?php foreach ($statusLabels as $code => $label): ?>
-                                        <option value="<?= e($code) ?>" <?= $offer['status'] === $code ? 'selected' : '' ?>><?= e($label) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <button type="submit" class="btn btn-sm btn-primary">Kaydet</button>
-                            </form>
-                        <?php else: ?>
-                            <strong>Durum:</strong> <?= e($statusLabels[$offer['status']] ?? $offer['status']) ?>
-                        <?php endif; ?>
-                    </div>
-                    <?php if (!empty($offer['approved_at'])): ?>
-                        <div class="mb-2"><strong>Onay Tarihi:</strong> <?= e($offer['approved_at']) ?></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-2"><strong>Müşteri:</strong> <?= e(trim($offer['first_name'] . ' ' . $offer['last_name'])) ?></div>
+                <div class="mb-2"><strong>Teklif Tarihi:</strong> <?= e(date('d.m.Y', strtotime($offer['offer_date']))) ?></div>
+                <?php if (!empty($offer['payment_method'])): ?>
+                    <div class="mb-2"><strong>Ödeme:</strong> <?= e($paymentLabels[$offer['payment_method']] ?? $offer['payment_method']) ?></div>
+                <?php endif; ?>
+                <?php if ($approveUrl): ?>
+                    <div class="mb-2"><strong>Onay:</strong> <a href="<?= e($approveUrl) ?>"><?= e($approveUrl) ?></a><button type="button" class="btn btn-sm btn-outline-secondary share-btn ms-2" data-url="<?= e($approveUrl) ?>">Paylaş</button></div>
+                <?php endif; ?>
+                <div class="mb-2">
+                    <?php if ($role === 'admin'): ?>
+                        <form method="post" class="d-flex align-items-center gap-2">
+                            <input type="hidden" name="action" value="update_status">
+                            <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
+                            <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                            <label class="form-label mb-0"><strong>Durum:</strong></label>
+                            <select name="status" class="form-select form-select-sm w-auto">
+                                <?php foreach ($statusLabels as $code => $label): ?>
+                                    <option value="<?= e($code) ?>" <?= $offer['status'] === $code ? 'selected' : '' ?>><?= e($label) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-primary">Kaydet</button>
+                        </form>
+                    <?php else: ?>
+                        <strong>Durum:</strong> <?= e($statusLabels[$offer['status']] ?? $offer['status']) ?>
                     <?php endif; ?>
                 </div>
-                <div class="col-md-6">
-                    <?php if (!empty($offer['company_name']) || !empty($offer['customer_company'])): ?>
-                        <div class="mb-2"><strong>Firma:</strong> <?= e($offer['company_name'] ?? $offer['customer_company']) ?></div>
-                    <?php endif; ?>
-                    <div class="mb-2"><strong>Montaj Tipi:</strong> <?= e($assemblyLabel) ?></div>
-                    <?php if (!empty($offer['validity_days'])): ?>
-                        <div class="mb-2"><strong>Geçerlilik:</strong> <?= (int)$offer['validity_days'] ?> gün</div>
-                    <?php endif; ?>
-                    <?php if (!empty($offer['installment_term'])): ?>
-                        <div class="mb-2"><strong>Vade:</strong> <?= e($offer['installment_term']) ?></div>
-                    <?php endif; ?>
-                    <div class="mb-2"><strong>Toplam Tutar:</strong> <?= e($totalFormatted) ?></div>
-                </div>
+                <?php if (!empty($offer['approved_at'])): ?>
+                    <div class="mb-2"><strong>Onay Tarihi:</strong> <?= e($offer['approved_at']) ?></div>
+                <?php endif; ?>
+            </div>
+            <div class="col-md-6">
+                <?php if (!empty($offer['company_name']) || !empty($offer['customer_company'])): ?>
+                    <div class="mb-2"><strong>Firma:</strong> <?= e($offer['company_name'] ?? $offer['customer_company']) ?></div>
+                <?php endif; ?>
+                <div class="mb-2"><strong>Montaj Tipi:</strong> <?= e($assemblyLabel) ?></div>
+                <?php if (!empty($offer['validity_days'])): ?>
+                    <div class="mb-2"><strong>Geçerlilik:</strong> <?= (int)$offer['validity_days'] ?> gün</div>
+                <?php endif; ?>
+                <?php if (!empty($offer['installment_term'])): ?>
+                    <div class="mb-2"><strong>Vade:</strong> <?= e($offer['installment_term']) ?></div>
+                <?php endif; ?>
+                <div class="mb-2"><strong>Toplam Tutar:</strong> <?= e($totalFormatted) ?></div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Giyotin Sistemleri</h5>
-            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addGuillotineModal">Giyotin Sistemi Teklifi Ekle</button>
-        </div>
-        <div class="card-body p-0">
-            <?php if ($guillotines): ?>
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped mb-0">
-                        <thead>
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Giyotin Sistemleri</h5>
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addGuillotineModal">Giyotin Sistemi Teklifi Ekle</button>
+    </div>
+    <div class="card-body p-0">
+        <?php if ($guillotines): ?>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Sistem</th>
+                            <th>En</th>
+                            <th>Boy</th>
+                            <th>Adet</th>
+                            <th>Cam</th>
+                            <th>Motor</th>
+                            <th>RAL</th>
+                            <th class="text-end">Satır Toplamı</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($guillotines as $g): ?>
                             <tr>
-                                <th>Sistem</th>
-                                <th>En</th>
-                                <th>Boy</th>
-                                <th>Adet</th>
-                                <th>Cam</th>
-                                <th>Motor</th>
-                                <th>RAL</th>
-                                <th class="text-end">Satır Toplamı</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($guillotines as $g): ?>
-                                <tr>
-                                    <td><?= e($g['system_type']) ?></td>
-                                    <td><?= e($g['width']) ?></td>
-                                    <td><?= e($g['height']) ?></td>
-                                    <td><?= e($g['quantity']) ?></td>
-                                    <td><?= e(trim($g['glass_type'] . ' ' . $g['glass_color'])) ?></td>
-                                    <td><?= e($g['motor_system']) ?></td>
-                                    <td><?= e($g['ral_code']) ?></td>
-                                    <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
-                                    <td class="text-end">
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="bi bi-three-dots"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end">
+                                <td><?= e($g['system_type']) ?></td>
+                                <td><?= e($g['width']) ?></td>
+                                <td><?= e($g['height']) ?></td>
+                                <td><?= e($g['quantity']) ?></td>
+                                <td><?= e(trim($g['glass_type'] . ' ' . $g['glass_color'])) ?></td>
+                                <td><?= e($g['motor_system']) ?></td>
+                                <td><?= e($g['ral_code']) ?></td>
+                                <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
+                                <td class="text-end">
+                                    <div class="dropdown position-static">
+                                        <button class="btn btn-sm btn-secondary"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            data-bs-display="static"
+                                            aria-expanded="false">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+
+                                        <ul class="dropdown-menu dropdown-menu-end" data-bs-auto-close="outside">
+                                            <li>
+                                                <a href="test.php?quote_id=<?= e((string)$g['id']) ?>"
+                                                    class="dropdown-item recalc-lines"
+                                                    data-gid="<?= e((string)$g['id']) ?>">
+                                                    <i class="bi bi-list-ul me-1"></i> Kalemler
+                                                </a>
+                                            </li>
+
+                                            <li>
+                                                <button type="button"
+                                                    class="dropdown-item edit-guillotine"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#addGuillotineModal"
+                                                    ...>
+                                                    <i class="bi bi-pencil me-1"></i> Düzenle
+                                                </button>
+                                            </li>
+
+                                            <?php if ($role === 'admin'): ?>
                                                 <li>
-                                                    <a href="test.php?quote_id=<?= e((string)$g['id']) ?>" class="dropdown-item recalc-lines" data-gid="<?= e((string)$g['id']) ?>">
-                                                        <i class="bi bi-list-ul me-1"></i> Kalemler
-                                                    </a>
+                                                    <form method="post" target="_blank" class="px-3 py-1">
+                                                        <input type="hidden" name="action" value="optimize_guillotine">
+                                                        <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="bi bi-calculator me-1"></i> Optimize
+                                                        </button>
+                                                    </form>
                                                 </li>
                                                 <li>
-                                                    <button type="button" class="dropdown-item edit-guillotine" data-bs-toggle="modal" data-bs-target="#addGuillotineModal"
-                                                        data-id="<?= e((string)$g['id']) ?>"
-                                                        data-width="<?= e((string)$g['width']) ?>"
-                                                        data-height="<?= e((string)$g['height']) ?>"
-                                                        data-quantity="<?= e((string)$g['quantity']) ?>"
-                                                        data-motor="<?= e($g['motor_system']) ?>"
-                                                        data-glass-type="<?= e($g['glass_type']) ?>"
-                                                        data-glass-color="<?= e($g['glass_color']) ?>"
-                                                        data-remote="<?= e((string)$g['remote_quantity']) ?>"
-                                                        data-ral="<?= e($g['ral_code']) ?>"
-                                                        data-profit="<?= e((string)$g['profit_margin']) ?>">
-                                                        <i class="bi bi-pencil me-1"></i> Düzenle
-                                                    </button>
-                                                </li>
-                                                <?php if ($role === 'admin'): ?>
-                                                <li>
-                                                    <form method="post" onsubmit="return confirm('Bu giyotin sistemini silmek istediğinize emin misiniz?');">
+                                                    <form method="post" onsubmit="return confirm('Bu giyotin sistemini silmek istediğinize emin misiniz?');" class="px-3 py-1">
                                                         <input type="hidden" name="action" value="delete_guillotine">
                                                         <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
                                                         <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                                        <button type="submit" class="dropdown-item text-danger"><i class="bi bi-trash me-1"></i> Sil</button>
+                                                        <button type="submit" class="dropdown-item text-danger">
+                                                            <i class="bi bi-trash me-1"></i> Sil
+                                                        </button>
                                                     </form>
                                                 </li>
-                                                <?php endif; ?>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php else: ?>
-                <div class="p-3 text-muted">Giyotin sistemi bulunamadı.</div>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Sürme Sistemleri</h5>
-        </div>
-        <div class="card-body p-0">
-            <?php if ($slidings): ?>
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped mb-0">
-                        <thead>
-                            <tr>
-                                <th>Sistem</th>
-                                <th>En</th>
-                                <th>Boy</th>
-                                <th>Adet</th>
-                                <th>Cam</th>
-                                <th>Kanat</th>
-                                <th>RAL</th>
-                                <th class="text-end">Satır Toplamı</th>
+                                            <?php endif; ?>
+                                        </ul>
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($slidings as $s): ?>
-                                <tr>
-                                    <td><?= e($s['system_type']) ?></td>
-                                    <td><?= e($s['width']) ?></td>
-                                    <td><?= e($s['height']) ?></td>
-                                    <td><?= e($s['quantity']) ?></td>
-                                    <td><?= e(trim($s['glass_type'] . ' ' . $s['glass_color'])) ?></td>
-                                    <td><?= e($s['wing_type']) ?></td>
-                                    <td><?= e($s['ral_code']) ?></td>
-                                    <td class="text-end"><?= e(number_format((float)$s['total_amount'], 2, ',', '.')) ?> ₺</td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php else: ?>
-                <div class="p-3 text-muted">Sürme sistemi bulunamadı.</div>
-            <?php endif; ?>
-        </div>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <div class="p-3 text-muted">Giyotin sistemi bulunamadı.</div>
+        <?php endif; ?>
     </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Sürme Sistemleri</h5>
+    </div>
+    <div class="card-body p-0">
+        <?php if ($slidings): ?>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Sistem</th>
+                            <th>En</th>
+                            <th>Boy</th>
+                            <th>Adet</th>
+                            <th>Cam</th>
+                            <th>Kanat</th>
+                            <th>RAL</th>
+                            <th class="text-end">Satır Toplamı</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($slidings as $s): ?>
+                            <tr>
+                                <td><?= e($s['system_type']) ?></td>
+                                <td><?= e($s['width']) ?></td>
+                                <td><?= e($s['height']) ?></td>
+                                <td><?= e($s['quantity']) ?></td>
+                                <td><?= e(trim($s['glass_type'] . ' ' . $s['glass_color'])) ?></td>
+                                <td><?= e($s['wing_type']) ?></td>
+                                <td><?= e($s['ral_code']) ?></td>
+                                <td class="text-end"><?= e(number_format((float)$s['total_amount'], 2, ',', '.')) ?> ₺</td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <div class="p-3 text-muted">Sürme sistemi bulunamadı.</div>
+        <?php endif; ?>
+    </div>
+</div>
 </div>
 
 <div class="modal fade" id="addGuillotineModal" tabindex="-1" aria-labelledby="addGuillotineLabel" aria-hidden="true">
@@ -655,49 +668,50 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
 </div>
 
 <script>
-document.getElementById('addGuillotineModal').addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const form = this.querySelector('form');
-    if (button && button.classList.contains('edit-guillotine')) {
-        form.querySelector('#guillotine_id').value = button.getAttribute('data-id');
-        form.querySelector('#width').value = button.getAttribute('data-width');
-        form.querySelector('#height').value = button.getAttribute('data-height');
-        form.querySelector('#quantity').value = button.getAttribute('data-quantity');
-        form.querySelector('#motor_system').value = button.getAttribute('data-motor');
-        form.querySelector('#glass_type').value = button.getAttribute('data-glass-type');
-        form.querySelector('#glass_color').value = button.getAttribute('data-glass-color');
-        form.querySelector('#remote_quantity').value = button.getAttribute('data-remote');
-        form.querySelector('#ral_code').value = button.getAttribute('data-ral');
-        form.querySelector('#profit_margin').value = button.getAttribute('data-profit');
-        this.querySelector('.modal-title').textContent = 'Edit Guillotine System Offer';
-    } else {
-        form.reset();
-        form.querySelector('#guillotine_id').value = '';
-        this.querySelector('.modal-title').textContent = 'Add Guillotine System Offer';
-    }
-});
-
-document.querySelectorAll('.recalc-lines').forEach(function (link) {
-    link.addEventListener('click', async function (e) {
-        e.preventDefault();
-        const url = this.href;
-        const gid = this.dataset.gid;
-        try {
-            await fetch('quotation_view.php?id=<?= e((string)$offer['id']) ?>', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: new URLSearchParams({
-                    action: 'recalc_guillotine',
-                    guillotine_id: gid,
-                    csrf_token: '<?= e($csrfToken) ?>'
-                })
-            });
-        } catch (err) {
-            // ignore errors and proceed to navigation
+    document.getElementById('addGuillotineModal').addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const form = this.querySelector('form');
+        if (button && button.classList.contains('edit-guillotine')) {
+            form.querySelector('#guillotine_id').value = button.getAttribute('data-id');
+            form.querySelector('#width').value = button.getAttribute('data-width');
+            form.querySelector('#height').value = button.getAttribute('data-height');
+            form.querySelector('#quantity').value = button.getAttribute('data-quantity');
+            form.querySelector('#motor_system').value = button.getAttribute('data-motor');
+            form.querySelector('#glass_type').value = button.getAttribute('data-glass-type');
+            form.querySelector('#glass_color').value = button.getAttribute('data-glass-color');
+            form.querySelector('#remote_quantity').value = button.getAttribute('data-remote');
+            form.querySelector('#ral_code').value = button.getAttribute('data-ral');
+            form.querySelector('#profit_margin').value = button.getAttribute('data-profit');
+            this.querySelector('.modal-title').textContent = 'Edit Guillotine System Offer';
+        } else {
+            form.reset();
+            form.querySelector('#guillotine_id').value = '';
+            this.querySelector('.modal-title').textContent = 'Add Guillotine System Offer';
         }
-        window.location.href = url;
     });
-});
 
+    document.querySelectorAll('.recalc-lines').forEach(function(link) {
+        link.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const url = this.href;
+            const gid = this.dataset.gid;
+            try {
+                await fetch('quotation_view.php?id=<?= e((string)$offer['id']) ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        action: 'recalc_guillotine',
+                        guillotine_id: gid,
+                        csrf_token: '<?= e($csrfToken) ?>'
+                    })
+                });
+            } catch (err) {
+                // ignore errors and proceed to navigation
+            }
+            window.location.href = url;
+        });
+    });
 </script>
 <?php require __DIR__ . '/footer.php'; ?>
