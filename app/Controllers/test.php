@@ -286,6 +286,7 @@ function calculateGuillotineTotals(array $input): array
 }
 
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
+    require_once __DIR__ . '/../../bootstrap.php';
     require BASE_PATH . '/header.php';
 
     function e(?string $v): string
