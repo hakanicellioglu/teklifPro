@@ -287,7 +287,6 @@ function calculateGuillotineTotals(array $input): array
 
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     require_once __DIR__ . '/../../bootstrap.php';
-    require BASE_PATH . '/header.php';
 
     function e(?string $v): string
     {
@@ -325,8 +324,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     $id = filter_input(INPUT_GET, 'quote_id', FILTER_VALIDATE_INT);
     if (!$id) {
-        echo '<div class="container mt-4"><div class="alert alert-danger">Geçersiz giyotin.</div></div>';
-        require BASE_PATH . '/footer.php';
+        require BASE_PATH . '/resources/views/errors/404.php';
         exit;
     }
 
@@ -334,8 +332,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
-        echo '<div class="container mt-4"><div class="alert alert-danger">Giyotin satırı bulunamadı.</div></div>';
-        require BASE_PATH . '/footer.php';
+        require BASE_PATH . '/resources/views/errors/404.php';
         exit;
     }
 
@@ -351,11 +348,12 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             'provider'    => $provider,
         ]);
     } catch (Throwable $e) {
-        echo '<div class="container mt-4"><div class="alert alert-danger">Hesaplama hatası: ' . e($e->getMessage()) . '</div></div>';
-        require BASE_PATH . '/footer.php';
+        error_log($e->getMessage());
+        require BASE_PATH . '/resources/views/errors/500.php';
         exit;
     }
 
+    require BASE_PATH . '/header.php';
     echo '<div class="container mt-4">';
     echo '<h3>Kalemler</h3>';
 
