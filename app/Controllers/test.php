@@ -286,7 +286,70 @@ function calculateGuillotineTotals(array $input): array
 }
 
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
-    require_once __DIR__ . '/../../bootstrap.php';
+    error_reporting(E_ALL);
+    ini_set('display_errors', '1');
+    ini_set('log_errors', '1');
+    error_log('test.php started');
+
+    $bootstrap = __DIR__ . '/../../bootstrap.php';
+    if (!is_file($bootstrap)) {
+        http_response_code(500);
+        echo "<div class='container py-5'><div class='alert alert-danger text-center'>bootstrap.php bulunamadı.</div></div>";
+        error_log('bootstrap.php missing: ' . $bootstrap);
+        exit;
+    }
+    require_once $bootstrap;
+    // re-apply dev error reporting after bootstrap
+    error_reporting(E_ALL);
+    ini_set('display_errors', '1');
+    ini_set('log_errors', '1');
+
+    // verify required files exist
+    $requiredFiles = [
+        'header'  => BASE_PATH . '/header.php',
+        'footer'  => BASE_PATH . '/footer.php',
+        'error404'=> BASE_PATH . '/resources/views/errors/404.php',
+        'error500'=> BASE_PATH . '/resources/views/errors/500.php',
+    ];
+    foreach ($requiredFiles as $name => $file) {
+        if (!is_file($file)) {
+            error_log("Missing {$name}: {$file}");
+        }
+    }
+
+    // ensure PDO connection
+    if (!isset($pdo) || !$pdo instanceof PDO) {
+        $cfg = BASE_PATH . '/config/config.php';
+        if (is_file($cfg)) {
+            require $cfg;
+        }
+    }
+    if (!isset($pdo) || !$pdo instanceof PDO) {
+        http_response_code(500);
+        echo "<div class='container py-5'><div class='alert alert-danger text-center'>Veritabanı bağlantısı yok.</div></div>";
+        error_log('PDO instance missing');
+        exit;
+    }
+    try {
+        $pdo->query('SELECT 1');
+        error_log('PDO connection OK');
+    } catch (Throwable $e) {
+        error_log('PDO test failed: ' . $e->getMessage());
+    }
+
+    // check product columns
+    try {
+        $columns = $pdo->query('SHOW COLUMNS FROM products')->fetchAll(PDO::FETCH_COLUMN);
+        $requiredCols = ['unit', 'unit_price', 'weight_per_meter', 'category'];
+        $missingCols = array_diff($requiredCols, $columns);
+        if ($missingCols) {
+            error_log('Missing product columns: ' . implode(',', $missingCols));
+        } else {
+            $pdo->query('SELECT unit, unit_price, weight_per_meter, category FROM products LIMIT 1');
+        }
+    } catch (Throwable $e) {
+        error_log('Product column check failed: ' . $e->getMessage());
+    }
 
     function e(?string $v): string
     {
@@ -315,24 +378,35 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         {
             $stmt = $this->pdo->prepare('SELECT unit, unit_price, weight_per_meter, category FROM products WHERE LOWER(name) = LOWER(:name)');
             $stmt->execute([':name' => $name]);
-
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
+            if ($row && !isset($row['unit'], $row['unit_price'], $row['weight_per_meter'], $row['category'])) {
+                error_log('Unexpected product columns for ' . $name);
+                return null;
+            }
             return $row ?: null;
         }
     }
 
     $id = filter_input(INPUT_GET, 'quote_id', FILTER_VALIDATE_INT);
     if (!$id) {
-        require BASE_PATH . '/resources/views/errors/404.php';
+        http_response_code(400);
+        echo "<div class='container py-5'><div class='alert alert-warning text-center'>quote_id parametresi zorunludur.</div></div>";
         exit;
     }
 
     $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, profit_rate, profit_margin FROM guillotinesystems WHERE id = :id');
     $stmt->execute([':id' => $id]);
+    $rowCount = $stmt->rowCount();
+    error_log('Guillotine row count: ' . $rowCount);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$row) {
-        require BASE_PATH . '/resources/views/errors/404.php';
+    if ($rowCount === 0 || !$row) {
+        $err404 = BASE_PATH . '/resources/views/errors/404.php';
+        if (is_file($err404)) {
+            require $err404;
+        } else {
+            http_response_code(404);
+            echo "<div class='container py-5'><div class='alert alert-warning text-center'>Kayıt bulunamadı.</div></div>";
+        }
         exit;
     }
 
@@ -349,11 +423,24 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         ]);
     } catch (Throwable $e) {
         error_log($e->getMessage());
-        require BASE_PATH . '/resources/views/errors/500.php';
+        $err500 = BASE_PATH . '/resources/views/errors/500.php';
+        if (is_file($err500)) {
+            require $err500;
+        } else {
+            http_response_code(500);
+            echo "<div class='container py-5'><div class='alert alert-danger text-center'>Hesaplama hatası.</div></div>";
+        }
         exit;
     }
 
-    require BASE_PATH . '/header.php';
+    $header = BASE_PATH . '/header.php';
+    if (!is_file($header)) {
+        http_response_code(500);
+        echo "<div class='container py-5'><div class='alert alert-danger text-center'>header.php bulunamadı.</div></div>";
+        error_log('Missing header.php: ' . $header);
+        exit;
+    }
+    require $header;
     echo '<div class="container mt-4">';
     echo '<h3>Kalemler</h3>';
 
@@ -456,6 +543,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '</div>';
     echo '</div>';
 
-    require BASE_PATH . '/footer.php';
+    $footer = BASE_PATH . '/footer.php';
+    if (is_file($footer)) {
+        require $footer;
+    } else {
+        error_log('Missing footer.php: ' . $footer);
+    }
 }
-
