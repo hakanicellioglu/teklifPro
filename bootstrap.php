@@ -4,13 +4,19 @@ if (!defined('BOOTSTRAP_LOADED')) {
     if (!defined('BASE_PATH')) {
         define('BASE_PATH', __DIR__);
     }
+    if (!defined('BASE_URL')) {
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $scriptDir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+        $baseUrl = ($scriptDir === '' || $scriptDir === '/') ? '/' : $scriptDir . '/';
+        define('BASE_URL', $baseUrl);
+    }
 
     ini_set('display_errors', '0');
     ini_set('log_errors', '1');
 
     function url(string $path = ''): string
     {
-        return '/' . ltrim($path, '/');
+        return BASE_URL . ltrim($path, '/');
     }
 
     function tr_money(float $v): string
