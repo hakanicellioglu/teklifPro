@@ -22,6 +22,49 @@ if (!$offer) {
     exit('Teklif bulunamadı.');
 }
 
+// Fetch related product rows
+$guillotines = [];
+$slidings = [];
+$items = [];
+$totalAmount = 0.0;
+
+try {
+    $gStmt = $pdo->prepare('SELECT system_type, width, height, quantity, total_amount FROM guillotinesystems WHERE general_offer_id = :id');
+    $gStmt->execute([':id' => $offer['id']]);
+    $guillotines = $gStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    // ignore
+}
+
+try {
+    $sStmt = $pdo->prepare('SELECT system_type, width, height, quantity, total_amount FROM slidingsystems WHERE general_offer_id = :id');
+    $sStmt->execute([':id' => $offer['id']]);
+    $slidings = $sStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    // ignore
+}
+
+foreach ($guillotines as $g) {
+    $items[] = [
+        'system'   => $g['system_type'],
+        'width'    => $g['width'],
+        'height'   => $g['height'],
+        'quantity' => $g['quantity'],
+        'amount'   => $g['total_amount'],
+    ];
+    $totalAmount += (float)$g['total_amount'];
+}
+foreach ($slidings as $s) {
+    $items[] = [
+        'system'   => $s['system_type'],
+        'width'    => $s['width'],
+        'height'   => $s['height'],
+        'quantity' => $s['quantity'],
+        'amount'   => $s['total_amount'],
+    ];
+    $totalAmount += (float)$s['total_amount'];
+}
+
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $offer['status'] === 'pending') {
     $decision = $_POST['decision'] ?? '';
@@ -62,6 +105,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $offer['status'] === 'pending') {
             <?php endif; ?>
         </div>
     </div>
+    <?php if ($items): ?>
+    <table class="table table-bordered mb-3">
+        <thead>
+            <tr>
+                <th>Sistem Tipi</th>
+                <th>Ölçüler</th>
+                <th>Adet</th>
+                <th>Tutar</th>
+            </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($items as $it): ?>
+            <tr>
+                <td><?= h($it['system']) ?></td>
+                <td><?= h($it['width'] . ' x ' . $it['height']) ?></td>
+                <td><?= h((string)$it['quantity']) ?></td>
+                <td><?= h(tr_money((float)$it['amount'])) ?> ₺</td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="3" class="text-end">Toplam</th>
+                <th><?= h(tr_money((float)$totalAmount)) ?> ₺</th>
+            </tr>
+        </tfoot>
+    </table>
+    <?php endif; ?>
     <form method="post" class="d-flex gap-2">
         <input type="hidden" name="token" value="<?= h($token) ?>">
         <button type="submit" name="decision" value="accepted" class="btn btn-success" <?= $offer['status'] !== 'pending' ? 'disabled' : '' ?>>Onayla</button>
