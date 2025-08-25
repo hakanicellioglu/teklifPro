@@ -482,7 +482,11 @@ require __DIR__ . '/header.php';
                           <div class="col-md-6">
                             <label class="form-label">Fiyat Birimi ve Fiyatı *</label>
                             <div class="input-group">
-                              <span class="input-group-text">TL</span>
+                              <select name="price_unit" class="form-select">
+                                <option value="TL">TL</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                              </select>
                               <input type="number" step="10" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
                             </div>
                           </div>
@@ -602,7 +606,11 @@ require __DIR__ . '/header.php';
                 <div class="col-md-6">
                   <label class="form-label">Fiyat Birimi ve Fiyatı *</label>
                   <div class="input-group">
-                    <span class="input-group-text">TL</span>
+                    <select name="price_unit" class="form-select">
+                      <option value="TL" <?= (($_POST['price_unit'] ?? 'TL') === 'TL') ? 'selected' : '' ?>>TL</option>
+                      <option value="USD" <?= (($_POST['price_unit'] ?? 'TL') === 'USD') ? 'selected' : '' ?>>USD</option>
+                      <option value="EUR" <?= (($_POST['price_unit'] ?? 'TL') === 'EUR') ? 'selected' : '' ?>>EUR</option>
+                    </select>
                     <input type="number" step="0.01" name="unit_price" class="form-control" required>
                   </div>
                 </div>
