@@ -64,6 +64,7 @@ if (!$id) {
 
 $error = null;
 $success = null;
+$debug = null;
 
 if (!empty($_SESSION['flash_success'])) {
     $success = $_SESSION['flash_success'];
@@ -88,6 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
             exit;
         } catch (Exception $e) {
             $error = 'Teklif silinemedi.';
+            $debug = $e->getMessage();
         }
     }
 }
@@ -110,6 +112,7 @@ if (
             $_SESSION['flash_success'] = 'Durum güncellendi.';
         } catch (Exception $e) {
             $_SESSION['flash_error'] = 'Durum güncellenemedi.';
+            $debug = $e->getMessage();
         }
     }
     header('Location: quotation_view.php?id=' . $id);
@@ -176,6 +179,7 @@ if (
         }
         header('Content-Type: application/json', true, 500);
         echo json_encode(['error' => 'Hesaplama hatası.']);
+        $debug = $e->getMessage();
         exit;
     }
 }
@@ -196,6 +200,7 @@ try {
     }
 } catch (Exception $e) {
     $error = 'Teklif verileri alınamadı.';
+    $debug = $e->getMessage();
     $offer = null;
 }
 
@@ -237,6 +242,7 @@ if ($gDel) {
             }
         } catch (Exception $e) {
             $_SESSION['flash_error'] = 'Giyotin sistemi silinemedi.';
+            $debug = $e->getMessage();
         }
     }
     header('Location: quotation_view.php?id=' . $id);
@@ -254,6 +260,7 @@ if ($gPost) {
                 $pdo->query('SELECT profit_margin FROM guillotinesystems LIMIT 1');
             } catch (Exception $e) {
                 $pdo->exec('ALTER TABLE guillotinesystems ADD COLUMN profit_margin DECIMAL(5,2) DEFAULT NULL AFTER glass_color');
+                $debug = $e->getMessage();
             }
 
             $gId = filter_input(INPUT_POST, 'guillotine_id', FILTER_VALIDATE_INT);
@@ -343,6 +350,7 @@ if ($gPost) {
             }
         } catch (Exception $e) {
             $error = 'Giyotin sistemi kaydedilemedi.';
+            $debug = $e->getMessage();
         }
     }
 }
@@ -356,6 +364,7 @@ if (!$error) {
         $guillotines = $gStmt->fetchAll();
     } catch (Exception $e) {
         $error = 'Giyotin sistemi verileri alınamadı.';
+        $debug = $e->getMessage();
     }
 }
 if (!$error) {
@@ -365,6 +374,7 @@ if (!$error) {
         $slidings = $sStmt->fetchAll();
     } catch (Exception $e) {
         $error = 'Sürme sistemi verileri alınamadı.';
+        $debug = $e->getMessage();
     }
 }
 
@@ -394,6 +404,9 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
 ?>
 <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
 <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
+<?php if (defined('APP_DEBUG') && APP_DEBUG && $debug): ?>
+    <div class="alert alert-warning"><strong>Debug:</strong> <?= e($debug) ?></div>
+<?php endif; ?>
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Özet</h5>
