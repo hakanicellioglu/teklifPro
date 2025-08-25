@@ -497,11 +497,6 @@ $customers = $pdo->query('SELECT id, first_name, last_name, company_name AS comp
             <input type="number" min="1" max="365" name="validity_days" class="form-control <?= isset($createErrors['validity_days']) ? 'is-invalid' : '' ?>" value="<?= e($createData['validity_days']) ?>" placeholder="örn. 15">
             <?php if (isset($createErrors['validity_days'])): ?><div class="invalid-feedback"><?= e($createErrors['validity_days']) ?></div><?php endif; ?>
           </div>
-          <div class="mb-3 installment-field" style="display:none;">
-            <label class="form-label">Vade</label>
-            <input type="text" name="installment_term" class="form-control <?= isset($createErrors['installment_term']) ? 'is-invalid' : '' ?>" value="<?= e($createData['installment_term']) ?>" placeholder="3 taksit (aylık)">
-            <?php if (isset($createErrors['installment_term'])): ?><div class="invalid-feedback"><?= e($createErrors['installment_term']) ?></div><?php endif; ?>
-          </div>
           <div class="mb-3">
             <label class="form-label">Teklif Tarihi</label>
             <input type="date" name="offer_date" class="form-control <?= isset($createErrors['offer_date']) ? 'is-invalid' : '' ?>" value="<?= e($createData['offer_date']) ?>" required>
