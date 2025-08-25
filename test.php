@@ -333,10 +333,14 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         return number_format($value, $decimals, ',', '.');
     }
 
-    // Show fetched exchange rates to the user
+    // Show fetched exchange rates to the user, warn if unavailable
     echo '<div class="container mt-4">';
-    echo '<div class="alert alert-info">1 USD = ' . e(number_format(USD_RATE, 4, ',', '.')) . ' ₺';
-    echo ' | 1 EUR = ' . e(number_format(EUR_RATE, 4, ',', '.')) . ' ₺</div>';
+    if (USD_RATE > 0 && EUR_RATE > 0) {
+        echo '<div class="alert alert-info">1 USD = ' . e(number_format(USD_RATE, 4, ',', '.')) . ' ₺';
+        echo ' | 1 EUR = ' . e(number_format(EUR_RATE, 4, ',', '.')) . ' ₺</div>';
+    } else {
+        echo '<div class="alert alert-warning">Kur bilgisi alınamadı</div>';
+    }
     echo '</div>';
 
     class PdoProductProvider implements ProductProviderInterface
