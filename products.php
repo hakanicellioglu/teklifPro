@@ -508,7 +508,7 @@ require __DIR__ . '/header.php';
                                 <option value="USD" <?= ($p['price_unit'] === 'USD') ? 'selected' : '' ?>>USD</option>
                                 <option value="EUR" <?= ($p['price_unit'] === 'EUR') ? 'selected' : '' ?>>EUR</option>
                               </select>
-                              <input type="number" step="10" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
+                              <input type="number" step="0.01" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
                             </div>
                           </div>
                           <?php
