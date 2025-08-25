@@ -30,8 +30,16 @@ $error = null;
 $success = null;
 $vatAllowed = [0, 1, 8, 18, 20];
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
-$categoryOptions = ['Cam', 'Alüminyum', 'Aksesuar', 'Fitil', 'Kumanda'];
 $unitTypeOptions = ['kg/m', 'm', 'm²', 'adet'];
+
+// Fetch categories from database
+$categoryStmt = $pdo->query('SELECT id, name FROM categories ORDER BY name');
+$categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
+$categoryMap = [];
+foreach ($categories as $cat) {
+  $categoryMap[(int)$cat['id']] = $cat['name'];
+}
+$validCategoryIds = array_keys($categoryMap);
 
 // Determine whether optional width/height columns exist
 $colStmt = $pdo->query('SHOW COLUMNS FROM products');
@@ -57,12 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $id = (int)($_POST['id'] ?? 0);
     $product_code = trim($_POST['product_code'] ?? '');
     $name = trim($_POST['name'] ?? '');
-    $category = trim($_POST['category'] ?? '');
+    $category_id = (int)($_POST['category_id'] ?? 0);
     $unit_type = trim($_POST['unit_type'] ?? '');
     $unit_value = (float)($_POST['unit_value'] ?? 0);
-
     $channel_count = $_POST['channel_count'] ?? null;
-    $isKumanda = mb_strtolower($category, 'UTF-8') === 'kumanda';
+    $categoryName = $categoryMap[$category_id] ?? '';
+    $isKumanda = mb_strtolower($categoryName, 'UTF-8') === 'kumanda';
     if ($isKumanda) {
       if (!in_array((int)$channel_count, [5, 10, 15], true)) {
         $errors[] = 'Kumanda kategorisi için Kanal Adedi alanı zorunludur ve 5, 10 veya 15 olmalıdır.';
@@ -77,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
       }
     }
 
-    if ($category === '' || !in_array($category, $categoryOptions, true)) {
+    if ($category_id === 0 || !in_array($category_id, $validCategoryIds, true)) {
       $errors[] = 'Kategori seçilmelidir.';
     }
     if ($unit_type === '' || !in_array($unit_type, $unitTypeOptions, true)) {
@@ -146,12 +154,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 
     if (!$errors) {
       try {
-        $sql = 'UPDATE products SET product_code=:product_code, name=:name, category=:category, unit=:unit_type, channel_count=:channel_count, weight_per_meter=:unit_value, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, image_url=:image_url WHERE id=:id';
+        $sql = 'UPDATE products SET product_code=:product_code, name=:name, category_id=:category_id, unit=:unit_type, channel_count=:channel_count, weight_per_meter=:unit_value, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, image_url=:image_url WHERE id=:id';
         $stmt = $pdo->prepare($sql);
         $params = [
           ':product_code' => $product_code ?: null,
           ':name' => $name,
-          ':category' => $category ?: null,
+          ':category_id' => $category_id ?: null,
           ':unit_type' => $unit_type ?: null,
           ':channel_count' => $channel_count,
           ':unit_value' => $unit_value,
@@ -174,11 +182,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
   } elseif ($action === 'create') {
     $product_code = trim($_POST['product_code'] ?? '');
     $name = trim($_POST['name'] ?? '');
-    $category = trim($_POST['category'] ?? '');
+    $category_id = (int)($_POST['category_id'] ?? 0);
     $unit_type = trim($_POST['unit_type'] ?? '');
     $unit_value = (float)($_POST['unit_value'] ?? 0);
     $channel_count = $_POST['channel_count'] ?? null;
-    $isKumanda = mb_strtolower($category, 'UTF-8') === 'kumanda';
+    $categoryName = $categoryMap[$category_id] ?? '';
+    $isKumanda = mb_strtolower($categoryName, 'UTF-8') === 'kumanda';
     if ($isKumanda) {
       if (!in_array((int)$channel_count, [5, 10, 15], true)) {
         $errors[] = 'Kumanda kategorisi için Kanal Adedi alanı zorunludur ve 5, 10 veya 15 olmalıdır.';
@@ -197,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $unit_price = trim($_POST['unit_price'] ?? '');
     $vat_rate = trim($_POST['vat_rate'] ?? '');
 
-    if ($category === '' || !in_array($category, $categoryOptions, true)) {
+    if ($category_id === 0 || !in_array($category_id, $validCategoryIds, true)) {
       $errors[] = 'Kategori seçilmelidir.';
     }
     if ($unit_type === '' || !in_array($unit_type, $unitTypeOptions, true)) {
@@ -257,13 +266,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 
     if (!$errors) {
       try {
-        $cols = 'product_code, name, category, unit, channel_count, weight_per_meter, color, description, unit_price, vat_rate, image_url';
-        $vals = ':product_code, :name, :category, :unit_type, :channel_count, :unit_value, :color, :description, :unit_price, :vat_rate, :image_url';
+        $cols = 'product_code, name, category_id, unit, channel_count, weight_per_meter, color, description, unit_price, vat_rate, image_url';
+        $vals = ':product_code, :name, :category_id, :unit_type, :channel_count, :unit_value, :color, :description, :unit_price, :vat_rate, :image_url';
         $stmt = $pdo->prepare("INSERT INTO products ($cols) VALUES ($vals)");
         $params = [
           ':product_code' => $product_code,
           ':name' => $name,
-          ':category' => $category ?: null,
+          ':category_id' => $category_id ?: null,
           ':unit_type' => $unit_type ?: null,
           ':channel_count' => $channel_count,
           ':unit_value' => $unit_value,
@@ -287,11 +296,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 $success = filter_input(INPUT_GET, 'success', FILTER_SANITIZE_SPECIAL_CHARS);
 $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHARS);
 
-$fields = 'id, product_code, name, category, unit AS unit_type, channel_count, weight_per_meter AS unit_value, color, image_url, description, unit_price, vat_rate';
+$fields = 'p.id, p.product_code, p.name, p.category_id, c.name AS category, p.unit AS unit_type, p.channel_count, p.weight_per_meter AS unit_value, p.color, p.image_url, p.description, p.unit_price, p.vat_rate';
 if ($hasDimensions) {
-  $fields .= ', width, height';
+  $fields .= ', p.width, p.height';
 }
-$stmt = $pdo->query("SELECT $fields FROM products ORDER BY id DESC");
+$stmt = $pdo->query("SELECT $fields FROM products p LEFT JOIN categories c ON p.category_id = c.id ORDER BY p.id DESC");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $productCount = count($products);
 require __DIR__ . '/header.php';
@@ -445,10 +454,10 @@ require __DIR__ . '/header.php';
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Kategori *</label>
-                            <select name="category" id="category-<?= $p['id'] ?>" class="form-select category-select" required>
+                            <select name="category_id" id="category-<?= $p['id'] ?>" class="form-select category-select" required>
                               <option value="">Seçiniz</option>
-                              <?php foreach ($categoryOptions as $cat): ?>
-                                <option value="<?= e($cat) ?>" <?= ($p['category'] === $cat) ? 'selected' : '' ?>><?= e($cat) ?></option>
+                              <?php foreach ($categories as $cat): ?>
+                                <option value="<?= e($cat['id']) ?>" <?= ($p['category_id'] == $cat['id']) ? 'selected' : '' ?>><?= e($cat['name']) ?></option>
                               <?php endforeach; ?>
                             </select>
                           </div>
@@ -568,10 +577,10 @@ require __DIR__ . '/header.php';
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Kategori *</label>
-                  <select name="category" id="category-create" class="form-select category-select" required>
+                  <select name="category_id" id="category-create" class="form-select category-select" required>
                     <option value="">Seçiniz</option>
-                    <?php foreach ($categoryOptions as $cat): ?>
-                      <option value="<?= e($cat) ?>" <?= (isset($_POST['category']) && $_POST['category'] === $cat) ? 'selected' : '' ?>><?= e($cat) ?></option>
+                    <?php foreach ($categories as $cat): ?>
+                      <option value="<?= e($cat['id']) ?>" <?= (isset($_POST['category_id']) && (int)$_POST['category_id'] === (int)$cat['id']) ? 'selected' : '' ?>><?= e($cat['name']) ?></option>
                     <?php endforeach; ?>
                   </select>
                 </div>
