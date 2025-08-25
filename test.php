@@ -351,20 +351,25 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     function fetchExchangeRates(string $base, array $currencies): array
     {
         $base = strtoupper($base);
-        $symbols = implode(',', array_map('strtoupper', $currencies));
-        $json = @file_get_contents("https://api.exchangerate.host/latest?base={$base}&symbols={$symbols}");
+        // New API does not support limiting symbols, so fetch all and filter.
+        $json = @file_get_contents("https://open.er-api.com/v6/latest/{$base}");
         $data = $json ? json_decode($json, true) : null;
-        if (!is_array($data) || empty($data['rates'])) {
+        if (!is_array($data) || (($data['result'] ?? '') !== 'success') || empty($data['rates'])) {
             return [];
         }
         $rates = [];
-        foreach ($data['rates'] as $cur => $rate) {
-            if ($rate <= 0) {
+        foreach ($currencies as $cur) {
+            $curUpper = strtoupper($cur);
+            if ($curUpper === $base) {
+                $rates[$curUpper] = 1.0;
                 continue;
             }
-            // API returns how much 1 base currency equals in target currency.
-            // We need multiplier from target currency to base, so take reciprocal.
-            $rates[strtoupper($cur)] = 1 / $rate;
+            $rate = $data['rates'][$curUpper] ?? null;
+            if ($rate && $rate > 0) {
+                // API returns how much 1 base currency equals in target currency.
+                // We need multiplier from target currency to base, so take reciprocal.
+                $rates[$curUpper] = 1 / $rate;
+            }
         }
         return $rates;
     }
