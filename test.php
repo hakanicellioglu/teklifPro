@@ -2,7 +2,45 @@
 
 declare(strict_types=1);
 
-const GLASS_UNIT_PRICE = 1680; // ₺ per m²
+/**
+ * Fetches yesterday's closing exchange rates for USD and EUR.
+ *
+ * @return array{USD: ?float, EUR: ?float} Rates as TRY per currency.
+ */
+function fetchExchangeRates(): array
+{
+    $yesterday  = (new DateTime('yesterday'))->format('Y-m-d');
+    $currencies = ['USD', 'EUR'];
+    $rates      = [];
+
+    foreach ($currencies as $currency) {
+        // Primary API (exchangerate.host)
+        $url  = "https://api.exchangerate.host/{$yesterday}?base={$currency}&symbols=TRY";
+        $json = @file_get_contents($url);
+        $data = $json ? json_decode($json, true) : null;
+        $rate = $data['rates']['TRY'] ?? null;
+
+        // Fallback API if the primary one fails
+        if ($rate === null) {
+            $url  = "https://api.frankfurter.app/{$yesterday}?from={$currency}&to=TRY";
+            $json = @file_get_contents($url);
+            $data = $json ? json_decode($json, true) : null;
+            $rate = $data['rates']['TRY'] ?? null;
+        }
+
+        $rates[$currency] = $rate;
+    }
+
+    return $rates;
+}
+
+$rates = fetchExchangeRates();
+define('USD_RATE', $rates['USD'] ?? 0.0);
+define('EUR_RATE', $rates['EUR'] ?? 0.0);
+
+// Base glass price in USD; fall back to previous TL price if the rate is missing.
+$glassBaseUsd = 52.0;
+define('GLASS_UNIT_PRICE', USD_RATE > 0 ? $glassBaseUsd * USD_RATE : 1680); // ₺ per m²
 
 /**
  * Provides product information required for calculations.
@@ -305,6 +343,16 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         $decimals = in_array($unit, $twoDecimals, true) ? 2 : 0;
         return number_format($value, $decimals, ',', '.');
     }
+
+    // Show fetched exchange rates to the user, warn if unavailable
+    echo '<div class="container mt-4">';
+    if (USD_RATE > 0 && EUR_RATE > 0) {
+        echo '<div class="alert alert-info">1 USD = ' . e(number_format(USD_RATE, 4, ',', '.')) . ' ₺';
+        echo ' | 1 EUR = ' . e(number_format(EUR_RATE, 4, ',', '.')) . ' ₺</div>';
+    } else {
+        echo '<div class="alert alert-warning">Kur bilgisi alınamadı</div>';
+    }
+    echo '</div>';
 
     class PdoProductProvider implements ProductProviderInterface
     {
