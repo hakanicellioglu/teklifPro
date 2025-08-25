@@ -16,13 +16,13 @@ function e(?string $v): string
   return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-function formatPrice(float $price): string
+function formatPrice(float $price, string $currency = 'TRY'): string
 {
   if (class_exists('NumberFormatter')) {
     $fmt = new NumberFormatter('tr_TR', NumberFormatter::CURRENCY);
-    return $fmt->formatCurrency($price, 'TRY');
+    return $fmt->formatCurrency($price, $currency);
   }
-  return number_format($price, 2, ',', '.') . ' TL';
+  return number_format($price, 2, ',', '.') . ' ' . $currency;
 }
 
 $errors = [];
@@ -95,7 +95,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $color = trim($_POST['color'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
+    $price_unit = strtoupper(trim($_POST['price_unit'] ?? 'TRY'));
     $vat_rate = trim($_POST['vat_rate'] ?? '');
+    $allowedPriceUnits = ['TRY', 'USD', 'EUR'];
+    if (!in_array($price_unit, $allowedPriceUnits, true)) {
+      $price_unit = 'TRY';
+    }
     if ($vat_rate === '') {
       $vat_rate = null;
     } elseif (!in_array((int)$vat_rate, $vatAllowed, true)) {
@@ -154,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 
     if (!$errors) {
       try {
-        $sql = 'UPDATE products SET product_code=:product_code, name=:name, category_id=:category_id, unit=:unit_type, channel_count=:channel_count, weight_per_meter=:unit_value, color=:color, description=:description, unit_price=:unit_price, vat_rate=:vat_rate, image_url=:image_url WHERE id=:id';
+        $sql = 'UPDATE products SET product_code=:product_code, name=:name, category_id=:category_id, unit=:unit_type, channel_count=:channel_count, weight_per_meter=:unit_value, color=:color, description=:description, price_unit=:price_unit, unit_price=:unit_price, vat_rate=:vat_rate, image_url=:image_url WHERE id=:id';
         $stmt = $pdo->prepare($sql);
         $params = [
           ':product_code' => $product_code ?: null,
@@ -165,6 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
           ':unit_value' => $unit_value,
           ':color' => $color ?: null,
           ':description' => $description ?: null,
+          ':price_unit' => $price_unit,
           ':unit_price' => $unit_price,
           ':vat_rate' => $vat_rate !== '' ? $vat_rate : null,
           ':image_url' => $imageUrl,
@@ -204,7 +210,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
     $color = trim($_POST['color'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $unit_price = trim($_POST['unit_price'] ?? '');
+    $price_unit = strtoupper(trim($_POST['price_unit'] ?? 'TRY'));
     $vat_rate = trim($_POST['vat_rate'] ?? '');
+    $allowedPriceUnits = ['TRY', 'USD', 'EUR'];
+    if (!in_array($price_unit, $allowedPriceUnits, true)) {
+      $price_unit = 'TRY';
+    }
 
     if ($category_id === 0 || !in_array($category_id, $validCategoryIds, true)) {
       $errors[] = 'Kategori seçilmelidir.';
@@ -266,8 +277,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 
     if (!$errors) {
       try {
-        $cols = 'product_code, name, category_id, unit, channel_count, weight_per_meter, color, description, unit_price, vat_rate, image_url';
-        $vals = ':product_code, :name, :category_id, :unit_type, :channel_count, :unit_value, :color, :description, :unit_price, :vat_rate, :image_url';
+        $cols = 'product_code, name, category_id, unit, channel_count, weight_per_meter, color, description, price_unit, unit_price, vat_rate, image_url';
+        $vals = ':product_code, :name, :category_id, :unit_type, :channel_count, :unit_value, :color, :description, :price_unit, :unit_price, :vat_rate, :image_url';
         $stmt = $pdo->prepare("INSERT INTO products ($cols) VALUES ($vals)");
         $params = [
           ':product_code' => $product_code,
@@ -278,6 +289,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
           ':unit_value' => $unit_value,
           ':color' => $color ?: null,
           ':description' => $description ?: null,
+          ':price_unit' => $price_unit,
           ':unit_price' => $unit_price,
           ':vat_rate' => $vat_rate !== '' ? $vat_rate : null,
           ':image_url' => $imageUrl,
@@ -296,7 +308,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
 $success = filter_input(INPUT_GET, 'success', FILTER_SANITIZE_SPECIAL_CHARS);
 $error = $error ?? filter_input(INPUT_GET, 'error', FILTER_SANITIZE_SPECIAL_CHARS);
 
-$fields = 'p.id, p.product_code, p.name, p.category_id, c.name AS category, p.unit AS unit_type, p.channel_count, p.weight_per_meter AS unit_value, p.color, p.image_url, p.description, p.unit_price, p.vat_rate';
+$fields = 'p.id, p.product_code, p.name, p.category_id, c.name AS category, p.unit AS unit_type, p.channel_count, p.weight_per_meter AS unit_value, p.color, p.image_url, p.description, p.price_unit, p.unit_price, p.vat_rate';
 if ($hasDimensions) {
   $fields .= ', p.width, p.height';
 }
@@ -394,7 +406,7 @@ require __DIR__ . '/header.php';
                 <p class="card-text mb-1"><?= e($p['unit_type']) ?> <?= e($p['unit_value']) ?></p>
               <?php endif; ?>
               <p class="card-text fw-semibold">
-                <?= e(formatPrice((float)$p['unit_price'])) ?>
+                <?= e(formatPrice((float)$p['unit_price'], $p['price_unit'] ?? 'TRY')) ?>
                 <?= $p['unit_type'] ? ' / ' . e($p['unit_type']) : '' ?>
               </p>
             </div>
@@ -492,9 +504,9 @@ require __DIR__ . '/header.php';
                             <label class="form-label">Fiyat Birimi ve Fiyatı *</label>
                             <div class="input-group">
                               <select name="price_unit" class="form-select">
-                                <option value="TL">TL</option>
-                                <option value="USD">USD</option>
-                                <option value="EUR">EUR</option>
+                                <option value="TRY" <?= ($p['price_unit'] === 'TRY') ? 'selected' : '' ?>>TL</option>
+                                <option value="USD" <?= ($p['price_unit'] === 'USD') ? 'selected' : '' ?>>USD</option>
+                                <option value="EUR" <?= ($p['price_unit'] === 'EUR') ? 'selected' : '' ?>>EUR</option>
                               </select>
                               <input type="number" step="10" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
                             </div>
@@ -616,9 +628,9 @@ require __DIR__ . '/header.php';
                   <label class="form-label">Fiyat Birimi ve Fiyatı *</label>
                   <div class="input-group">
                     <select name="price_unit" class="form-select">
-                      <option value="TL" <?= (($_POST['price_unit'] ?? 'TL') === 'TL') ? 'selected' : '' ?>>TL</option>
-                      <option value="USD" <?= (($_POST['price_unit'] ?? 'TL') === 'USD') ? 'selected' : '' ?>>USD</option>
-                      <option value="EUR" <?= (($_POST['price_unit'] ?? 'TL') === 'EUR') ? 'selected' : '' ?>>EUR</option>
+                      <option value="TRY" <?= (($_POST['price_unit'] ?? 'TRY') === 'TRY') ? 'selected' : '' ?>>TL</option>
+                      <option value="USD" <?= (($_POST['price_unit'] ?? 'TRY') === 'USD') ? 'selected' : '' ?>>USD</option>
+                      <option value="EUR" <?= (($_POST['price_unit'] ?? 'TRY') === 'EUR') ? 'selected' : '' ?>>EUR</option>
                     </select>
                     <input type="number" step="0.01" name="unit_price" class="form-control" required>
                   </div>
