@@ -230,7 +230,7 @@ function calculateGuillotineTotals(array $input): array
         ];
     }
 
-    $aluPaintedKg = $aluKg * 1.1 * 1.01;
+    $aluPaintedKg = $aluKg * 1.01;
     $aluFireKg    = $aluPaintedKg * 0.07;
 
     $extras = [
