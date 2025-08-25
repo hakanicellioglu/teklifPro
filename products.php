@@ -30,7 +30,7 @@ $error = null;
 $success = null;
 $vatAllowed = [0, 1, 8, 18, 20];
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
-$unitTypeOptions = ['kg/m', 'm', 'm²', 'adet'];
+$unitTypeOptions = ['kg/m', 'm', 'm²', 'adet', 'set'];
 
 // Fetch categories from database
 $categoryStmt = $pdo->query('SELECT id, name FROM categories ORDER BY name');
