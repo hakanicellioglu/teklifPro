@@ -333,6 +333,12 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         return number_format($value, $decimals, ',', '.');
     }
 
+    // Show fetched exchange rates to the user
+    echo '<div class="container mt-4">';
+    echo '<div class="alert alert-info">1 USD = ' . e(number_format(USD_RATE, 4, ',', '.')) . ' ₺';
+    echo ' | 1 EUR = ' . e(number_format(EUR_RATE, 4, ',', '.')) . ' ₺</div>';
+    echo '</div>';
+
     class PdoProductProvider implements ProductProviderInterface
     {
         public function __construct(private PDO $pdo) {}
