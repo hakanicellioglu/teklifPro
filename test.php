@@ -2,7 +2,34 @@
 
 declare(strict_types=1);
 
-const GLASS_UNIT_PRICE = 1680; // ₺ per m²
+/**
+ * Fetches yesterday's closing exchange rates for USD and EUR.
+ *
+ * @return array{USD: ?float, EUR: ?float} Rates as TRY per currency.
+ */
+function fetchExchangeRates(): array
+{
+    $yesterday  = (new DateTime('yesterday'))->format('Y-m-d');
+    $currencies = ['USD', 'EUR'];
+    $rates      = [];
+
+    foreach ($currencies as $currency) {
+        $url  = "https://api.exchangerate.host/{$yesterday}?base={$currency}&symbols=TRY";
+        $json = @file_get_contents($url);
+        $data = $json ? json_decode($json, true) : null;
+        $rates[$currency] = $data['rates']['TRY'] ?? null;
+    }
+
+    return $rates;
+}
+
+$rates = fetchExchangeRates();
+define('USD_RATE', $rates['USD'] ?? 0.0);
+define('EUR_RATE', $rates['EUR'] ?? 0.0);
+
+// Base glass price in USD; fall back to previous TL price if the rate is missing.
+$glassBaseUsd = 52.0;
+define('GLASS_UNIT_PRICE', USD_RATE > 0 ? $glassBaseUsd * USD_RATE : 1680); // ₺ per m²
 
 /**
  * Provides product information required for calculations.
