@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-const GLASS_UNIT_PRICE = 1680; // ₺ per m²
+const GLASS_UNIT_PRICE = 1680; // TRY per m²
 
 /**
  * Provides product information required for calculations.
@@ -10,7 +10,7 @@ const GLASS_UNIT_PRICE = 1680; // ₺ per m²
 interface ProductProviderInterface
 {
     /**
-     * Return product fields: unit, unit_price, weight_per_meter, category.
+     * Return product fields: unit, unit_price, weight_per_meter, category, price_unit.
      * Return null if product is not found.
      */
     public function getProduct(string $name): ?array;
@@ -30,7 +30,7 @@ interface ProductProviderInterface
  * } $input
  *
  * @return array{
- *   lines: array<int, array{category:string,name:string,measure:float,unit:string,quantity:float,pieces:int,total:float}>,
+ *   lines: array<int, array{category:string,name:string,measure:float,unit:string,quantity:float,pieces:int,total:float,currency:string}>,
  *   totals: array{
  *     alu_cost: float,
  *     glass_cost: float,
@@ -41,7 +41,11 @@ interface ProductProviderInterface
  *     general_expense: float,
  *     grand_total: float
  *   },
- *   alu_kg: float
+ *   currency: string,
+ *   alu_kg: float,
+ *   alu_painted_kg: float,
+ *   alu_fire_kg: float,
+ *   glass: array{width: float, height: float, quantity: float}
  * }
  */
 function calculateGuillotineTotals(array $input): array
@@ -50,6 +54,7 @@ function calculateGuillotineTotals(array $input): array
         throw new InvalidArgumentException('Valid product provider is required');
     }
     $provider = $input['provider'];
+    $currency = null;
 
     $width  = max(0.0, (float) ($input['width'] ?? 0));
     $height = max(0.0, (float) ($input['height'] ?? 0));
@@ -98,8 +103,8 @@ function calculateGuillotineTotals(array $input): array
         ['name' => 'Motor Kutu Contası', 'measure' => fn($w, $h, $q) => ($w - 14) * $q + $w * $q,         'qty' => fn($w, $h, $q) => 1],
         ['name' => 'Kanat Contası',      'measure' => fn($w, $h, $q) => (($h - 290) / 3) * $q * 2,        'qty' => fn($w, $h, $q) => 1],
         ['name' => 'Plastik Set',        'measure' => fn($w, $h, $q) => 1,                                'qty' => fn($w, $h, $q) => $q],
-        // Zincir unit price was previously treated as 900₺ via outdated DB data.
-        // Force the correct unit price (680₺) here to keep calculations consistent
+        // Zincir unit price was previously treated as 900 TRY via outdated DB data.
+        // Force the correct unit price (680 TRY) here to keep calculations consistent
         // even if the database still holds an old value.
         [
             'name'       => 'Zincir',
@@ -142,6 +147,7 @@ function calculateGuillotineTotals(array $input): array
                 'unit_price'      => GLASS_UNIT_PRICE,
                 'weight_per_meter' => 0,
                 'category'        => 'Cam',
+                'price_unit'      => 'TRY',
             ];
         } else {
             $product = $provider->getProduct($rule['name']);
@@ -155,6 +161,9 @@ function calculateGuillotineTotals(array $input): array
                 if (isset($rule['category'])) {
                     $product['category'] = $rule['category'];
                 }
+                if (isset($rule['price_unit'])) {
+                    $product['price_unit'] = $rule['price_unit'];
+                }
             } elseif (isset($rule['unit_price'])) {
                 // Fallback when product row is missing; use data provided in the rule.
                 $product = [
@@ -162,10 +171,18 @@ function calculateGuillotineTotals(array $input): array
                     'unit_price'      => $rule['unit_price'],
                     'weight_per_meter' => 0,
                     'category'        => $rule['category'] ?? 'Diğer',
+                    'price_unit'      => $rule['price_unit'] ?? 'TRY',
                 ];
             } else {
                 continue;
             }
+        }
+
+        $lineCurrency  = strtoupper((string) ($product['price_unit'] ?? 'TRY'));
+        if ($currency === null) {
+            $currency = $lineCurrency;
+        } elseif ($currency !== $lineCurrency) {
+            throw new RuntimeException('Mixed currencies are not supported');
         }
 
         $unit          = strtolower((string) ($product['unit'] ?? ''));
@@ -227,6 +244,7 @@ function calculateGuillotineTotals(array $input): array
             'quantity' => $qtyDisplay,
             'pieces'   => $rq,
             'total'    => $lineTotal,
+            'currency' => $lineCurrency,
         ];
     }
 
@@ -275,6 +293,7 @@ function calculateGuillotineTotals(array $input): array
     return [
         'lines'          => $lines,
         'totals'         => $totals,
+        'currency'       => $currency,
         'alu_kg'         => $aluKg,
         'alu_painted_kg' => $aluPaintedKg,
         'alu_fire_kg'    => $aluFireKg,
@@ -306,13 +325,23 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         return number_format($value, $decimals, ',', '.');
     }
 
+    function currencySymbol(string $currency): string
+    {
+        return match (strtoupper($currency)) {
+            'USD' => '$',
+            'EUR' => '€',
+            'TRY', 'TL' => '₺',
+            default => $currency,
+        };
+    }
+
     class PdoProductProvider implements ProductProviderInterface
     {
         public function __construct(private PDO $pdo) {}
 
         public function getProduct(string $name): ?array
         {
-            $stmt = $this->pdo->prepare('SELECT p.unit, p.unit_price, p.weight_per_meter, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
+            $stmt = $this->pdo->prepare('SELECT p.unit, p.unit_price, p.weight_per_meter, p.price_unit, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
             $stmt->execute([':name' => $name]);
 
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -371,6 +400,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     $tot       = $result['totals'];
     $glassInfo = $result['glass'] ?? null;
+    $currencySymbol = currencySymbol($result['currency']);
 
     foreach ($categories as $cat) {
         $isAlu = strcasecmp($cat['title'], 'Alüminyum') === 0;
@@ -395,7 +425,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             }
             echo '<td>' . e(fmtUnit($line['quantity'], $line['unit'])) . '</td>';
             echo '<td>' . e($line['unit']) . '</td>';
-            echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ₺</td>';
+            echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ' . e(currencySymbol($line['currency'])) . '</td>';
             echo '</tr>';
             $qtySum   += $line['quantity'];
             $totalSum += $line['total'];
@@ -415,7 +445,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         }
         echo '<td>' . e(fmtUnit($qtySum, $unit)) . '</td>';
         echo '<td>' . e($unit) . '</td>';
-        echo '<td class="text-end">' . e(number_format($totalSum, 2, ',', '.')) . ' ₺</td>';
+        echo '<td class="text-end">' . e(number_format($totalSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
         echo '</tr>';
         echo '</tbody></table></div>';
     }
@@ -433,13 +463,13 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '<td>' . e(number_format($glassInfo['quantity'], 0, ',', '.')) . '</td>';
         echo '<td>' . e(number_format($singleArea, 2, ',', '.')) . '</td>';
         echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
-        echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</td>';
+        echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
         echo '</tr>';
         echo '<tr>';
         echo '<td colspan="3" class="text-end"><strong>Toplam</strong></td>';
         echo '<td></td>';
         echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
-        echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ₺</td>';
+        echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
         echo '</tr>';
         echo '</tbody></table></div>';
     }
@@ -450,20 +480,20 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $grandTotalWithProfit = $tot['grand_total'];
 
     echo '<tr><th>Alüminyum Boyalı ' . e(number_format($result['alu_painted_kg'], 2, ',', '.')) . ' kg</th><td>'
-        . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ₺</td></tr>';
+        . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
     echo '<tr><th>Alüminyum Fire ' . e(number_format($result['alu_fire_kg'], 2, ',', '.')) . ' kg</th><td>'
-        . e(number_format($tot['extras']['waste'], 2, ',', '.')) . ' ₺</td></tr>';
-    echo '<tr><th>Aksesuar</th><td>' . e(number_format($tot['aksesuar_cost'], 2, ',', '.')) . ' ₺</td></tr>';
-    echo '<tr><th>Fitil</th><td>' . e(number_format($tot['fitil_cost'], 2, ',', '.')) . ' ₺</td></tr>';
-    echo '<tr><th>İmalat İşçiliği</th><td>' . e(number_format($tot['extras']['labor'], 2, ',', '.')) . ' ₺</td></tr>';
+        . e(number_format($tot['extras']['waste'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
+    echo '<tr><th>Aksesuar</th><td>' . e(number_format($tot['aksesuar_cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
+    echo '<tr><th>Fitil</th><td>' . e(number_format($tot['fitil_cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
+    echo '<tr><th>İmalat İşçiliği</th><td>' . e(number_format($tot['extras']['labor'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
 
     echo '<tr class="table-light fw-bold">';
-    echo '<td>Kâr</td><td>' . e(number_format($tot['profit'], 2, ',', '.')) . ' ₺</td>';
+    echo '<td>Kâr</td><td>' . e(number_format($tot['profit'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
     echo '</tr>';
-    echo '<tr><th>Genel Gider</th><td>' . e(number_format($tot['general_expense'], 2, ',', '.')) . ' ₺</td></tr>';
+    echo '<tr><th>Genel Gider</th><td>' . e(number_format($tot['general_expense'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
 
     echo '<tr class="table-success fw-bold">';
-    echo '<td>Genel Toplam</td><td>' . e(number_format($grandTotalWithProfit, 2, ',', '.')) . ' ₺</td>';
+    echo '<td>Genel Toplam</td><td>' . e(number_format($grandTotalWithProfit, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
     echo '</tr>';
 
     echo '</tbody>';
