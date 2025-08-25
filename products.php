@@ -480,8 +480,11 @@ require __DIR__ . '/header.php';
                             <input type="text" name="color" class="form-control" value="<?= e($p['color']) ?>">
                           </div>
                           <div class="col-md-6">
-                            <label class="form-label">Fiyat *</label>
-                            <input type="number" step="10" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
+                            <label class="form-label">Fiyat Birimi ve Fiyatı *</label>
+                            <div class="input-group">
+                              <span class="input-group-text">TL</span>
+                              <input type="number" step="10" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
+                            </div>
                           </div>
                           <?php
                           $allowedVat = [0, 1, 8, 18, 20];
@@ -597,8 +600,11 @@ require __DIR__ . '/header.php';
                   <input type="text" name="color" class="form-control">
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Fiyat *</label>
-                  <input type="number" step="0.01" name="unit_price" class="form-control" required>
+                  <label class="form-label">Fiyat Birimi ve Fiyatı *</label>
+                  <div class="input-group">
+                    <span class="input-group-text">TL</span>
+                    <input type="number" step="0.01" name="unit_price" class="form-control" required>
+                  </div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">KDV Oranı</label>
