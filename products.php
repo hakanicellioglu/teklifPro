@@ -463,25 +463,24 @@ require __DIR__ . '/header.php';
                             <div class="form-text">Only required for remote (‘kumanda’) products.</div>
                           </div>
                           <div class="col-md-6">
-                            <label class="form-label">Birim Türü *</label>
-                            <select name="unit_type" class="form-select" required>
-                              <option value="">Seçiniz</option>
-                              <?php foreach ($unitTypeOptions as $ut): ?>
-                                <option value="<?= e($ut) ?>" <?= ($p['unit_type'] === $ut) ? 'selected' : '' ?>><?= e($ut) ?></option>
-                              <?php endforeach; ?>
-                            </select>
-                          </div>
-                          <div class="col-md-6 unit-value-group">
-                            <label class="form-label">Birim Değeri *</label>
-                            <input type="number" step="0.001" min="0.001" name="unit_value" class="form-control unit-value-field" required value="<?= e($p['unit_value']) ?>">
-                          </div>
-                          <div class="col-md-6">
                             <label class="form-label">Renk</label>
                             <input type="text" name="color" class="form-control" value="<?= e($p['color']) ?>">
                           </div>
                           <div class="col-md-6">
                             <label class="form-label">Fiyat *</label>
-                            <input type="number" step="10" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
+                            <div class="input-group">
+                              <input type="number" step="10" name="unit_price" class="form-control" required value="<?= e($p['unit_price']) ?>">
+                              <select name="unit_type" class="form-select" required>
+                                <option value="">Seçiniz</option>
+                                <?php foreach ($unitTypeOptions as $ut): ?>
+                                  <option value="<?= e($ut) ?>" <?= ($p['unit_type'] === $ut) ? 'selected' : '' ?>><?= e($ut) ?></option>
+                                <?php endforeach; ?>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="col-md-6 unit-value-group">
+                            <label class="form-label">Birim Değeri *</label>
+                            <input type="number" step="0.001" min="0.001" name="unit_value" class="form-control unit-value-field" required value="<?= e($p['unit_value']) ?>">
                           </div>
                           <?php
                           $allowedVat = [0, 1, 8, 18, 20];
@@ -579,26 +578,24 @@ require __DIR__ . '/header.php';
                   <div class="form-text">Only required for remote (‘kumanda’) products.</div>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Birim Türü *</label>
-                  <select name="unit_type" class="form-select" required>
-                    <option value="">Seçiniz</option>
-                    <?php foreach ($unitTypeOptions as $ut): ?>
-                      <option value="<?= e($ut) ?>" <?= (isset($_POST['unit_type']) && $_POST['unit_type'] === $ut) ? 'selected' : '' ?>><?= e($ut) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="col-md-6 unit-value-group">
-                  <label class="form-label">Birim Değeri *</label>
-                  <input type="number" step="0.001" min="0.001" name="unit_value" class="form-control" required value="<?= e($_POST['unit_value'] ?? '') ?>">
-                </div>
-
-                <div class="col-md-6">
                   <label class="form-label">Renk</label>
                   <input type="text" name="color" class="form-control">
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Fiyat *</label>
-                  <input type="number" step="0.01" name="unit_price" class="form-control" required>
+                  <div class="input-group">
+                    <input type="number" step="0.01" name="unit_price" class="form-control" required>
+                    <select name="unit_type" class="form-select" required>
+                      <option value="">Seçiniz</option>
+                      <?php foreach ($unitTypeOptions as $ut): ?>
+                        <option value="<?= e($ut) ?>" <?= (isset($_POST['unit_type']) && $_POST['unit_type'] === $ut) ? 'selected' : '' ?>><?= e($ut) ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-6 unit-value-group">
+                  <label class="form-label">Birim Değeri *</label>
+                  <input type="number" step="0.001" min="0.001" name="unit_value" class="form-control" required value="<?= e($_POST['unit_value'] ?? '') ?>">
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">KDV Oranı</label>
