@@ -26,11 +26,13 @@ interface ProductProviderInterface
  *   glass_type?: string,
  *   profit_rate?: float|int|string,
  *   profit_margin?: float|int|string,
+ *   currency?: string,
+ *   exchange_rates?: array<string,float>,
  *   provider: ProductProviderInterface
  * } $input
  *
  * @return array{
- *   lines: array<int, array{category:string,name:string,measure:float,unit:string,quantity:float,pieces:int,total:float,currency:string}>,
+ *   lines: array<int, array{category:string,name:string,measure:float,unit:string,quantity:float,pieces:int,total:float,currency:string,original_currency:string}>,
  *   totals: array{
  *     alu_cost: float,
  *     glass_cost: float,
@@ -54,7 +56,8 @@ function calculateGuillotineTotals(array $input): array
         throw new InvalidArgumentException('Valid product provider is required');
     }
     $provider = $input['provider'];
-    $currency = null;
+    $currency = strtoupper((string) ($input['currency'] ?? 'TRY'));
+    $exchangeRates = array_change_key_case($input['exchange_rates'] ?? [], CASE_UPPER);
 
     $width  = max(0.0, (float) ($input['width'] ?? 0));
     $height = max(0.0, (float) ($input['height'] ?? 0));
@@ -179,16 +182,20 @@ function calculateGuillotineTotals(array $input): array
         }
 
         $lineCurrency  = strtoupper((string) ($product['price_unit'] ?? 'TRY'));
-        if ($currency === null) {
-            $currency = $lineCurrency;
-        } elseif ($currency !== $lineCurrency) {
-            throw new RuntimeException('Mixed currencies are not supported');
-        }
-
         $unit          = strtolower((string) ($product['unit'] ?? ''));
         $unitPrice     = (float) ($product['unit_price'] ?? 0);
         $wpm           = (float) ($product['weight_per_meter'] ?? 0);
         $category      = (string) ($product['category'] ?? 'Diğer');
+
+        $originalCurrency = $lineCurrency;
+        if ($lineCurrency !== $currency) {
+            $rate = $exchangeRates[$lineCurrency] ?? null;
+            if ($rate === null) {
+                throw new RuntimeException("Exchange rate for {$lineCurrency} to {$currency} not provided");
+            }
+            $unitPrice *= $rate;
+            $lineCurrency = $currency;
+        }
 
         $qtyDisplay = 0.0;
         $lineTotal  = 0.0;
@@ -237,14 +244,15 @@ function calculateGuillotineTotals(array $input): array
         }
 
         $lines[] = [
-            'category' => $category,
-            'name'     => $rule['name'],
-            'measure'  => $measure,
-            'unit'     => $unit,
-            'quantity' => $qtyDisplay,
-            'pieces'   => $rq,
-            'total'    => $lineTotal,
-            'currency' => $lineCurrency,
+            'category'         => $category,
+            'name'             => $rule['name'],
+            'measure'          => $measure,
+            'unit'             => $unit,
+            'quantity'         => $qtyDisplay,
+            'pieces'           => $rq,
+            'total'            => $lineTotal,
+            'currency'         => $lineCurrency,
+            'original_currency'=> $originalCurrency,
         ];
     }
 
@@ -335,6 +343,32 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         };
     }
 
+    /**
+     * Fetch exchange rates for given currencies relative to a base currency.
+     * Returns an array mapping currency code to multiplier for converting
+     * prices from that currency to the base currency.
+     */
+    function fetchExchangeRates(string $base, array $currencies): array
+    {
+        $base = strtoupper($base);
+        $symbols = implode(',', array_map('strtoupper', $currencies));
+        $json = @file_get_contents("https://api.exchangerate.host/latest?base={$base}&symbols={$symbols}");
+        $data = $json ? json_decode($json, true) : null;
+        if (!is_array($data) || empty($data['rates'])) {
+            return [];
+        }
+        $rates = [];
+        foreach ($data['rates'] as $cur => $rate) {
+            if ($rate <= 0) {
+                continue;
+            }
+            // API returns how much 1 base currency equals in target currency.
+            // We need multiplier from target currency to base, so take reciprocal.
+            $rates[strtoupper($cur)] = 1 / $rate;
+        }
+        return $rates;
+    }
+
     class PdoProductProvider implements ProductProviderInterface
     {
         public function __construct(private PDO $pdo) {}
@@ -368,14 +402,18 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     $provider = new PdoProductProvider($pdo);
 
+    $exchangeRates = fetchExchangeRates('TRY', ['USD', 'EUR']);
+
     try {
         $result = calculateGuillotineTotals([
-            'width'       => $row['width'],
-            'height'      => $row['height'],
-            'quantity'    => $row['quantity'],
-            'glass_type'  => $row['glass_type'] ?? '',
-            'profit_rate' => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
-            'provider'    => $provider,
+            'width'         => $row['width'],
+            'height'        => $row['height'],
+            'quantity'      => $row['quantity'],
+            'glass_type'    => $row['glass_type'] ?? '',
+            'profit_rate'   => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
+            'currency'      => 'TRY',
+            'exchange_rates'=> $exchangeRates,
+            'provider'      => $provider,
         ]);
     } catch (Throwable $e) {
         echo '<div class="container mt-4"><div class="alert alert-danger">Hesaplama hatası: ' . e($e->getMessage()) . '</div></div>';
