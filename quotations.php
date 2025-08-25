@@ -186,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
   } else {
     $termMonths = '';
     $interest = '';
+    $term = '';
   }
 
   if (!$createErrors) {
@@ -341,8 +342,6 @@ unset($_SESSION['flash_error']);
               <?php if ($o['payment_method'] === 'vadeli'): ?>
                 <?= $o['term_months'] !== null ? (int)$o['term_months'] . ' ay' : '' ?>
                 <?= $o['interest_value'] !== null ? ' %' . e($o['interest_value']) : '' ?>
-              <?php else: ?>
-                <?= e($o['installment_term'] ?? '') ?>
               <?php endif; ?>
             </td>
             <td><time datetime="<?= e($o['offer_date']) ?>"><?= e($o['offer_date']) ?></time></td>
@@ -498,7 +497,7 @@ $customers = $pdo->query('SELECT id, first_name, last_name, company_name AS comp
             <input type="number" min="1" max="365" name="validity_days" class="form-control <?= isset($createErrors['validity_days']) ? 'is-invalid' : '' ?>" value="<?= e($createData['validity_days']) ?>" placeholder="örn. 15">
             <?php if (isset($createErrors['validity_days'])): ?><div class="invalid-feedback"><?= e($createErrors['validity_days']) ?></div><?php endif; ?>
           </div>
-          <div class="mb-3 installment-field">
+          <div class="mb-3 installment-field" style="display:none;">
             <label class="form-label">Vade</label>
             <input type="text" name="installment_term" class="form-control <?= isset($createErrors['installment_term']) ? 'is-invalid' : '' ?>" value="<?= e($createData['installment_term']) ?>" placeholder="3 taksit (aylık)">
             <?php if (isset($createErrors['installment_term'])): ?><div class="invalid-feedback"><?= e($createErrors['installment_term']) ?></div><?php endif; ?>
@@ -524,7 +523,7 @@ $customers = $pdo->query('SELECT id, first_name, last_name, company_name AS comp
       el.style.display = payment === 'vadeli' ? '' : 'none';
     });
     var inst = document.querySelector('#createModal .installment-field');
-    if (inst) inst.style.display = payment === 'vadeli' ? 'none' : '';
+    if (inst) inst.style.display = payment === 'vadeli' ? '' : 'none';
   }
   document.querySelector('#createModal select[name="payment_method"]').addEventListener('change', toggleVadeliFields);
   toggleVadeliFields();
