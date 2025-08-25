@@ -73,38 +73,38 @@ function calculateGuillotineTotals(array $input): array
     $glassQty    = ($wingCount + $baseCount) / 2;
 
     $rules = [
-        ['name' => 'Motor Kutusu',       'measure' => fn($w,$h,$q) => $w - 14,                        'qty' => fn($w,$h,$q) => $q],
-        ['name' => 'Motor Kapak',        'measure' => fn($w,$h,$q) => $w - 15,                        'qty' => fn($w,$h,$q) => $q],
-        ['name' => 'Alt Kasa',           'measure' => fn($w,$h,$q) => $w,                              'qty' => fn($w,$h,$q) => $q],
-        ['name' => 'Tutamak',            'measure' => fn($w,$h,$q) => $w - 185,                        'qty' => fn($w,$h,$q) => $q],
-        ['name' => 'Kenetli Baza',       'measure' => fn($w,$h,$q) => $w - 185,                        'qty' => fn($w,$h,$q) => 3 * $q],
-        ['name' => 'Küpeşte Bazası',     'measure' => fn($w,$h,$q) => $w - 185,                        'qty' => fn($w,$h,$q) => 2 * $q],
-        ['name' => 'Küpeşte',           'measure' => fn($w,$h,$q) => $w - 185,                        'qty' => fn($w,$h,$q) => $q],
+        ['name' => 'Motor Kutusu',       'measure' => fn($w, $h, $q) => $w - 14,                        'qty' => fn($w, $h, $q) => $q],
+        ['name' => 'Motor Kapak',        'measure' => fn($w, $h, $q) => $w - 15,                        'qty' => fn($w, $h, $q) => $q],
+        ['name' => 'Alt Kasa',           'measure' => fn($w, $h, $q) => $w,                              'qty' => fn($w, $h, $q) => $q],
+        ['name' => 'Tutamak',            'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => 2 * $q],
+        ['name' => 'Kenetli Baza',       'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => 2 * $q],
+        ['name' => 'Küpeşte Bazası',     'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => 2 * $q],
+        ['name' => 'Küpeşte',           'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => $q],
     ];
 
     if ($includeGlassStrips) {
-        $rules[] = ['name' => 'Yatay Tek Cam Çıtası', 'measure' => fn($w,$h,$q) => ($w - 185) - 52,      'qty' => fn($w,$h,$q) => 11 * $q];
-        $rules[] = ['name' => 'Dikey Tek Cam Çıtası', 'measure' => fn($w,$h,$q) => (($h - 290) / 3) - 6, 'qty' => fn($w,$h,$q) => 11 * $q];
+        $rules[] = ['name' => 'Yatay Tek Cam Çıtası', 'measure' => fn($w, $h, $q) => ($w - 185) - 52,      'qty' => fn($w, $h, $q) => 11 * $q];
+        $rules[] = ['name' => 'Dikey Tek Cam Çıtası', 'measure' => fn($w, $h, $q) => (($h - 290) / 3) - 6, 'qty' => fn($w, $h, $q) => 11 * $q];
     }
 
     $rules = array_merge($rules, [
-        ['name' => 'Dikme',              'measure' => fn($w,$h,$q) => $h - 166,                        'qty' => fn($w,$h,$q) => 2 * $q],
-        ['name' => 'Orta Dikme',         'measure' => fn($w,$h,$q) => $h - 166,                        'qty' => fn($w,$h,$q) => 2 * $q],
-        ['name' => 'Son Kapatma',        'measure' => fn($w,$h,$q) => $h - (($h - 291) / 3) - 221,      'qty' => fn($w,$h,$q) => 2 * $q],
-        ['name' => 'Kanat',              'measure' => fn($w,$h,$q) => ($h - 291) / 3,                   'qty' => fn($w,$h,$q) => 2 * $q],
-        ['name' => 'Dikey Baza',         'measure' => fn($w,$h,$q) => ($h - 291) / 3,                   'qty' => fn($w,$h,$q) => 4 * $q],
-        ['name' => 'Flatbelt Kayış',     'measure' => fn($w,$h,$q) => $h - (($h - 290) / 3) - 221 + 600,'qty' => fn($w,$h,$q) => 2 * $q],
-        ['name' => 'Motor Borusu',       'measure' => fn($w,$h,$q) => $w - 75,                          'qty' => fn($w,$h,$q) => $q],
-        ['name' => 'Motor Kutu Contası', 'measure' => fn($w,$h,$q) => ($w - 14) * $q + $w * $q,         'qty' => fn($w,$h,$q) => 1],
-        ['name' => 'Kanat Contası',      'measure' => fn($w,$h,$q) => (($h - 290) / 3) * $q * 2,        'qty' => fn($w,$h,$q) => 1],
-        ['name' => 'Plastik Set',        'measure' => fn($w,$h,$q) => 1,                                'qty' => fn($w,$h,$q) => $q],
+        ['name' => 'Dikme',              'measure' => fn($w, $h, $q) => $h - 166,                        'qty' => fn($w, $h, $q) => 2 * $q],
+        ['name' => 'Orta Dikme',         'measure' => fn($w, $h, $q) => $h - 166,                        'qty' => fn($w, $h, $q) => 2 * $q],
+        ['name' => 'Son Kapatma',        'measure' => fn($w, $h, $q) => $h - (($h - 291) / 3) - 214.5,      'qty' => fn($w, $h, $q) => 2 * $q],
+        ['name' => 'Kanat',              'measure' => fn($w, $h, $q) => ($h - 291) / 3,                   'qty' => fn($w, $h, $q) => 2 * $q],
+        ['name' => 'Dikey Baza',         'measure' => fn($w, $h, $q) => ($h - 291) / 3,                   'qty' => fn($w, $h, $q) => 4 * $q],
+        ['name' => 'Flatbelt Kayış',     'measure' => fn($w, $h, $q) => $h - (($h - 290) / 3) - 221 + 600, 'qty' => fn($w, $h, $q) => 2 * $q],
+        ['name' => 'Motor Borusu',       'measure' => fn($w, $h, $q) => $w - 75,                          'qty' => fn($w, $h, $q) => $q],
+        ['name' => 'Motor Kutu Contası', 'measure' => fn($w, $h, $q) => ($w - 14) * $q + $w * $q,         'qty' => fn($w, $h, $q) => 1],
+        ['name' => 'Kanat Contası',      'measure' => fn($w, $h, $q) => (($h - 290) / 3) * $q * 2,        'qty' => fn($w, $h, $q) => 1],
+        ['name' => 'Plastik Set',        'measure' => fn($w, $h, $q) => 1,                                'qty' => fn($w, $h, $q) => $q],
         // Zincir unit price was previously treated as 900₺ via outdated DB data.
         // Force the correct unit price (680₺) here to keep calculations consistent
         // even if the database still holds an old value.
         [
             'name'       => 'Zincir',
-            'measure'    => fn($w,$h,$q) => 1,
-            'qty'        => fn($w,$h,$q) => $q,
+            'measure'    => fn($w, $h, $q) => 1,
+            'qty'        => fn($w, $h, $q) => $q,
             'unit_price' => 680.0,
             'unit'       => 'set',
             'category'   => 'Aksesuar',
@@ -114,10 +114,10 @@ function calculateGuillotineTotals(array $input): array
     // Glass product rule using calculated dimensions and quantity
     $rules[] = [
         'name'    => 'Cam',
-        'measure' => fn($w,$h,$q) => $glassWidth,
-        'width'   => fn($w,$h,$q) => $glassWidth,
-        'height'  => fn($w,$h,$q) => $glassHeight,
-        'qty'     => fn($w,$h,$q) => $glassQty,
+        'measure' => fn($w, $h, $q) => $glassWidth,
+        'width'   => fn($w, $h, $q) => $glassWidth,
+        'height'  => fn($w, $h, $q) => $glassHeight,
+        'qty'     => fn($w, $h, $q) => $glassQty,
     ];
 
     $lines        = [];
@@ -140,7 +140,7 @@ function calculateGuillotineTotals(array $input): array
             $product = [
                 'unit'            => 'm²',
                 'unit_price'      => GLASS_UNIT_PRICE,
-                'weight_per_meter'=> 0,
+                'weight_per_meter' => 0,
                 'category'        => 'Cam',
             ];
         } else {
@@ -160,7 +160,7 @@ function calculateGuillotineTotals(array $input): array
                 $product = [
                     'unit'            => $rule['unit'] ?? 'adet',
                     'unit_price'      => $rule['unit_price'],
-                    'weight_per_meter'=> 0,
+                    'weight_per_meter' => 0,
                     'category'        => $rule['category'] ?? 'Diğer',
                 ];
             } else {
@@ -308,9 +308,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     class PdoProductProvider implements ProductProviderInterface
     {
-        public function __construct(private PDO $pdo)
-        {
-        }
+        public function __construct(private PDO $pdo) {}
 
         public function getProduct(string $name): ?array
         {
@@ -475,4 +473,3 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     require __DIR__ . '/footer.php';
 }
-
