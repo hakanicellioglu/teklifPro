@@ -14,10 +14,21 @@ function fetchExchangeRates(): array
     $rates      = [];
 
     foreach ($currencies as $currency) {
+        // Primary API (exchangerate.host)
         $url  = "https://api.exchangerate.host/{$yesterday}?base={$currency}&symbols=TRY";
         $json = @file_get_contents($url);
         $data = $json ? json_decode($json, true) : null;
-        $rates[$currency] = $data['rates']['TRY'] ?? null;
+        $rate = $data['rates']['TRY'] ?? null;
+
+        // Fallback API if the primary one fails
+        if ($rate === null) {
+            $url  = "https://api.frankfurter.app/{$yesterday}?from={$currency}&to=TRY";
+            $json = @file_get_contents($url);
+            $data = $json ? json_decode($json, true) : null;
+            $rate = $data['rates']['TRY'] ?? null;
+        }
+
+        $rates[$currency] = $rate;
     }
 
     return $rates;
