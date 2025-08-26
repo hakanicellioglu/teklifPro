@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Anamakine: 127.0.0.1
--- Üretim Zamanı: 26 Ağu 2025, 08:19:08
+-- Üretim Zamanı: 26 Ağu 2025, 09:58:26
 -- Sunucu sürümü: 10.4.32-MariaDB
 -- PHP Sürümü: 8.2.12
 
@@ -153,6 +153,7 @@ CREATE TABLE `guillotinesystems` (
   `motor_system` varchar(100) DEFAULT NULL,
   `remote_quantity` int(11) DEFAULT NULL,
   `ral_code` varchar(50) DEFAULT NULL,
+  `paint_face` varchar(100) DEFAULT NULL,
   `glass_type` varchar(100) DEFAULT NULL,
   `glass_color` varchar(50) DEFAULT NULL,
   `profit_margin` decimal(5,2) DEFAULT NULL,
@@ -165,12 +166,12 @@ CREATE TABLE `guillotinesystems` (
 -- Tablo döküm verisi `guillotinesystems`
 --
 
-INSERT INTO `guillotinesystems` (`id`, `general_offer_id`, `system_type`, `width`, `height`, `quantity`, `motor_system`, `remote_quantity`, `ral_code`, `glass_type`, `glass_color`, `profit_margin`, `profit_rate`, `profit_amount`, `total_amount`) VALUES
-(6, 2, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 7286.06),
-(15, 9, 'Guillotine', 5000.00, 1000.00, 5, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 30.00, NULL, 0.00, 0.00),
-(22, 3, 'Guillotine', 2814.00, 2425.00, 6, 'Somfy', 1, '7016', 'Tek Cam', 'Şeffaf', 0.00, NULL, 0.00, 148683.25),
-(27, 11, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6761.20),
-(33, 13, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 4857.87);
+INSERT INTO `guillotinesystems` (`id`, `general_offer_id`, `system_type`, `width`, `height`, `quantity`, `motor_system`, `remote_quantity`, `ral_code`, `paint_face`, `glass_type`, `glass_color`, `profit_margin`, `profit_rate`, `profit_amount`, `total_amount`) VALUES
+(6, 2, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '7016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 7286.06),
+(15, 9, 'Guillotine', 5000.00, 1000.00, 5, 'Somfy', 1, '7016', NULL, 'Isıcam', 'Şeffaf', 30.00, NULL, 0.00, 0.00),
+(22, 3, 'Guillotine', 2814.00, 2425.00, 6, 'Somfy', 1, '7016', NULL, 'Tek Cam', 'Şeffaf', 0.00, NULL, 0.00, 148683.25),
+(27, 11, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '7016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6761.20),
+(33, 13, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '7016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 4857.87);
 
 -- --------------------------------------------------------
 
