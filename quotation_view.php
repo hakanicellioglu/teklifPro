@@ -8,6 +8,17 @@ function e(?string $v): string
     return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Ensure a column exists on a table; add it if missing.
+ */
+function ensureColumn(PDO $pdo, string $table, string $column, string $definition): void
+{
+    $stmt = $pdo->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
+    if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+        $pdo->exec("ALTER TABLE `$table` ADD COLUMN `$column` $definition");
+    }
+}
+
 class PdoProductProvider implements ProductProviderInterface
 {
     public function __construct(private PDO $pdo) {}
@@ -256,18 +267,8 @@ if ($gPost) {
         $error = 'Geçersiz CSRF tokenı.';
     } else {
         try {
-            try {
-                $pdo->query('SELECT profit_margin FROM guillotinesystems LIMIT 1');
-            } catch (Exception $e) {
-                $pdo->exec('ALTER TABLE guillotinesystems ADD COLUMN profit_margin DECIMAL(5,2) DEFAULT NULL AFTER glass_color');
-                $debug = $e->getMessage();
-            }
-            try {
-                $pdo->query('SELECT paint_face FROM guillotinesystems LIMIT 1');
-            } catch (Exception $e) {
-                $pdo->exec('ALTER TABLE guillotinesystems ADD COLUMN paint_face VARCHAR(100) DEFAULT NULL AFTER ral_code');
-                $debug = $e->getMessage();
-            }
+            ensureColumn($pdo, 'guillotinesystems', 'profit_margin', "DECIMAL(5,2) DEFAULT NULL AFTER glass_color");
+            ensureColumn($pdo, 'guillotinesystems', 'paint_face', "VARCHAR(100) DEFAULT NULL AFTER ral_code");
 
             $gId = filter_input(INPUT_POST, 'guillotine_id', FILTER_VALIDATE_INT);
             $width = filter_input(INPUT_POST, 'width', FILTER_VALIDATE_FLOAT);
@@ -278,7 +279,7 @@ if ($gPost) {
             $glassColor = $_POST['glass_color'] ?? null;
             $remoteQty = filter_input(INPUT_POST, 'remote_quantity', FILTER_VALIDATE_INT);
             $ralCode = trim($_POST['ral_code'] ?? '');
-            $paintFace = $_POST['paint_face'] ?? null;
+            $paintFace = trim($_POST['paint_face'] ?? '') ?: null;
             $profitMargin = filter_input(INPUT_POST, 'profit_margin', FILTER_VALIDATE_FLOAT);
 
             $validNumbers = $width !== false && $width > 0
