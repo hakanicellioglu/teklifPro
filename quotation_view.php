@@ -533,7 +533,16 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                                     class="dropdown-item edit-guillotine"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#addGuillotineModal"
-                                                    ...>
+                                                    data-id="<?= e((string)$g['id']) ?>"
+                                                    data-width="<?= e((string)$g['width']) ?>"
+                                                    data-height="<?= e((string)$g['height']) ?>"
+                                                    data-quantity="<?= e((string)$g['quantity']) ?>"
+                                                    data-motor="<?= e((string)$g['motor_system']) ?>"
+                                                    data-glass-type="<?= e((string)$g['glass_type']) ?>"
+                                                    data-glass-color="<?= e((string)$g['glass_color']) ?>"
+                                                    data-remote="<?= e((string)$g['remote_quantity']) ?>"
+                                                    data-ral="<?= e((string)$g['ral_code']) ?>"
+                                                    data-profit="<?= e((string)$g['profit_margin']) ?>">
                                                     <i class="bi bi-pencil me-1"></i> Düzenle
                                                 </button>
                                             </li>
@@ -704,11 +713,11 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
             form.querySelector('#remote_quantity').value = button.getAttribute('data-remote');
             form.querySelector('#ral_code').value = button.getAttribute('data-ral');
             form.querySelector('#profit_margin').value = button.getAttribute('data-profit');
-            this.querySelector('.modal-title').textContent = 'Edit Guillotine System Offer';
+            this.querySelector('.modal-title').textContent = 'Giyotin Sistemini Düzenle';
         } else {
             form.reset();
             form.querySelector('#guillotine_id').value = '';
-            this.querySelector('.modal-title').textContent = 'Add Guillotine System Offer';
+            this.querySelector('.modal-title').textContent = 'Giyotin Sistemi Teklifi Ekle';
         }
     });
 
