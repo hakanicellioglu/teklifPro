@@ -272,6 +272,7 @@ if ($gPost) {
             $glassColor = $_POST['glass_color'] ?? null;
             $remoteQty = filter_input(INPUT_POST, 'remote_quantity', FILTER_VALIDATE_INT);
             $ralCode = trim($_POST['ral_code'] ?? '');
+            $paintFace = trim($_POST['paint_face'] ?? '');
             $profitMargin = filter_input(INPUT_POST, 'profit_margin', FILTER_VALIDATE_FLOAT);
 
             $validNumbers = $width !== false && $width > 0
@@ -284,7 +285,7 @@ if ($gPost) {
                 $error = 'Tüm sayısal alanlar pozitif olmalıdır.';
             } else {
                 if ($gId) {
-                    $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin WHERE id=:id AND general_offer_id=:goid';
+                    $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, paint_face=:paint_face, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin WHERE id=:id AND general_offer_id=:goid';
                     $params = [
                         ':width' => $width,
                         ':height' => $height,
@@ -292,6 +293,7 @@ if ($gPost) {
                         ':motor' => $motor,
                         ':remote' => $remoteQty,
                         ':ral' => $ralCode,
+                        ':paint_face' => $paintFace,
                         ':glass_type' => $glassType,
                         ':glass_color' => $glassColor,
                         ':profit_margin' => $profitMargin,
@@ -299,7 +301,7 @@ if ($gPost) {
                         ':goid' => $id,
                     ];
                 } else {
-                    $sql = 'INSERT INTO guillotinesystems (general_offer_id, system_type, width, height, quantity, motor_system, remote_quantity, ral_code, glass_type, glass_color, profit_margin) VALUES (:goid, :stype, :width, :height, :quantity, :motor, :remote, :ral, :glass_type, :glass_color, :profit_margin)';
+                    $sql = 'INSERT INTO guillotinesystems (general_offer_id, system_type, width, height, quantity, motor_system, remote_quantity, ral_code, paint_face, glass_type, glass_color, profit_margin) VALUES (:goid, :stype, :width, :height, :quantity, :motor, :remote, :ral, :paint_face, :glass_type, :glass_color, :profit_margin)';
                     $params = [
                         ':goid' => $id,
                         ':stype' => 'Guillotine',
@@ -309,6 +311,7 @@ if ($gPost) {
                         ':motor' => $motor,
                         ':remote' => $remoteQty,
                         ':ral' => $ralCode,
+                        ':paint_face' => $paintFace,
                         ':glass_type' => $glassType,
                         ':glass_color' => $glassColor,
                         ':profit_margin' => $profitMargin,
@@ -359,7 +362,7 @@ $guillotines = [];
 $slidings = [];
 if (!$error) {
     try {
-        $gStmt = $pdo->prepare('SELECT id, system_type, width, height, quantity, motor_system, remote_quantity, ral_code, glass_type, glass_color, profit_margin, total_amount FROM guillotinesystems WHERE general_offer_id = :id');
+        $gStmt = $pdo->prepare('SELECT id, system_type, width, height, quantity, motor_system, remote_quantity, ral_code, paint_face, glass_type, glass_color, profit_margin, total_amount FROM guillotinesystems WHERE general_offer_id = :id');
         $gStmt->execute([':id' => $id]);
         $guillotines = $gStmt->fetchAll();
     } catch (Exception $e) {
@@ -493,7 +496,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                             <th>Adet</th>
                             <th>Cam</th>
                             <th>Motor</th>
-                            <th>RAL</th>
+                            <th>RAL/Boya Yüzeyi</th>
                             <th class="text-end">Satır Toplamı</th>
                             <th></th>
                         </tr>
@@ -507,7 +510,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                 <td><?= e($g['quantity']) ?></td>
                                 <td><?= e(trim($g['glass_type'] . ' ' . $g['glass_color'])) ?></td>
                                 <td><?= e($g['motor_system']) ?></td>
-                                <td><?= e($g['ral_code']) ?></td>
+                                <td><?= e(trim($g['ral_code'] . ' ' . $g['paint_face'])) ?></td>
                                 <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
                                 <td class="text-end">
                                     <div class="dropdown position-static">
@@ -542,6 +545,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                                     data-glass-color="<?= e($g['glass_color']) ?>"
                                                     data-remote="<?= e($g['remote_quantity']) ?>"
                                                     data-ral="<?= e($g['ral_code']) ?>"
+                                                    data-paint-face="<?= e($g['paint_face']) ?>"
                                                     data-profit="<?= e($g['profit_margin']) ?>"
                                                     title="Düzenle">
                                                     <i class="bi bi-pencil me-1"></i> Düzenle
@@ -673,12 +677,20 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                             <input type="number" min="1" step="1" class="form-control text-start" id="remote_quantity" name="remote_quantity">
                         </div>
                         <div class="col-md-6">
+                            <label for="profit_margin" class="form-label">Kâr Marjı (%)</label>
+                            <input type="number" min="0" step="0.01" class="form-control text-start" id="profit_margin" name="profit_margin">
+                        </div>
+                        <div class="col-md-6">
                             <label for="ral_code" class="form-label">RAL Kodu</label>
                             <input type="text" class="form-control" id="ral_code" name="ral_code">
                         </div>
                         <div class="col-md-6">
-                            <label for="profit_margin" class="form-label">Kâr Marjı (%)</label>
-                            <input type="number" min="0" step="0.01" class="form-control text-start" id="profit_margin" name="profit_margin">
+                            <label for="paint_face" class="form-label">Boya Yüzeyi</label>
+                            <select class="form-select" id="paint_face" name="paint_face">
+                                <option value="mat">Mat</option>
+                                <option value="parlak">Parlak</option>
+                                <option value="texture">Texture</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -704,8 +716,9 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
             form.querySelector('#glass_type').value = button.getAttribute('data-glass-type');
             form.querySelector('#glass_color').value = button.getAttribute('data-glass-color');
             form.querySelector('#remote_quantity').value = button.getAttribute('data-remote');
-            form.querySelector('#ral_code').value = button.getAttribute('data-ral');
             form.querySelector('#profit_margin').value = button.getAttribute('data-profit');
+            form.querySelector('#ral_code').value = button.getAttribute('data-ral');
+            form.querySelector('#paint_face').value = button.getAttribute('data-paint-face');
             this.querySelector('.modal-title').textContent = 'Edit Guillotine System Offer';
         } else {
             form.reset();
