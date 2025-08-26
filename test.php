@@ -421,25 +421,65 @@ function calculateGuillotineTotals(array $input): array
 }
 
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
-    //
-    // Sayfa Başlatma
-    // Dosya doğrudan çalıştırıldığında başlık dosyasını dahil eder.
-    //
+    require __DIR__ . '/config.php';
+
+    class PdoProductProvider implements ProductProviderInterface
+    {
+        public function __construct(private PDO $pdo) {}
+
+        public function getProduct(string $name): ?array
+        {
+            $stmt = $this->pdo->prepare('SELECT p.unit, p.unit_price, p.weight_per_meter, p.price_unit, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
+            $stmt->execute([':name' => $name]);
+
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $row ?: null;
+        }
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quote_id'])) {
+        header('Content-Type: application/json');
+        $gId = filter_input(INPUT_POST, 'quote_id', FILTER_VALIDATE_INT);
+        if (!$gId) {
+            echo json_encode(['success' => false, 'message' => 'Geçersiz giyotin.']);
+            exit;
+        }
+        try {
+            $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, profit_rate, profit_margin FROM guillotinesystems WHERE id = :id');
+            $stmt->execute([':id' => $gId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) {
+                echo json_encode(['success' => false, 'message' => 'Giyotin satırı bulunamadı.']);
+                exit;
+            }
+            $provider = new PdoProductProvider($pdo);
+            $totals = calculateGuillotineTotals([
+                'width'       => $row['width'],
+                'height'      => $row['height'],
+                'quantity'    => $row['quantity'],
+                'glass_type'  => $row['glass_type'] ?? '',
+                'profit_rate' => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
+                'provider'    => $provider,
+            ]);
+            $grandTotal = $totals['totals']['grand_total'];
+            $upd = $pdo->prepare('UPDATE guillotinesystems SET total_amount = :t WHERE id = :id');
+            $upd->execute([':t' => $grandTotal, ':id' => $gId]);
+            echo json_encode(['success' => true, 'total' => $grandTotal]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Hesaplama hatası.']);
+        }
+        exit;
+    }
+
     require __DIR__ . '/header.php';
 
-    //
-    // HTML Kaçış Fonksiyonu
-    // Çıktıya güvenli metin yazmak için özel karakterleri dönüştürür.
-    //
     function e(?string $v): string
     {
         return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
     }
 
-    //
-    // Birim Formatlama Fonksiyonu
-    // Verilen birimi temel alarak sayısal değeri uygun biçimde gösterir.
-    //
     function fmtUnit(float $value, string $unit): string
     {
         $unit = strtolower(trim($unit));
@@ -448,10 +488,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         return number_format($value, $decimals, ',', '.');
     }
 
-    //
-    // Para Birimi Sembolü
-    // Verilen para birimine karşılık gelen sembolü döndürür.
-    //
     function currencySymbol(string $currency): string
     {
         return match (strtoupper($currency)) {
@@ -462,14 +498,9 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         };
     }
 
-    //
-    // Kur Oranlarını Alma
-    // Belirtilen para birimleri için baz para birimine göre çeviri katsayısı döndürür.
-    //
     function fetchExchangeRates(string $base, array $currencies): array
     {
         $base = strtoupper($base);
-        // New API does not support limiting symbols, so fetch all and filter.
         $json = @file_get_contents("https://open.er-api.com/v6/latest/{$base}");
         $data = $json ? json_decode($json, true) : null;
         if (!is_array($data) || (($data['result'] ?? '') !== 'success') || empty($data['rates'])) {
@@ -484,41 +515,12 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             }
             $rate = $data['rates'][$curUpper] ?? null;
             if ($rate && $rate > 0) {
-                // API returns how much 1 base currency equals in target currency.
-                // We need multiplier from target currency to base, so take reciprocal.
                 $rates[$curUpper] = 1 / $rate;
             }
         }
         return $rates;
     }
 
-    //
-    // PDO Ürün Sağlayıcı Sınıfı
-    // Ürün bilgilerini veritabanından okumak için PDO kullanır.
-    //
-    class PdoProductProvider implements ProductProviderInterface
-    {
-        public function __construct(private PDO $pdo) {}
-
-        //
-        // Ürün Sorgusu
-        // Verilen isimle eşleşen ürün kaydını veritabanından getirir.
-        //
-        public function getProduct(string $name): ?array
-        {
-            $stmt = $this->pdo->prepare('SELECT p.unit, p.unit_price, p.weight_per_meter, p.price_unit, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
-            $stmt->execute([':name' => $name]);
-
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            return $row ?: null;
-        }
-    }
-
-    //
-    // Giyotin Kimliği
-    // URL'den gelen teklif kimliğini doğrular.
-    //
     $id = filter_input(INPUT_GET, 'quote_id', FILTER_VALIDATE_INT);
     if (!$id) {
         echo '<div class="container mt-4"><div class="alert alert-danger">Geçersiz giyotin.</div></div>';

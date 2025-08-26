@@ -511,7 +511,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                 <td><?= e(trim($g['glass_type'] . ' ' . $g['glass_color'])) ?></td>
                                 <td><?= e($g['motor_system']) ?></td>
                                 <td><?= e(trim($g['ral_code'] . ' ' . $g['paint_face'])) ?></td>
-                                <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
+                                <td class="text-end" data-id="<?= e($g['id']) ?>"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
                                 <td class="text-end">
                                     <div class="dropdown position-static">
                                         <button class="btn btn-sm btn-secondary"
@@ -529,6 +529,11 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                                     data-gid="<?= e((string)$g['id']) ?>">
                                                     <i class="bi bi-list-ul me-1"></i> Kalemler
                                                 </a>
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item refresh-price" data-id="<?= e($g['id']) ?>">
+                                                    <i class="bi bi-arrow-repeat me-1"></i> Yenile
+                                                </button>
                                             </li>
 
                                             <li>
@@ -750,5 +755,40 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
             window.location.href = url;
         });
     });
+
+    document.querySelectorAll('.refresh-price').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.id;
+            try {
+                const response = await fetch('test.php', {
+                    method: 'POST',
+                    body: new URLSearchParams({ quote_id: id })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const cell = document.querySelector(`td.text-end[data-id="${id}"]`);
+                    if (cell) {
+                        const formatted = parseFloat(data.total).toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        cell.textContent = `${formatted} ₺`;
+                    }
+                    showAlert('Fiyat güncellendi', 'success');
+                } else {
+                    showAlert(data.message || 'Fiyat güncellenemedi', 'danger');
+                }
+            } catch (err) {
+                showAlert('Fiyat güncellenemedi', 'danger');
+            }
+        });
+    });
+
+    function showAlert(message, type = 'success') {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+        document.body.appendChild(wrapper);
+        setTimeout(() => {
+            const alert = bootstrap.Alert.getOrCreateInstance(wrapper.querySelector('.alert'));
+            alert.close();
+        }, 3000);
+    }
 </script>
 <?php require __DIR__ . '/footer.php'; ?>
