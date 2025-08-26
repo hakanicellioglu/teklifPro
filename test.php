@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/helpers.php';
+
 //
 // Cam Birim Fiyatı
 // Cam fiyatı artık veritabanındaki ürün bilgilerinden alınır.
@@ -462,35 +464,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         };
     }
 
-    //
-    // Kur Oranlarını Alma
-    // Belirtilen para birimleri için baz para birimine göre çeviri katsayısı döndürür.
-    //
-    function fetchExchangeRates(string $base, array $currencies): array
-    {
-        $base = strtoupper($base);
-        // New API does not support limiting symbols, so fetch all and filter.
-        $json = @file_get_contents("https://open.er-api.com/v6/latest/{$base}");
-        $data = $json ? json_decode($json, true) : null;
-        if (!is_array($data) || (($data['result'] ?? '') !== 'success') || empty($data['rates'])) {
-            return [];
-        }
-        $rates = [];
-        foreach ($currencies as $cur) {
-            $curUpper = strtoupper($cur);
-            if ($curUpper === $base) {
-                $rates[$curUpper] = 1.0;
-                continue;
-            }
-            $rate = $data['rates'][$curUpper] ?? null;
-            if ($rate && $rate > 0) {
-                // API returns how much 1 base currency equals in target currency.
-                // We need multiplier from target currency to base, so take reciprocal.
-                $rates[$curUpper] = 1 / $rate;
-            }
-        }
-        return $rates;
-    }
 
     //
     // PDO Ürün Sağlayıcı Sınıfı

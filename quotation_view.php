@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/header.php';
 require __DIR__ . '/components/page_header.php';
+require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/test.php';
 
 function e(?string $v): string
@@ -138,13 +139,24 @@ if (
             if ((float)($row['width'] ?? 0) <= 0 || (float)($row['height'] ?? 0) <= 0 || (int)($row['quantity'] ?? 0) <= 0) {
                 throw new Exception('Geçersiz giyotin satırı.');
             }
+            $exchangeRates = fetchExchangeRates('TRY', ['USD', 'EUR']);
+            if (empty($exchangeRates)) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                header('Content-Type: application/json', true, 500);
+                echo json_encode(['error' => 'Kur bilgileri alınamadı.']);
+                exit;
+            }
             $totals = calculateGuillotineTotals([
-                'width'       => $row['width'],
-                'height'      => $row['height'],
-                'quantity'    => $row['quantity'],
-                'glass_type'  => $row['glass_type'] ?? '',
-                'profit_rate' => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
-                'provider'    => $productProvider,
+                'width'         => $row['width'],
+                'height'        => $row['height'],
+                'quantity'      => $row['quantity'],
+                'glass_type'    => $row['glass_type'] ?? '',
+                'profit_rate'   => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
+                'currency'      => 'TRY',
+                'exchange_rates'=> $exchangeRates,
+                'provider'      => $productProvider,
             ]);
             $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
             $gUpd->execute([
@@ -276,70 +288,77 @@ if ($gPost) {
             if (!$validNumbers) {
                 $error = 'Tüm sayısal alanlar pozitif olmalıdır.';
             } else {
-                if ($gId) {
-                    $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin WHERE id=:id AND general_offer_id=:goid';
-                    $params = [
-                        ':width' => $width,
-                        ':height' => $height,
-                        ':quantity' => $quantity,
-                        ':motor' => $motor,
-                        ':remote' => $remoteQty,
-                        ':ral' => $ralCode,
-                        ':glass_type' => $glassType,
-                        ':glass_color' => $glassColor,
-                        ':profit_margin' => $profitMargin,
-                        ':id' => $gId,
-                        ':goid' => $id,
-                    ];
+                $exchangeRates = fetchExchangeRates('TRY', ['USD', 'EUR']);
+                if (empty($exchangeRates)) {
+                    $error = 'Kur bilgileri alınamadı.';
                 } else {
-                    $sql = 'INSERT INTO guillotinesystems (general_offer_id, system_type, width, height, quantity, motor_system, remote_quantity, ral_code, glass_type, glass_color, profit_margin) VALUES (:goid, :stype, :width, :height, :quantity, :motor, :remote, :ral, :glass_type, :glass_color, :profit_margin)';
-                    $params = [
-                        ':goid' => $id,
-                        ':stype' => 'Guillotine',
-                        ':width' => $width,
-                        ':height' => $height,
-                        ':quantity' => $quantity,
-                        ':motor' => $motor,
-                        ':remote' => $remoteQty,
-                        ':ral' => $ralCode,
-                        ':glass_type' => $glassType,
-                        ':glass_color' => $glassColor,
-                        ':profit_margin' => $profitMargin,
-                    ];
-                }
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute($params);
+                    if ($gId) {
+                        $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin WHERE id=:id AND general_offer_id=:goid';
+                        $params = [
+                            ':width' => $width,
+                            ':height' => $height,
+                            ':quantity' => $quantity,
+                            ':motor' => $motor,
+                            ':remote' => $remoteQty,
+                            ':ral' => $ralCode,
+                            ':glass_type' => $glassType,
+                            ':glass_color' => $glassColor,
+                            ':profit_margin' => $profitMargin,
+                            ':id' => $gId,
+                            ':goid' => $id,
+                        ];
+                    } else {
+                        $sql = 'INSERT INTO guillotinesystems (general_offer_id, system_type, width, height, quantity, motor_system, remote_quantity, ral_code, glass_type, glass_color, profit_margin) VALUES (:goid, :stype, :width, :height, :quantity, :motor, :remote, :ral, :glass_type, :glass_color, :profit_margin)';
+                        $params = [
+                            ':goid' => $id,
+                            ':stype' => 'Guillotine',
+                            ':width' => $width,
+                            ':height' => $height,
+                            ':quantity' => $quantity,
+                            ':motor' => $motor,
+                            ':remote' => $remoteQty,
+                            ':ral' => $ralCode,
+                            ':glass_type' => $glassType,
+                            ':glass_color' => $glassColor,
+                            ':profit_margin' => $profitMargin,
+                        ];
+                    }
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute($params);
 
-                $gId = $gId ?: (int)$pdo->lastInsertId();
-                $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE id = :gid AND general_offer_id = :goid');
-                $gFetch->execute([':gid' => $gId, ':goid' => $id]);
-                if ($row = $gFetch->fetch(PDO::FETCH_ASSOC)) {
-                    $totals = calculateGuillotineTotals([
-                        'width'       => $row['width'],
-                        'height'      => $row['height'],
-                        'quantity'    => $row['quantity'],
-                        'glass_type'  => $row['glass_type'] ?? '',
-                        'profit_rate' => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
-                        'provider'    => $productProvider,
-                    ]);
-                    $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
-                    $gUpd->execute([
-                        ':pamount' => $totals['totals']['profit'],
-                        ':tamount' => $totals['totals']['grand_total'],
-                        ':id' => $gId,
-                    ]);
-                }
+                    $gId = $gId ?: (int)$pdo->lastInsertId();
+                    $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE id = :gid AND general_offer_id = :goid');
+                    $gFetch->execute([':gid' => $gId, ':goid' => $id]);
+                    if ($row = $gFetch->fetch(PDO::FETCH_ASSOC)) {
+                        $totals = calculateGuillotineTotals([
+                            'width'         => $row['width'],
+                            'height'        => $row['height'],
+                            'quantity'      => $row['quantity'],
+                            'glass_type'    => $row['glass_type'] ?? '',
+                            'profit_rate'   => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
+                            'currency'      => 'TRY',
+                            'exchange_rates'=> $exchangeRates,
+                            'provider'      => $productProvider,
+                        ]);
+                        $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
+                        $gUpd->execute([
+                            ':pamount' => $totals['totals']['profit'],
+                            ':tamount' => $totals['totals']['grand_total'],
+                            ':id' => $gId,
+                        ]);
+                    }
 
-                $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
-                $gSumStmt->execute([':id' => $id]);
-                $gSum = (float)$gSumStmt->fetchColumn();
-                $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
-                $sSumStmt->execute([':id' => $id]);
-                $sSum = (float)$sSumStmt->fetchColumn();
-                $overall = $gSum + $sSum;
-                $updStmt = $pdo->prepare('UPDATE generaloffers SET total_amount = :total WHERE id = :id');
-                $updStmt->execute([':total' => $overall, ':id' => $id]);
-                $success = $gId ? 'Giyotin sistemi güncellendi.' : 'Giyotin sistemi eklendi.';
+                    $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
+                    $gSumStmt->execute([':id' => $id]);
+                    $gSum = (float)$gSumStmt->fetchColumn();
+                    $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
+                    $sSumStmt->execute([':id' => $id]);
+                    $sSum = (float)$sSumStmt->fetchColumn();
+                    $overall = $gSum + $sSum;
+                    $updStmt = $pdo->prepare('UPDATE generaloffers SET total_amount = :total WHERE id = :id');
+                    $updStmt->execute([':total' => $overall, ':id' => $id]);
+                    $success = $gId ? 'Giyotin sistemi güncellendi.' : 'Giyotin sistemi eklendi.';
+                }
             }
         } catch (Exception $e) {
             $error = 'Giyotin sistemi kaydedilemedi.';
