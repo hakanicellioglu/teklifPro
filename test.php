@@ -569,6 +569,19 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     }
 
     echo '<div class="container mt-4">';
+    if (!empty($exchangeRates)) {
+        echo '<div class="alert alert-info mb-4">';
+        if (isset($exchangeRates['USD'])) {
+            echo '1 USD = ' . e(number_format($exchangeRates['USD'], 2, ',', '.')) . ' ' . e(currencySymbol('TRY'));
+        }
+        if (isset($exchangeRates['EUR'])) {
+            if (isset($exchangeRates['USD'])) {
+                echo '<br>';
+            }
+            echo '1 EUR = ' . e(number_format($exchangeRates['EUR'], 2, ',', '.')) . ' ' . e(currencySymbol('TRY'));
+        }
+        echo '</div>';
+    }
     echo '<h3>Kalemler</h3>';
 
     //
