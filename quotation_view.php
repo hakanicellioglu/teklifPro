@@ -16,8 +16,8 @@ class PdoProductProvider implements ProductProviderInterface
     {
         $stmt = $this->pdo->prepare(
             'SELECT p.unit, p.unit_price, p.vat_rate, p.weight_per_meter, p.price_unit, c.name AS category '
-            . 'FROM products p LEFT JOIN categories c ON p.category_id = c.id '
-            . 'WHERE LOWER(p.name) = LOWER(:name)'
+                . 'FROM products p LEFT JOIN categories c ON p.category_id = c.id '
+                . 'WHERE LOWER(p.name) = LOWER(:name)'
         );
         $stmt->execute([':name' => $name]);
 
@@ -664,8 +664,16 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                         </div>
                         <div class="col-md-6">
                             <label for="ral_code" class="form-label">RAL Kodu</label>
-                            <input type="text" class="form-control" id="ral_code" name="ral_code">
+                            <div class="d-flex gap-2">
+                                <input type="text" class="form-control" id="ral_code" name="ral_code">
+                                <select class="form-select" id="paint_face" name="paint_face" style="max-width:150px;">
+                                    <option value="Mat">Mat</option>
+                                    <option value="Parlak">Parlak</option>
+                                    <option value="Texture">Texture</option>
+                                </select>
+                            </div>
                         </div>
+
                         <div class="col-md-6">
                             <label for="profit_margin" class="form-label">Kâr Marjı (%)</label>
                             <input type="number" min="0" step="0.01" class="form-control text-start" id="profit_margin" name="profit_margin">
