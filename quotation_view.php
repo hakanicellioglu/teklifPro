@@ -50,20 +50,18 @@ $paymentLabels = [
 ];
 
 $statusLabels = [
-    'draft'     => 'Taslak (müşteriye gitmedi)',
-    'sent'      => 'Müşteriye gönderildi',
-    'accepted'  => 'Müşteri onayladı',
-    'rejected'  => 'Müşteri reddetti',
-    'expired'   => 'Geçerlilik tarihi geçti',
-    'cancelled' => 'Siz iptal ettiniz (revize edilmeyecek)',
+    'draft'       => 'Taslak',
+    'approved'    => 'Onaylandı',
+    'cancelled'   => 'İptal Edildi',
+    'rejected'    => 'Reddedildi',
+    'in_progress' => 'Devam Ediyor',
 ];
 $statusClasses = [
-    'draft'     => 'secondary',
-    'sent'      => 'info',
-    'accepted'  => 'success',
-    'rejected'  => 'danger',
-    'expired'   => 'warning',
-    'cancelled' => 'dark',
+    'draft'       => 'secondary',
+    'approved'    => 'success',
+    'cancelled'   => 'dark',
+    'rejected'    => 'danger',
+    'in_progress' => 'info',
 ];
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
