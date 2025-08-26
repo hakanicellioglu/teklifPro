@@ -437,15 +437,19 @@ $actions = '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" clas
 $actions .= ' <a href="/pdf/preview.php?id=' . e((string)$offer['id']) . '" class="btn btn-secondary btn-icon" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf"></i>PDF Önizleme</a>';
 page_header('Teklif #' . e((string)$offer['id']), $actions);
 ?>
-<?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
-<?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
 <?php
 if (!defined('APP_DEBUG')) {
     define('APP_DEBUG', false); // Set to true for debugging
 }
 ?>
-<?php if (!empty($debug) && defined('APP_DEBUG') && APP_DEBUG): ?>
-    <div class="alert alert-warning"><strong>Debug:</strong> <?= e($debug) ?></div>
+<?php if ($success): ?>
+    <div class="alert alert-success"><?= e($success) ?></div>
+<?php endif; ?>
+<?php if ($error): ?>
+    <div class="alert alert-danger"><?= e($error) ?></div>
+    <?php if (!empty($debug) && APP_DEBUG): ?>
+        <div class="alert alert-warning"><strong>Debug:</strong> <?= e($debug) ?></div>
+    <?php endif; ?>
 <?php endif; ?>
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
