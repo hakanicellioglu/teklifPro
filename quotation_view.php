@@ -441,22 +441,6 @@ ob_start();
     <a href="/pdf/preview.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-secondary" target="_blank" rel="noopener" data-bs-toggle="tooltip" title="PDF Önizleme" aria-label="PDF Önizleme"><i class="bi bi-file-earmark-pdf"></i></a>
     <?php if ($role === 'admin'): ?>
         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" aria-label="Sil" title="Sil"><i class="bi bi-trash"></i></button>
-        <div class="btn-group">
-            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Durum Değiştir" title="Durum Değiştir"><i class="bi bi-caret-down"></i></button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <?php foreach ($statusLabels as $code => $label): ?>
-                    <li>
-                        <form method="post" class="m-0">
-                            <input type="hidden" name="action" value="update_status">
-                            <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
-                            <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                            <input type="hidden" name="status" value="<?= e($code) ?>">
-                            <button type="submit" class="dropdown-item"><?= e($label) ?></button>
-                        </form>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
     <?php endif; ?>
 </div>
 <div class="dropdown d-md-none d-print-none">
@@ -469,18 +453,6 @@ ob_start();
         <?php if ($role === 'admin'): ?>
             <li><hr class="dropdown-divider"></li>
             <li><button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="bi bi-trash me-1"></i> Sil</button></li>
-            <li><h6 class="dropdown-header">Durum Değiştir</h6></li>
-            <?php foreach ($statusLabels as $code => $label): ?>
-                <li>
-                    <form method="post" class="m-0">
-                        <input type="hidden" name="action" value="update_status">
-                        <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
-                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                        <input type="hidden" name="status" value="<?= e($code) ?>">
-                        <button type="submit" class="dropdown-item"><?= e($label) ?></button>
-                    </form>
-                </li>
-            <?php endforeach; ?>
         <?php endif; ?>
     </ul>
 </div>
