@@ -57,6 +57,14 @@ $statusLabels = [
     'expired'   => 'Geçerlilik tarihi geçti',
     'cancelled' => 'Siz iptal ettiniz (revize edilmeyecek)',
 ];
+$statusClasses = [
+    'draft'     => 'secondary',
+    'sent'      => 'info',
+    'accepted'  => 'success',
+    'rejected'  => 'danger',
+    'expired'   => 'warning',
+    'cancelled' => 'dark',
+];
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
     echo '<div class="container mt-4"><div class="alert alert-danger">Teklif bulunamadı.</div></div></body></html>';
@@ -400,6 +408,25 @@ $totalFormatted = tr_money($totalAmount) . ' ₺';
 $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
 
 ?>
+<style>
+    .table-sticky-header thead th {
+        position: sticky;
+        top: 0;
+        background: var(--bs-body-bg);
+        z-index: 1;
+        box-shadow: 0 2px 0 rgba(0,0,0,.05);
+    }
+    .w-total { min-width: 8rem; }
+    .spin { animation: spin 1s linear infinite; display:inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media print {
+        .btn, .dropdown, .btn-group { display: none !important; }
+        body { background: #fff; }
+        .card { box-shadow: none !important; }
+        .table { border: 1px solid #000; }
+        .table th, .table td { border: 1px solid #000 !important; }
+    }
+</style>
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="quotations.php">Teklifler</a></li>
@@ -407,39 +434,88 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
     </ol>
 </nav>
 <?php
-$actions = '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary" data-bs-toggle="tooltip" title="Düzenle"><i class="bi bi-pencil"></i></a>';
-$actions .= ' <a href="/pdf/preview.php?id=' . e((string)$offer['id']) . '" class="btn btn-secondary btn-icon" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf"></i>PDF Önizleme</a>';
+ob_start();
+?>
+<div class="d-none d-md-inline-flex btn-group d-print-none" role="group" aria-label="Eylemler">
+    <a href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-primary" data-bs-toggle="tooltip" title="Düzenle" aria-label="Düzenle"><i class="bi bi-pencil"></i></a>
+    <a href="/pdf/preview.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-secondary" target="_blank" rel="noopener" data-bs-toggle="tooltip" title="PDF Önizleme" aria-label="PDF Önizleme"><i class="bi bi-file-earmark-pdf"></i></a>
+    <?php if ($role === 'admin'): ?>
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" aria-label="Sil" title="Sil"><i class="bi bi-trash"></i></button>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Durum Değiştir" title="Durum Değiştir"><i class="bi bi-caret-down"></i></button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <?php foreach ($statusLabels as $code => $label): ?>
+                    <li>
+                        <form method="post" class="m-0">
+                            <input type="hidden" name="action" value="update_status">
+                            <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
+                            <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                            <input type="hidden" name="status" value="<?= e($code) ?>">
+                            <button type="submit" class="dropdown-item"><?= e($label) ?></button>
+                        </form>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+</div>
+<div class="dropdown d-md-none d-print-none">
+    <button class="btn btn-primary dropdown-toggle" type="button" id="actionMenu" data-bs-toggle="dropdown" aria-expanded="false">
+        Eylemler
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionMenu">
+        <li><a class="dropdown-item" href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>"><i class="bi bi-pencil me-1"></i> Düzenle</a></li>
+        <li><a class="dropdown-item" href="/pdf/preview.php?id=<?= e((string)$offer['id']) ?>" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf me-1"></i> PDF Önizleme</a></li>
+        <?php if ($role === 'admin'): ?>
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="bi bi-trash me-1"></i> Sil</button></li>
+            <li><h6 class="dropdown-header">Durum Değiştir</h6></li>
+            <?php foreach ($statusLabels as $code => $label): ?>
+                <li>
+                    <form method="post" class="m-0">
+                        <input type="hidden" name="action" value="update_status">
+                        <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
+                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                        <input type="hidden" name="status" value="<?= e($code) ?>">
+                        <button type="submit" class="dropdown-item"><?= e($label) ?></button>
+                    </form>
+                </li>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </ul>
+</div>
+<?php
+$actions = ob_get_clean();
 page_header('Teklif #' . e((string)$offer['id']), $actions);
 ?>
 <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
 <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
 <div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header">
         <h5 class="mb-0">Özet</h5>
-        <?php if ($role === 'admin'): ?>
-            <form method="post" class="d-inline">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
-                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                <button type="submit" class="btn btn-danger btn-sm" data-confirm="Bu teklifi silmek istediğinize emin misiniz?" data-bs-toggle="tooltip" title="Sil"><i class="bi bi-trash"></i></button>
-            </form>
-        <?php endif; ?>
     </div>
     <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="mb-2"><strong>Müşteri:</strong> <?= e(trim($offer['first_name'] . ' ' . $offer['last_name'])) ?></div>
-                <div class="mb-2"><strong>Teklif Tarihi:</strong> <?= e(date('d.m.Y', strtotime($offer['offer_date']))) ?></div>
+        <div class="row row-cols-1 row-cols-md-2 g-3">
+            <div class="col">
+                <div class="mb-2">
+                    <span class="text-muted small d-block">Müşteri</span>
+                    <span class="text-body"><?= e(trim($offer['first_name'] . ' ' . $offer['last_name'])) ?></span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-muted small d-block">Teklif Tarihi</span>
+                    <span class="text-body"><?= e(date('d.m.Y', strtotime($offer['offer_date']))) ?></span>
+                </div>
                 <?php if (!empty($offer['payment_method'])): ?>
-                    <div class="mb-2"><strong>Ödeme:</strong> <?= e($paymentLabels[$offer['payment_method']] ?? $offer['payment_method']) ?></div>
+                    <div class="mb-2">
+                        <span class="text-muted small d-block">Ödeme</span>
+                        <span class="text-body"><?= e($paymentLabels[$offer['payment_method']] ?? $offer['payment_method']) ?></span>
+                    </div>
                 <?php endif; ?>
                 <?php if ($approveUrl): ?>
                     <div class="mb-2">
-                        <strong>Onay:</strong>
-                        <button type="button"
-                            class="btn btn-sm btn-outline-secondary share-btn ms-2"
-                            data-url="<?= e($approveUrl) ?>">
-                            Paylaş
+                        <span class="text-muted small d-block">Onay Linki</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary share-btn" data-url="<?= e($approveUrl) ?>">
+                            <i class="bi bi-share me-1" aria-hidden="true"></i><span class="visually-hidden">Bağlantıyı kopyala</span> Paylaş
                         </button>
                     </div>
                 <?php endif; ?>
@@ -449,8 +525,8 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                             <input type="hidden" name="action" value="update_status">
                             <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
                             <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                            <label class="form-label mb-0"><strong>Durum:</strong></label>
-                            <select name="status" class="form-select form-select-sm w-auto">
+                            <label for="statusSelect" class="form-label mb-0 small">Durum</label>
+                            <select id="statusSelect" name="status" class="form-select form-select-sm w-auto">
                                 <?php foreach ($statusLabels as $code => $label): ?>
                                     <option value="<?= e($code) ?>" <?= $offer['status'] === $code ? 'selected' : '' ?>><?= e($label) ?></option>
                                 <?php endforeach; ?>
@@ -458,25 +534,38 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                             <button type="submit" class="btn btn-sm btn-primary">Kaydet</button>
                         </form>
                     <?php else: ?>
-                        <strong>Durum:</strong> <?= e($statusLabels[$offer['status']] ?? $offer['status']) ?>
+                        <span class="text-muted small d-block">Durum</span>
+                        <span class="badge bg-<?= e($statusClasses[$offer['status']] ?? 'secondary') ?>"><?= e($statusLabels[$offer['status']] ?? $offer['status']) ?></span>
                     <?php endif; ?>
                 </div>
-                <?php if (!empty($offer['approved_at'])): ?>
-                    <div class="mb-2"><strong>Onay Tarihi:</strong> <?= e($offer['approved_at']) ?></div>
-                <?php endif; ?>
             </div>
-            <div class="col-md-6">
+            <div class="col">
                 <?php if (!empty($offer['company_name']) || !empty($offer['customer_company'])): ?>
-                    <div class="mb-2"><strong>Firma:</strong> <?= e($offer['company_name'] ?? $offer['customer_company']) ?></div>
+                    <div class="mb-2">
+                        <span class="text-muted small d-block">Firma</span>
+                        <span class="text-body"><?= e($offer['company_name'] ?? $offer['customer_company']) ?></span>
+                    </div>
                 <?php endif; ?>
-                <div class="mb-2"><strong>Montaj Tipi:</strong> <?= e($assemblyLabel) ?></div>
+                <div class="mb-2">
+                    <span class="text-muted small d-block">Montaj Tipi</span>
+                    <span class="text-body"><?= e($assemblyLabel) ?></span>
+                </div>
                 <?php if (!empty($offer['validity_days'])): ?>
-                    <div class="mb-2"><strong>Geçerlilik:</strong> <?= (int)$offer['validity_days'] ?> gün</div>
+                    <div class="mb-2">
+                        <span class="text-muted small d-block">Geçerlilik</span>
+                        <span class="text-body"><?= (int)$offer['validity_days'] ?> gün</span>
+                    </div>
                 <?php endif; ?>
                 <?php if (!empty($offer['installment_term'])): ?>
-                    <div class="mb-2"><strong>Vade:</strong> <?= e($offer['installment_term']) ?></div>
+                    <div class="mb-2">
+                        <span class="text-muted small d-block">Vade</span>
+                        <span class="text-body"><?= e($offer['installment_term']) ?></span>
+                    </div>
                 <?php endif; ?>
-                <div class="mb-2"><strong>Toplam Tutar:</strong> <?= e($totalFormatted) ?></div>
+                <div class="mb-2">
+                    <span class="text-muted small d-block">Toplam Tutar</span>
+                    <span class="fs-5 fw-semibold text-body"><?= e($totalFormatted) ?></span>
+                </div>
             </div>
         </div>
     </div>
@@ -490,17 +579,17 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
     <div class="card-body p-0">
         <?php if ($guillotines): ?>
             <div class="table-responsive">
-                <table class="table table-sm table-striped mb-0">
+                <table class="table table-sm table-striped table-sticky-header mb-0">
                     <thead>
                         <tr>
                             <th>Sistem</th>
-                            <th>En</th>
-                            <th>Boy</th>
-                            <th>Adet</th>
+                            <th class="text-end">En</th>
+                            <th class="text-end">Boy</th>
+                            <th class="text-end">Adet</th>
                             <th>Cam</th>
                             <th>Motor</th>
                             <th>RAL</th>
-                            <th class="text-end">Satır Toplamı</th>
+                            <th class="text-end w-total">Satır Toplamı</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -508,61 +597,34 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                         <?php foreach ($guillotines as $g): ?>
                             <tr>
                                 <td><?= e($g['system_type']) ?></td>
-                                <td><?= e($g['width']) ?></td>
-                                <td><?= e($g['height']) ?></td>
-                                <td><?= e($g['quantity']) ?></td>
-                                <td><?= e(trim($g['glass_type'] . ' ' . $g['glass_color'])) ?></td>
-                                <td><?= e($g['motor_system']) ?></td>
-                                <td><?= e($g['ral_code']) ?></td>
-                                <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
+                                <td class="text-end"><?= e($g['width']) ?></td>
+                                <td class="text-end"><?= e($g['height']) ?></td>
+                                <td class="text-end"><?= e($g['quantity']) ?></td>
+                                <td class="text-truncate" style="max-width:120px;" title="<?= e(trim($g['glass_type'] . ' ' . $g['glass_color'])) ?>"><?= e(trim($g['glass_type'] . ' ' . $g['glass_color'])) ?></td>
+                                <td class="text-truncate" style="max-width:100px;" title="<?= e($g['motor_system']) ?>"><?= e($g['motor_system']) ?></td>
+                                <td class="text-truncate" style="max-width:80px;" title="<?= e($g['ral_code']) ?>"><?= e($g['ral_code']) ?></td>
+                                <td class="text-end w-total"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
                                 <td class="text-end">
                                     <div class="dropdown position-static">
-                                        <button class="btn btn-sm btn-secondary"
-                                            type="button"
-                                            data-bs-toggle="dropdown"
-                                            data-bs-display="static"
-                                            aria-expanded="false">
+                                        <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" aria-label="İşlemler">
                                             <i class="bi bi-three-dots"></i>
                                         </button>
-
                                         <ul class="dropdown-menu dropdown-menu-end" data-bs-auto-close="outside">
                                             <li>
-                                                <a href="test.php?quote_id=<?= e((string)$g['id']) ?>"
-                                                    class="dropdown-item recalc-lines"
-                                                    data-gid="<?= e((string)$g['id']) ?>">
+                                                <a href="test.php?quote_id=<?= e((string)$g['id']) ?>" class="dropdown-item recalc-lines" data-gid="<?= e((string)$g['id']) ?>">
                                                     <i class="bi bi-list-ul me-1"></i> Kalemler
                                                 </a>
                                             </li>
-
                                             <li>
-                                                <button type="button"
-                                                    class="dropdown-item edit-guillotine"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#addGuillotineModal"
-                                                    data-id="<?= e((string)$g['id']) ?>"
-                                                    data-width="<?= e((string)$g['width']) ?>"
-                                                    data-height="<?= e((string)$g['height']) ?>"
-                                                    data-quantity="<?= e((string)$g['quantity']) ?>"
-                                                    data-motor="<?= e((string)$g['motor_system']) ?>"
-                                                    data-glass-type="<?= e((string)$g['glass_type']) ?>"
-                                                    data-glass-color="<?= e((string)$g['glass_color']) ?>"
-                                                    data-remote="<?= e((string)$g['remote_quantity']) ?>"
-                                                    data-ral="<?= e((string)$g['ral_code']) ?>"
-                                                    data-profit="<?= e((string)$g['profit_margin']) ?>">
+                                                <button type="button" class="dropdown-item edit-guillotine" data-bs-toggle="modal" data-bs-target="#addGuillotineModal" data-id="<?= e((string)$g['id']) ?>" data-width="<?= e((string)$g['width']) ?>" data-height="<?= e((string)$g['height']) ?>" data-quantity="<?= e((string)$g['quantity']) ?>" data-motor="<?= e((string)$g['motor_system']) ?>" data-glass-type="<?= e((string)$g['glass_type']) ?>" data-glass-color="<?= e((string)$g['glass_color']) ?>" data-remote="<?= e((string)$g['remote_quantity']) ?>" data-ral="<?= e((string)$g['ral_code']) ?>" data-profit="<?= e((string)$g['profit_margin']) ?>">
                                                     <i class="bi bi-pencil me-1"></i> Düzenle
                                                 </button>
                                             </li>
-
                                             <?php if ($role === 'admin'): ?>
                                                 <li>
-                                                    <form method="post" onsubmit="return confirm('Bu giyotin sistemini silmek istediğinize emin misiniz?');" class="px-3 py-1">
-                                                        <input type="hidden" name="action" value="delete_guillotine">
-                                                        <input type="hidden" name="guillotine_id" value="<?= e((string)$g['id']) ?>">
-                                                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                                                        <button type="submit" class="dropdown-item text-danger">
-                                                            <i class="bi bi-trash me-1"></i> Sil
-                                                        </button>
-                                                    </form>
+                                                    <button type="button" class="dropdown-item text-danger delete-guillotine" data-id="<?= e((string)$g['id']) ?>" data-bs-toggle="modal" data-bs-target="#deleteGuillotineModal">
+                                                        <i class="bi bi-trash me-1"></i> Sil
+                                                    </button>
                                                 </li>
                                             <?php endif; ?>
                                         </ul>
@@ -574,7 +636,11 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                 </table>
             </div>
         <?php else: ?>
-            <div class="p-3 text-muted">Giyotin sistemi bulunamadı.</div>
+            <div class="p-5 text-center text-muted">
+                <i class="bi bi-inboxes display-6 mb-3"></i>
+                <p class="mb-3">Kayıt yok</p>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addGuillotineModal">Yeni Ekle</button>
+            </div>
         <?php endif; ?>
     </div>
 </div>
@@ -586,37 +652,41 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
     <div class="card-body p-0">
         <?php if ($slidings): ?>
             <div class="table-responsive">
-                <table class="table table-sm table-striped mb-0">
+                <table class="table table-sm table-striped table-sticky-header mb-0">
                     <thead>
                         <tr>
                             <th>Sistem</th>
-                            <th>En</th>
-                            <th>Boy</th>
-                            <th>Adet</th>
+                            <th class="text-end">En</th>
+                            <th class="text-end">Boy</th>
+                            <th class="text-end">Adet</th>
                             <th>Cam</th>
                             <th>Kanat</th>
                             <th>RAL</th>
-                            <th class="text-end">Satır Toplamı</th>
+                            <th class="text-end w-total">Satır Toplamı</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($slidings as $s): ?>
                             <tr>
                                 <td><?= e($s['system_type']) ?></td>
-                                <td><?= e($s['width']) ?></td>
-                                <td><?= e($s['height']) ?></td>
-                                <td><?= e($s['quantity']) ?></td>
-                                <td><?= e(trim($s['glass_type'] . ' ' . $s['glass_color'])) ?></td>
-                                <td><?= e($s['wing_type']) ?></td>
-                                <td><?= e($s['ral_code']) ?></td>
-                                <td class="text-end"><?= e(number_format((float)$s['total_amount'], 2, ',', '.')) ?> ₺</td>
+                                <td class="text-end"><?= e($s['width']) ?></td>
+                                <td class="text-end"><?= e($s['height']) ?></td>
+                                <td class="text-end"><?= e($s['quantity']) ?></td>
+                                <td class="text-truncate" style="max-width:120px;" title="<?= e(trim($s['glass_type'] . ' ' . $s['glass_color'])) ?>"><?= e(trim($s['glass_type'] . ' ' . $s['glass_color'])) ?></td>
+                                <td class="text-truncate" style="max-width:120px;" title="<?= e($s['wing_type']) ?>"><?= e($s['wing_type']) ?></td>
+                                <td class="text-truncate" style="max-width:80px;" title="<?= e($s['ral_code']) ?>"><?= e($s['ral_code']) ?></td>
+                                <td class="text-end w-total"><?= e(number_format((float)$s['total_amount'], 2, ',', '.')) ?> ₺</td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
         <?php else: ?>
-            <div class="p-3 text-muted">Sürme sistemi bulunamadı.</div>
+            <div class="p-5 text-center text-muted">
+                <i class="bi bi-inboxes display-6 mb-3"></i>
+                <p class="mb-3">Kayıt yok</p>
+                <a href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-sm btn-primary">Yeni Ekle</a>
+            </div>
         <?php endif; ?>
     </div>
 </div>
@@ -637,16 +707,19 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                     <input type="hidden" name="general_offer_id" value="<?= e((string)$offer['id']) ?>">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label for="width" class="form-label">Genişlik</label>
-                            <input type="number" min="0.01" step="0.01" class="form-control text-start" id="width" name="width" required>
+                            <label for="width" class="form-label">Genişlik <span class="text-danger" aria-hidden="true">*</span></label>
+                            <input type="number" min="0.01" step="0.01" class="form-control" id="width" name="width" placeholder="mm" aria-required="true" required>
+                            <div class="form-text">mm</div>
                         </div>
                         <div class="col-md-6">
-                            <label for="height" class="form-label">Yükseklik</label>
-                            <input type="number" min="0.01" step="0.01" class="form-control text-start" id="height" name="height" required>
+                            <label for="height" class="form-label">Yükseklik <span class="text-danger" aria-hidden="true">*</span></label>
+                            <input type="number" min="0.01" step="0.01" class="form-control" id="height" name="height" placeholder="mm" aria-required="true" required>
+                            <div class="form-text">mm</div>
                         </div>
                         <div class="col-md-6">
-                            <label for="quantity" class="form-label">Sistem Adedi</label>
-                            <input type="number" min="1" step="1" class="form-control text-start" id="quantity" name="quantity" required>
+                            <label for="quantity" class="form-label">Sistem Adedi <span class="text-danger" aria-hidden="true">*</span></label>
+                            <input type="number" min="1" step="1" class="form-control" id="quantity" name="quantity" placeholder="1" aria-required="true" required>
+                            <div class="form-text">adet</div>
                         </div>
                         <div class="col-md-6">
                             <label for="motor_system" class="form-label">Motor Sistemi</label>
@@ -675,21 +748,67 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                         </div>
                         <div class="col-md-6">
                             <label for="remote_quantity" class="form-label">Kumanda Adedi</label>
-                            <input type="number" min="1" step="1" class="form-control text-start" id="remote_quantity" name="remote_quantity">
+                            <input type="number" min="1" step="1" class="form-control" id="remote_quantity" name="remote_quantity" placeholder="0">
+                            <div class="form-text">adet</div>
                         </div>
                         <div class="col-md-6">
                             <label for="ral_code" class="form-label">RAL Kodu</label>
-                            <input type="text" class="form-control" id="ral_code" name="ral_code">
+                            <input type="text" class="form-control" id="ral_code" name="ral_code" placeholder="Örn: 9016">
                         </div>
                         <div class="col-md-6">
-                            <label for="profit_margin" class="form-label">Kâr Marjı (%)</label>
-                            <input type="number" min="0" step="0.01" class="form-control text-start" id="profit_margin" name="profit_margin">
+                            <label for="profit_margin" class="form-label">Kâr Marjı <span class="text-danger" aria-hidden="true">*</span></label>
+                            <div class="input-group">
+                                <input type="number" min="0" step="0.01" class="form-control" id="profit_margin" name="profit_margin" placeholder="0" aria-required="true" required>
+                                <span class="input-group-text">%</span>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
                     <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+</div>
+</div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Teklifi Sil</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">Bu teklifi silmek istediğinize emin misiniz?</div>
+                <div class="modal-footer">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
+                    <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-danger">Sil</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteGuillotineModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Satırı Sil</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">Bu giyotin sistemini silmek istediğinize emin misiniz?</div>
+                <div class="modal-footer">
+                    <input type="hidden" name="action" value="delete_guillotine">
+                    <input type="hidden" name="guillotine_id" id="deleteGuillotineId">
+                    <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-danger">Sil</button>
                 </div>
             </form>
         </div>
@@ -719,25 +838,33 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
         }
     });
 
+    const delModal = document.getElementById('deleteGuillotineModal');
+    delModal?.addEventListener('show.bs.modal', function(event) {
+        const btn = event.relatedTarget;
+        this.querySelector('#deleteGuillotineId').value = btn.getAttribute('data-id');
+    });
+
     document.querySelectorAll('.recalc-lines').forEach(function(link) {
         link.addEventListener('click', async function(e) {
             e.preventDefault();
             const url = this.href;
             const gid = this.dataset.gid;
+            const original = this.innerHTML;
+            this.classList.add('disabled');
+            this.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i>Yeniden Hesaplanıyor…';
             try {
-                await fetch('quotation_view.php?id=<?= e((string)$offer['id']) ?>', {
+                const res = await fetch('quotation_view.php?id=<?= e((string)$offer['id']) ?>', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams({
                         action: 'recalc_guillotine',
                         guillotine_id: gid,
                         csrf_token: '<?= e($csrfToken) ?>'
                     })
                 });
+                if (!res.ok) throw new Error();
             } catch (err) {
-                // ignore errors and proceed to navigation
+                window.showToast && window.showToast('Hesaplama sırasında sorun oluştu, sayfa açılıyor…', 'warning');
             }
             window.location.href = url;
         });
