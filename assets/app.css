@@ -63,6 +63,13 @@ input[type=number],
   text-align: left !important;
 }
 
-.share-btn {
-  margin-left: .5rem;
+.num {
+  font-family: var(--bs-font-monospace);
+  text-align: right;
+}
+.table-sticky thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bs-body-bg);
+  z-index: 1;
 }

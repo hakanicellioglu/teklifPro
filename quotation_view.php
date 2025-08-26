@@ -57,6 +57,14 @@ $statusLabels = [
     'expired'   => 'Geçerlilik tarihi geçti',
     'cancelled' => 'Siz iptal ettiniz (revize edilmeyecek)',
 ];
+$statusClasses = [
+    'draft'     => 'secondary',
+    'sent'      => 'info',
+    'accepted'  => 'success',
+    'rejected'  => 'danger',
+    'expired'   => 'warning',
+    'cancelled' => 'dark',
+];
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
     echo '<div class="container mt-4"><div class="alert alert-danger">Teklif bulunamadı.</div></div></body></html>';
@@ -407,8 +415,19 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
     </ol>
 </nav>
 <?php
-$actions = '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary" data-bs-toggle="tooltip" title="Düzenle"><i class="bi bi-pencil"></i></a>';
-$actions .= ' <a href="/pdf/preview.php?id=' . e((string)$offer['id']) . '" class="btn btn-secondary btn-icon" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf"></i>PDF Önizleme</a>';
+$actions = '<div class="btn-group" role="group" aria-label="Teklif eylemleri">';
+$actions .= '<a href="quotation_edit.php?id=' . e((string)$offer['id']) . '" class="btn btn-primary"><i class="bi bi-pencil me-1"></i>Düzenle</a>';
+$actions .= '<a href="/pdf/preview.php?id=' . e((string)$offer['id']) . '" class="btn btn-outline-secondary" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>';
+if ($role === 'admin') {
+    $actions .= '<form method="post" class="d-inline">'
+        . '<input type="hidden" name="action" value="delete">'
+        . '<input type="hidden" name="id" value="' . e((string)$offer['id']) . '">' 
+        . '<input type="hidden" name="csrf_token" value="' . e($csrfToken) . '">' 
+        . '<button type="submit" class="btn btn-outline-danger" data-confirm="Bu teklifi silmek istediğinize emin misiniz?">'
+        . '<i class="bi bi-trash me-1"></i>Sil</button>'
+        . '</form>';
+}
+$actions .= '</div>';
 page_header('Teklif #' . e((string)$offer['id']), $actions);
 ?>
 <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
@@ -416,67 +435,81 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Özet</h5>
-        <?php if ($role === 'admin'): ?>
-            <form method="post" class="d-inline">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
-                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                <button type="submit" class="btn btn-danger btn-sm" data-confirm="Bu teklifi silmek istediğinize emin misiniz?" data-bs-toggle="tooltip" title="Sil"><i class="bi bi-trash"></i></button>
-            </form>
-        <?php endif; ?>
     </div>
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <div class="mb-2"><strong>Müşteri:</strong> <?= e(trim($offer['first_name'] . ' ' . $offer['last_name'])) ?></div>
-                <div class="mb-2"><strong>Teklif Tarihi:</strong> <?= e(date('d.m.Y', strtotime($offer['offer_date']))) ?></div>
-                <?php if (!empty($offer['payment_method'])): ?>
-                    <div class="mb-2"><strong>Ödeme:</strong> <?= e($paymentLabels[$offer['payment_method']] ?? $offer['payment_method']) ?></div>
-                <?php endif; ?>
-                <?php if ($approveUrl): ?>
-                    <div class="mb-2">
-                        <strong>Onay:</strong>
-                        <button type="button"
-                            class="btn btn-sm btn-outline-secondary share-btn ms-2"
-                            data-url="<?= e($approveUrl) ?>">
-                            Paylaş
-                        </button>
-                    </div>
-                <?php endif; ?>
-                <div class="mb-2">
-                    <?php if ($role === 'admin'): ?>
-                        <form method="post" class="d-flex align-items-center gap-2">
-                            <input type="hidden" name="action" value="update_status">
-                            <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
-                            <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
-                            <label class="form-label mb-0"><strong>Durum:</strong></label>
-                            <select name="status" class="form-select form-select-sm w-auto">
-                                <?php foreach ($statusLabels as $code => $label): ?>
-                                    <option value="<?= e($code) ?>" <?= $offer['status'] === $code ? 'selected' : '' ?>><?= e($label) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-primary">Kaydet</button>
-                        </form>
-                    <?php else: ?>
-                        <strong>Durum:</strong> <?= e($statusLabels[$offer['status']] ?? $offer['status']) ?>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Müşteri</dt>
+                    <dd class="col-sm-8"><?= e(trim($offer['first_name'] . ' ' . $offer['last_name'])) ?></dd>
+                    <dt class="col-sm-4">Teklif Tarihi</dt>
+                    <dd class="col-sm-8"><?= e(date('d.m.Y', strtotime($offer['offer_date']))) ?></dd>
+                    <?php if (!empty($offer['payment_method'])): ?>
+                        <dt class="col-sm-4">Ödeme</dt>
+                        <dd class="col-sm-8"><?= e($paymentLabels[$offer['payment_method']] ?? $offer['payment_method']) ?></dd>
                     <?php endif; ?>
-                </div>
-                <?php if (!empty($offer['approved_at'])): ?>
-                    <div class="mb-2"><strong>Onay Tarihi:</strong> <?= e($offer['approved_at']) ?></div>
-                <?php endif; ?>
+                    <?php if ($approveUrl): ?>
+                        <dt class="col-sm-4">Onay</dt>
+                        <dd class="col-sm-8">
+                            <button type="button" class="btn btn-sm btn-outline-secondary copy-btn" data-url="<?= e($approveUrl) ?>">Kopyala</button>
+                        </dd>
+                    <?php endif; ?>
+                    <dt class="col-sm-4">Durum</dt>
+                    <dd class="col-sm-8">
+                        <?php if ($role === 'admin'): ?>
+                            <div class="dropdown d-inline">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" id="statusDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="badge bg-<?= e($statusClasses[$offer['status']] ?? 'secondary') ?>"><?= e($statusLabels[$offer['status']] ?? $offer['status']) ?></span>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="statusDropdown">
+                                    <?php foreach ($statusLabels as $code => $label): ?>
+                                        <li>
+                                            <form method="post" class="status-form">
+                                                <input type="hidden" name="action" value="update_status">
+                                                <input type="hidden" name="id" value="<?= e((string)$offer['id']) ?>">
+                                                <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                                <input type="hidden" name="status" value="<?= e($code) ?>">
+                                                <button type="submit" class="dropdown-item" data-confirm="Durumu '<?= e($label) ?>' olarak değiştirmek istiyor musunuz?"><?= e($label) ?></button>
+                                            </form>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        <?php else: ?>
+                            <span class="badge bg-<?= e($statusClasses[$offer['status']] ?? 'secondary') ?>"><?= e($statusLabels[$offer['status']] ?? $offer['status']) ?></span>
+                        <?php endif; ?>
+                    </dd>
+                    <?php if (!empty($offer['approved_at'])): ?>
+                        <dt class="col-sm-4">Onay Tarihi</dt>
+                        <dd class="col-sm-8"><?= e($offer['approved_at']) ?></dd>
+                    <?php endif; ?>
+                </dl>
             </div>
             <div class="col-md-6">
-                <?php if (!empty($offer['company_name']) || !empty($offer['customer_company'])): ?>
-                    <div class="mb-2"><strong>Firma:</strong> <?= e($offer['company_name'] ?? $offer['customer_company']) ?></div>
-                <?php endif; ?>
-                <div class="mb-2"><strong>Montaj Tipi:</strong> <?= e($assemblyLabel) ?></div>
-                <?php if (!empty($offer['validity_days'])): ?>
-                    <div class="mb-2"><strong>Geçerlilik:</strong> <?= (int)$offer['validity_days'] ?> gün</div>
-                <?php endif; ?>
-                <?php if (!empty($offer['installment_term'])): ?>
-                    <div class="mb-2"><strong>Vade:</strong> <?= e($offer['installment_term']) ?></div>
-                <?php endif; ?>
-                <div class="mb-2"><strong>Toplam Tutar:</strong> <?= e($totalFormatted) ?></div>
+                <dl class="row mb-0">
+                    <?php if (!empty($offer['company_name']) || !empty($offer['customer_company'])): ?>
+                        <dt class="col-sm-4">Firma</dt>
+                        <dd class="col-sm-8"><?= e($offer['company_name'] ?? $offer['customer_company']) ?></dd>
+                    <?php endif; ?>
+                    <dt class="col-sm-4">Montaj Tipi</dt>
+                    <dd class="col-sm-8"><?= e($assemblyLabel) ?></dd>
+                    <?php if (!empty($offer['validity_days'])): ?>
+                        <dt class="col-sm-4">Geçerlilik</dt>
+                        <dd class="col-sm-8"><?= (int)$offer['validity_days'] ?> gün</dd>
+                    <?php endif; ?>
+                    <?php if (!empty($offer['installment_term'])): ?>
+                        <dt class="col-sm-4">Vade</dt>
+                        <dd class="col-sm-8"><?= e($offer['installment_term']) ?></dd>
+                    <?php endif; ?>
+                    <dt class="col-sm-4">Toplam</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge rounded-pill bg-primary fs-5 px-3 py-2 num"><?= e($totalFormatted) ?></span>
+                        <div class="small text-muted mt-1">
+                            Ara Toplam: <?= e(tr_money($subtotalCalc)) ?> ₺<br>
+                            KDV: <?= e(tr_money($vatAmountCalc)) ?> ₺
+                        </div>
+                    </dd>
+                </dl>
             </div>
         </div>
     </div>
@@ -489,32 +522,33 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
     </div>
     <div class="card-body p-0">
         <?php if ($guillotines): ?>
+            <?php $guillotineTotal = array_sum(array_map(fn($g) => (float)$g['total_amount'], $guillotines)); ?>
             <div class="table-responsive">
-                <table class="table table-sm table-striped mb-0">
+                <table class="table table-sm table-striped mb-0 table-sticky">
                     <thead>
                         <tr>
-                            <th>Sistem</th>
-                            <th>En</th>
-                            <th>Boy</th>
-                            <th>Adet</th>
-                            <th>Cam</th>
-                            <th>Motor</th>
-                            <th>RAL</th>
-                            <th class="text-end">Satır Toplamı</th>
-                            <th></th>
+                            <th scope="col">Sistem</th>
+                            <th scope="col">En</th>
+                            <th scope="col">Boy</th>
+                            <th scope="col">Adet</th>
+                            <th scope="col">Cam</th>
+                            <th scope="col">Motor</th>
+                            <th scope="col">RAL</th>
+                            <th scope="col" class="text-end">Satır Toplamı</th>
+                            <th scope="col"></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($guillotines as $g): ?>
                             <tr>
                                 <td><?= e($g['system_type']) ?></td>
-                                <td><?= e($g['width']) ?></td>
-                                <td><?= e($g['height']) ?></td>
-                                <td><?= e($g['quantity']) ?></td>
+                                <td class="text-nowrap num"><?= e($g['width']) ?></td>
+                                <td class="text-nowrap num"><?= e($g['height']) ?></td>
+                                <td class="text-nowrap num"><?= e($g['quantity']) ?></td>
                                 <td><?= e(trim($g['glass_type'] . ' ' . $g['glass_color'])) ?></td>
                                 <td><?= e($g['motor_system']) ?></td>
                                 <td><?= e($g['ral_code']) ?></td>
-                                <td class="text-end"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
+                                <td class="text-end num"><?= e(number_format((float)$g['total_amount'], 2, ',', '.')) ?> ₺</td>
                                 <td class="text-end">
                                     <div class="dropdown position-static">
                                         <button class="btn btn-sm btn-secondary"
@@ -570,6 +604,11 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                 </td>
                             </tr>
                         <?php endforeach; ?>
+                        <tr>
+                            <td colspan="7" class="text-end fw-semibold">Toplam</td>
+                            <td class="text-end num"><?= e(number_format($guillotineTotal, 2, ',', '.')) ?> ₺</td>
+                            <td></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -585,33 +624,38 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
     </div>
     <div class="card-body p-0">
         <?php if ($slidings): ?>
+            <?php $slidingTotal = array_sum(array_map(fn($s) => (float)$s['total_amount'], $slidings)); ?>
             <div class="table-responsive">
-                <table class="table table-sm table-striped mb-0">
+                <table class="table table-sm table-striped mb-0 table-sticky">
                     <thead>
                         <tr>
-                            <th>Sistem</th>
-                            <th>En</th>
-                            <th>Boy</th>
-                            <th>Adet</th>
-                            <th>Cam</th>
-                            <th>Kanat</th>
-                            <th>RAL</th>
-                            <th class="text-end">Satır Toplamı</th>
+                            <th scope="col">Sistem</th>
+                            <th scope="col">En</th>
+                            <th scope="col">Boy</th>
+                            <th scope="col">Adet</th>
+                            <th scope="col">Cam</th>
+                            <th scope="col">Kanat</th>
+                            <th scope="col">RAL</th>
+                            <th scope="col" class="text-end">Satır Toplamı</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($slidings as $s): ?>
                             <tr>
                                 <td><?= e($s['system_type']) ?></td>
-                                <td><?= e($s['width']) ?></td>
-                                <td><?= e($s['height']) ?></td>
-                                <td><?= e($s['quantity']) ?></td>
+                                <td class="text-nowrap num"><?= e($s['width']) ?></td>
+                                <td class="text-nowrap num"><?= e($s['height']) ?></td>
+                                <td class="text-nowrap num"><?= e($s['quantity']) ?></td>
                                 <td><?= e(trim($s['glass_type'] . ' ' . $s['glass_color'])) ?></td>
                                 <td><?= e($s['wing_type']) ?></td>
                                 <td><?= e($s['ral_code']) ?></td>
-                                <td class="text-end"><?= e(number_format((float)$s['total_amount'], 2, ',', '.')) ?> ₺</td>
+                                <td class="text-end num"><?= e(number_format((float)$s['total_amount'], 2, ',', '.')) ?> ₺</td>
                             </tr>
                         <?php endforeach; ?>
+                        <tr>
+                            <td colspan="7" class="text-end fw-semibold">Toplam</td>
+                            <td class="text-end num"><?= e(number_format($slidingTotal, 2, ',', '.')) ?> ₺</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -638,11 +682,17 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="width" class="form-label">Genişlik</label>
-                            <input type="number" min="0.01" step="0.01" class="form-control text-start" id="width" name="width" required>
+                            <div class="input-group">
+                                <input type="number" min="0.01" step="0.01" class="form-control text-start" id="width" name="width" required>
+                                <span class="input-group-text">mm</span>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label for="height" class="form-label">Yükseklik</label>
-                            <input type="number" min="0.01" step="0.01" class="form-control text-start" id="height" name="height" required>
+                            <div class="input-group">
+                                <input type="number" min="0.01" step="0.01" class="form-control text-start" id="height" name="height" required>
+                                <span class="input-group-text">mm</span>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label for="quantity" class="form-label">Sistem Adedi</label>
@@ -679,11 +729,15 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                         </div>
                         <div class="col-md-6">
                             <label for="ral_code" class="form-label">RAL Kodu</label>
-                            <input type="text" class="form-control" id="ral_code" name="ral_code">
+                            <input type="text" class="form-control" id="ral_code" name="ral_code" placeholder="Örn: RAL 9005">
+                            <div class="form-text">Örn: RAL 9005</div>
                         </div>
                         <div class="col-md-6">
-                            <label for="profit_margin" class="form-label">Kâr Marjı (%)</label>
-                            <input type="number" min="0" step="0.01" class="form-control text-start" id="profit_margin" name="profit_margin">
+                            <label for="profit_margin" class="form-label">Kâr Marjı</label>
+                            <div class="input-group">
+                                <input type="number" min="0" step="0.01" class="form-control text-start" id="profit_margin" name="profit_margin">
+                                <span class="input-group-text">%</span>
+                            </div>
                         </div>
                     </div>
                 </div>

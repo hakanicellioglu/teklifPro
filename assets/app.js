@@ -76,23 +76,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  document.querySelectorAll('.share-btn').forEach(btn => {
+  document.querySelectorAll('.copy-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const url = btn.getAttribute('data-url');
       if (!url) return;
-      if (navigator.share) {
-        try {
-          await navigator.share({ url });
-        } catch (e) {
-          /* ignore */
-        }
-      } else {
-        try {
-          await navigator.clipboard.writeText(url);
-          window.showToast && window.showToast('Bağlantı panoya kopyalandı', 'info');
-        } catch (e) {
-          window.showToast && window.showToast('Bağlantı kopyalanamadı', 'danger');
-        }
+      try {
+        await navigator.clipboard.writeText(url);
+        const original = btn.textContent;
+        btn.textContent = 'Kopyalandı';
+        setTimeout(() => { btn.textContent = original; }, 2000);
+      } catch (e) {
+        window.showToast && window.showToast('Bağlantı kopyalanamadı', 'danger');
       }
     });
   });
