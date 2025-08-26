@@ -395,13 +395,8 @@ if (!$error) {
     }
 }
 
-$totalAmount = 0;
-foreach ($guillotines as $g) {
-    $totalAmount += (float)$g['total_amount'];
-}
-foreach ($slidings as $s) {
-    $totalAmount += (float)$s['total_amount'];
-}
+$items = getOfferSystems($pdo, $id);
+$totalAmount = array_reduce($items, fn($carry, $it) => $carry + (float)$it['amount'], 0.0);
 $subtotalCalc = round($totalAmount / 1.2, 2);
 $vatAmountCalc = round($totalAmount - $subtotalCalc, 2);
 $totalFormatted = tr_money($totalAmount) . ' ₺';
@@ -539,8 +534,49 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                     <span class="fs-5 fw-semibold text-body"><?= e($totalFormatted) ?></span>
                 </div>
             </div>
-        </div>
+</div>
+</div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Kalemler</h5>
     </div>
+    <?php if ($items): ?>
+    <div class="table-responsive">
+        <table class="table table-sm table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Sistem Tipi</th>
+                    <th>Ölçüler</th>
+                    <th class="text-end">Adet</th>
+                    <th class="text-end">Tutar</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($items as $it): ?>
+                <tr>
+                    <td><?= e($it['system']) ?></td>
+                    <td><?= e($it['width'] . ' x ' . $it['height']) ?></td>
+                    <td class="text-end"><?= e((string)$it['quantity']) ?></td>
+                    <td class="text-end"><?= e(tr_money((float)$it['amount'])) ?> ₺</td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">Toplam</th>
+                    <th class="text-end"><?= e(tr_money($totalAmount)) ?> ₺</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <?php else: ?>
+    <div class="card-body text-center text-secondary">
+        <i class="bi bi-inboxes display-6 mb-2" aria-hidden="true"></i>
+        <p class="mb-0">Kalem bulunamadı.</p>
+    </div>
+    <?php endif; ?>
 </div>
 
 <div class="card mb-4">

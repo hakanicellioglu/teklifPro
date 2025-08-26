@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../config.php';
+require_once __DIR__ . '/../helpers.php';
 
 function h(?string $v): string
 {
@@ -22,48 +23,9 @@ if (!$offer) {
     exit('Teklif bulunamadı.');
 }
 
-// Fetch related product rows
-$guillotines = [];
-$slidings = [];
-$items = [];
-$totalAmount = 0.0;
-
-try {
-    $gStmt = $pdo->prepare('SELECT system_type, width, height, quantity, total_amount FROM guillotinesystems WHERE general_offer_id = :id');
-    $gStmt->execute([':id' => $offer['id']]);
-    $guillotines = $gStmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (Exception $e) {
-    // ignore
-}
-
-try {
-    $sStmt = $pdo->prepare('SELECT system_type, width, height, quantity, total_amount FROM slidingsystems WHERE general_offer_id = :id');
-    $sStmt->execute([':id' => $offer['id']]);
-    $slidings = $sStmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (Exception $e) {
-    // ignore
-}
-
-foreach ($guillotines as $g) {
-    $items[] = [
-        'system'   => $g['system_type'],
-        'width'    => $g['width'],
-        'height'   => $g['height'],
-        'quantity' => $g['quantity'],
-        'amount'   => $g['total_amount'],
-    ];
-    $totalAmount += (float)$g['total_amount'];
-}
-foreach ($slidings as $s) {
-    $items[] = [
-        'system'   => $s['system_type'],
-        'width'    => $s['width'],
-        'height'   => $s['height'],
-        'quantity' => $s['quantity'],
-        'amount'   => $s['total_amount'],
-    ];
-    $totalAmount += (float)$s['total_amount'];
-}
+// Fetch related product rows merged by size
+$items = getOfferSystems($pdo, (int)$offer['id']);
+$totalAmount = array_reduce($items, fn($carry, $it) => $carry + (float)$it['amount'], 0.0);
 
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $offer['status'] === 'pending') {

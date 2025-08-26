@@ -35,3 +35,46 @@ function fetchExchangeRates(string $base, array $currencies): array
     }
     return $rates;
 }
+
+/**
+ * Returns offer items from guillotine and sliding systems merged by system type and dimensions.
+ *
+ * @param PDO $pdo
+ * @param int $offerId
+ * @return array<int,array{system:string,width:float,height:float,quantity:int,amount:float}>
+ */
+function getOfferSystems(PDO $pdo, int $offerId): array
+{
+    $rows = [];
+    try {
+        $stmt = $pdo->prepare('SELECT system_type AS system, width, height, quantity, total_amount AS amount FROM guillotinesystems WHERE general_offer_id = :id');
+        $stmt->execute([':id' => $offerId]);
+        $rows = array_merge($rows, $stmt->fetchAll());
+    } catch (Exception $e) {
+        // ignore
+    }
+    try {
+        $stmt = $pdo->prepare('SELECT system_type AS system, width, height, quantity, total_amount AS amount FROM slidingsystems WHERE general_offer_id = :id');
+        $stmt->execute([':id' => $offerId]);
+        $rows = array_merge($rows, $stmt->fetchAll());
+    } catch (Exception $e) {
+        // ignore
+    }
+    $merged = [];
+    foreach ($rows as $r) {
+        $key = strtolower((string)$r['system']) . '|' . $r['width'] . '|' . $r['height'];
+        if (!isset($merged[$key])) {
+            $merged[$key] = [
+                'system'   => $r['system'],
+                'width'    => $r['width'],
+                'height'   => $r['height'],
+                'quantity' => (int)$r['quantity'],
+                'amount'   => (float)$r['amount'],
+            ];
+        } else {
+            $merged[$key]['quantity'] += (int)$r['quantity'];
+            $merged[$key]['amount'] += (float)$r['amount'];
+        }
+    }
+    return array_values($merged);
+}
