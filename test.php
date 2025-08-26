@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 //
 // Cam Birim Fiyatı
-// Metrekare başına cam maliyetini temsil eder ve hesaplamalarda kullanılır.
+// Cam fiyatı artık veritabanındaki ürün bilgilerinden alınır.
 //
-const GLASS_UNIT_PRICE = 1680; // TRY per m²
 
 //
 // Ürün Sağlayıcı Arayüzü
@@ -207,46 +206,36 @@ function calculateGuillotineTotals(array $input): array
 
         //
         // Ürün Bilgisi Seçimi
-        // Kural cam ise sabit değerler kullanılır, değilse veritabanından alınır.
+        // Ürün veritabanından alınır; gerekli alanlar kuraldan güncellenir.
         //
-        if ($rule['name'] === 'Cam') {
+        $product = $provider->getProduct($rule['name']);
+        if ($product) {
+            if (isset($rule['unit_price'])) {
+                $product['unit_price'] = $rule['unit_price'];
+            }
+            if (isset($rule['unit'])) {
+                $product['unit'] = $rule['unit'];
+            }
+            if (isset($rule['category'])) {
+                $product['category'] = $rule['category'];
+            }
+            if (isset($rule['price_unit'])) {
+                $product['price_unit'] = $rule['price_unit'];
+            }
+        } elseif (isset($rule['unit_price'])) {
+            //
+            // Ürün Bulunamadı
+            // Veritabanında ürün yoksa kuraldaki bilgiler kullanılır.
+            //
             $product = [
-                'unit'            => 'm²',
-                'unit_price'      => GLASS_UNIT_PRICE,
+                'unit'            => $rule['unit'] ?? 'adet',
+                'unit_price'      => $rule['unit_price'],
                 'weight_per_meter' => 0,
-                'category'        => 'Cam',
-                'price_unit'      => 'TRY',
+                'category'        => $rule['category'] ?? 'Diğer',
+                'price_unit'      => $rule['price_unit'] ?? 'TRY',
             ];
         } else {
-            $product = $provider->getProduct($rule['name']);
-            if ($product) {
-                if (isset($rule['unit_price'])) {
-                    $product['unit_price'] = $rule['unit_price'];
-                }
-                if (isset($rule['unit'])) {
-                    $product['unit'] = $rule['unit'];
-                }
-                if (isset($rule['category'])) {
-                    $product['category'] = $rule['category'];
-                }
-                if (isset($rule['price_unit'])) {
-                    $product['price_unit'] = $rule['price_unit'];
-                }
-            } elseif (isset($rule['unit_price'])) {
-                //
-                // Ürün Bulunamadı
-                // Veritabanında ürün yoksa kuraldaki bilgiler kullanılır.
-                //
-                $product = [
-                    'unit'            => $rule['unit'] ?? 'adet',
-                    'unit_price'      => $rule['unit_price'],
-                    'weight_per_meter' => 0,
-                    'category'        => $rule['category'] ?? 'Diğer',
-                    'price_unit'      => $rule['price_unit'] ?? 'TRY',
-                ];
-            } else {
-                continue;
-            }
+            continue;
         }
 
         //
