@@ -31,6 +31,7 @@ $success = null;
 $vatAllowed = [0, 1, 8, 18, 20];
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 $unitTypeOptions = ['kg/m', 'm', 'm²', 'adet', 'set'];
+$unitValueOneTypes = ['m', 'm²', 'adet', 'set'];
 
 // Fetch categories from database
 $categoryStmt = $pdo->query('SELECT id, name FROM categories ORDER BY name');
@@ -80,6 +81,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
       $unit_value = null;
     } else {
       $channel_count = null;
+      if (in_array($unit_type, $unitValueOneTypes, true)) {
+        $unit_value = 1;
+      }
       if ($unit_value <= 0) {
         $errors[] = 'Birim değeri > 0 olmalıdır.';
       }
@@ -203,6 +207,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'admin') {
       $unit_value = null;
     } else {
       $channel_count = null;
+      if (in_array($unit_type, $unitValueOneTypes, true)) {
+        $unit_value = 1;
+      }
       if ($unit_value <= 0) {
         $errors[] = 'Birim değeri > 0 olmalıdır.';
       }
@@ -723,11 +730,24 @@ require __DIR__ . '/header.php';
   document.querySelectorAll('select[name="unit_type"]').forEach(select => {
     const unitGroup = select.closest('form')?.querySelector('.unit-value-group');
     const unitInput = unitGroup?.querySelector('input[name="unit_value"]');
+    const readOnlyTypes = ['m', 'm²', 'adet', 'set'];
 
     const toggleUnitValue = () => {
-      const show = select.value === 'kg/m';
+      const type = select.value;
+      const show = type === 'kg/m' || readOnlyTypes.includes(type);
       if (unitGroup) unitGroup.style.display = show ? '' : 'none';
-      if (unitInput) unitInput.required = show;
+      if (unitInput) {
+        unitInput.required = type === 'kg/m';
+        if (readOnlyTypes.includes(type)) {
+          unitInput.readOnly = true;
+          unitInput.value = '1';
+        } else {
+          unitInput.readOnly = false;
+          if (type !== 'kg/m') {
+            unitInput.value = '';
+          }
+        }
+      }
     };
 
     toggleUnitValue();
