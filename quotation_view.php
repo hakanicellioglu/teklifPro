@@ -533,7 +533,17 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                                     class="dropdown-item edit-guillotine"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#addGuillotineModal"
-                                                    ...>
+                                                    data-id="<?= e($g['id']) ?>"
+                                                    data-width="<?= e($g['width']) ?>"
+                                                    data-height="<?= e($g['height']) ?>"
+                                                    data-quantity="<?= e($g['quantity']) ?>"
+                                                    data-motor="<?= e($g['motor_system']) ?>"
+                                                    data-glass-type="<?= e($g['glass_type']) ?>"
+                                                    data-glass-color="<?= e($g['glass_color']) ?>"
+                                                    data-remote="<?= e($g['remote_quantity']) ?>"
+                                                    data-ral="<?= e($g['ral_code']) ?>"
+                                                    data-profit="<?= e($g['profit_margin']) ?>"
+                                                    title="Düzenle">
                                                     <i class="bi bi-pencil me-1"></i> Düzenle
                                                 </button>
                                             </li>
