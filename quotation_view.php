@@ -10,13 +10,27 @@ function e(?string $v): string
 
 /**
  * Ensure a column exists on a table; add it if missing.
+ * If the definition contains an AFTER clause for a non-existent column,
+ * the column will simply be appended to the table.
  */
 function ensureColumn(PDO $pdo, string $table, string $column, string $definition): void
 {
     $stmt = $pdo->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
-    if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
-        $pdo->exec("ALTER TABLE `$table` ADD COLUMN `$column` $definition");
+    if ($stmt->fetch(PDO::FETCH_ASSOC)) {
+        return;
     }
+
+    // Handle optional AFTER clause dynamically
+    if (preg_match('/AFTER\s+`?(\w+)`?/i', $definition, $m)) {
+        $afterColumn = $m[1];
+        $check = $pdo->query("SHOW COLUMNS FROM `$table` LIKE '$afterColumn'");
+        if (!$check->fetch(PDO::FETCH_ASSOC)) {
+            // Remove AFTER clause if the referenced column does not exist
+            $definition = preg_replace('/\s+AFTER\s+`?\w+`?/i', '', $definition);
+        }
+    }
+
+    $pdo->exec("ALTER TABLE `$table` ADD COLUMN `$column` $definition");
 }
 
 class PdoProductProvider implements ProductProviderInterface
@@ -271,16 +285,27 @@ if ($gPost) {
             ensureColumn($pdo, 'guillotinesystems', 'paint_face', "VARCHAR(100) DEFAULT NULL AFTER ral_code");
 
             $gId = filter_input(INPUT_POST, 'guillotine_id', FILTER_VALIDATE_INT);
+            $isUpdate = $gId ? true : false;
+            $gId = $gId ?: null;
             $width = filter_input(INPUT_POST, 'width', FILTER_VALIDATE_FLOAT);
             $height = filter_input(INPUT_POST, 'height', FILTER_VALIDATE_FLOAT);
             $quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
             $motor = $_POST['motor_system'] ?? null;
             $glassType = $_POST['glass_type'] ?? null;
             $glassColor = $_POST['glass_color'] ?? null;
-            $remoteQty = filter_input(INPUT_POST, 'remote_quantity', FILTER_VALIDATE_INT);
+
+            $remoteInput = $_POST['remote_quantity'] ?? null;
+            $remoteQty = ($remoteInput === '' || $remoteInput === null)
+                ? null
+                : filter_var($remoteInput, FILTER_VALIDATE_INT);
+
             $ralCode = trim($_POST['ral_code'] ?? '');
             $paintFace = trim($_POST['paint_face'] ?? '') ?: null;
-            $profitMargin = filter_input(INPUT_POST, 'profit_margin', FILTER_VALIDATE_FLOAT);
+
+            $profitInput = $_POST['profit_margin'] ?? null;
+            $profitMargin = ($profitInput === '' || $profitInput === null)
+                ? 0
+                : filter_var($profitInput, FILTER_VALIDATE_FLOAT);
 
             $validNumbers = $width !== false && $width > 0
                 && $height !== false && $height > 0
@@ -356,7 +381,7 @@ if ($gPost) {
                 $overall = $gSum + $sSum;
                 $updStmt = $pdo->prepare('UPDATE generaloffers SET total_amount = :total WHERE id = :id');
                 $updStmt->execute([':total' => $overall, ':id' => $id]);
-                $success = $gId ? 'Giyotin sistemi güncellendi.' : 'Giyotin sistemi eklendi.';
+                $success = $isUpdate ? 'Giyotin sistemi güncellendi.' : 'Giyotin sistemi eklendi.';
             }
         } catch (Exception $e) {
             $error = 'Giyotin sistemi kaydedilemedi.';
