@@ -407,9 +407,6 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
 ?>
 <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
 <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
-<?php if (defined('APP_DEBUG') && APP_DEBUG && $debug): ?>
-    <div class="alert alert-warning"><strong>Debug:</strong> <?= e($debug) ?></div>
-<?php endif; ?>
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Özet</h5>
