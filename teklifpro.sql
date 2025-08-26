@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Anamakine: 127.0.0.1
--- Üretim Zamanı: 25 Ağu 2025, 12:43:25
+-- Üretim Zamanı: 26 Ağu 2025, 08:19:08
 -- Sunucu sürümü: 10.4.32-MariaDB
 -- PHP Sürümü: 8.2.12
 
@@ -40,7 +40,8 @@ CREATE TABLE `categories` (
 INSERT INTO `categories` (`id`, `name`, `unit_type`) VALUES
 (1, 'Alüminyum', 'm'),
 (2, 'Aksesuar', 'adet'),
-(3, 'Fitil', 'm');
+(3, 'Fitil', 'm'),
+(4, 'Cam', 'kg/m');
 
 -- --------------------------------------------------------
 
@@ -133,8 +134,8 @@ CREATE TABLE `generaloffers` (
 --
 
 INSERT INTO `generaloffers` (`id`, `quote_no`, `customer_id`, `company_id`, `offer_date`, `assembly_type`, `delivery_time`, `payment_method`, `validity_days`, `installment_term`, `payment_type`, `term_months`, `interest_mode`, `interest_value`, `interest_amount`, `total_with_interest`, `monthly_installment`, `grace_days`, `payment_term`, `offer_validity`, `maturity_period`, `discount_rate`, `discount_amount`, `vat_rate`, `vat_amount`, `total_amount`, `profit_percent`, `profit_amount`, `status`, `approval_token`, `approved_at`, `note`) VALUES
-(11, NULL, 1, NULL, '2025-08-22', 'demonte', NULL, 'cash', 10, NULL, 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 388944.00, NULL, NULL, 'sent', '6a11fec84c4615436d2015e24e35e184', '2025-08-23 08:36:37', NULL),
-(12, NULL, 1, NULL, '2025-08-25', 'demonte', NULL, 'cash', 1, '0', 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'rejected', NULL, '2025-08-25 13:00:14', NULL);
+(11, NULL, 1, NULL, '2025-08-22', 'demonte', NULL, 'cash', 10, NULL, 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 6761.20, NULL, NULL, 'sent', '6a11fec84c4615436d2015e24e35e184', '2025-08-23 08:36:37', NULL),
+(13, NULL, 2, NULL, '2025-08-25', 'demonte', NULL, 'vadeli', 10, NULL, 'cash', 1, NULL, 5.00, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 4857.87, NULL, NULL, 'accepted', NULL, '2025-08-26 08:58:43', NULL);
 
 -- --------------------------------------------------------
 
@@ -168,11 +169,8 @@ INSERT INTO `guillotinesystems` (`id`, `general_offer_id`, `system_type`, `width
 (6, 2, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 7286.06),
 (15, 9, 'Guillotine', 5000.00, 1000.00, 5, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 30.00, NULL, 0.00, 0.00),
 (22, 3, 'Guillotine', 2814.00, 2425.00, 6, 'Somfy', 1, '7016', 'Tek Cam', 'Şeffaf', 0.00, NULL, 0.00, 148683.25),
-(24, 11, 'Guillotine', 2814.00, 2425.00, 1, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 21976.62),
-(25, 11, 'Guillotine', 2814.00, 2425.00, 1, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 22699.22),
-(26, 11, 'Guillotine', 2814.00, 2425.00, 1, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 22699.22),
 (27, 11, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6761.20),
-(28, 11, 'Guillotine', 2150.00, 1870.00, 20, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 314807.74);
+(33, 13, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '7016', 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 4857.87);
 
 -- --------------------------------------------------------
 
@@ -217,13 +215,13 @@ INSERT INTO `products` (`id`, `product_code`, `name`, `unit`, `channel_count`, `
 (12, 'ALU-012', 'Son Kapatma', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d8e53630e23.99446192.png', NULL, 5.00, 0.980, 0.00, 1, 'USD'),
 (13, 'ALU-013', 'Kanat', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d979f9d9095.83107493.png', NULL, 5.00, 1.499, 0.00, 1, 'USD'),
 (14, 'ALU-014', 'Dikey Baza', 'kg/m', NULL, NULL, NULL, NULL, 'uploads/prod_689d98fb17a318.00944727.png', NULL, 5.00, 0.627, 0.00, 1, 'USD'),
-(15, 'AKS-001', 'Zincir', 'adet', NULL, NULL, NULL, NULL, 'uploads/prod_689daf670db319.58780229.png', NULL, 5.00, 1.000, 20.00, 2, 'USD'),
-(17, 'ALU-015', 'Motor Borusu', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dba8ccbd6a4.05135182.png', NULL, 5.00, 1.000, 0.00, 1, 'USD'),
-(18, 'FIT-001', 'Motor Kutu Contası', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbaa5c1c036.57568229.png', NULL, 5.00, 1.000, 20.00, 3, 'USD'),
-(19, 'FIT-002', 'Kanat Contası', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbabf730f57.59776694.png', NULL, 5.00, 1.000, 20.00, 3, 'USD'),
-(20, 'PRD-01', 'Kıl Fitil', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbad192dca3.02797000.jpg', NULL, 25.00, 1.000, 20.00, NULL, 'USD'),
-(21, 'AKS-001', 'Plastik Set', 'set', NULL, NULL, NULL, NULL, 'uploads/prod_689daf670db319.58780229.png', NULL, 5.00, 1.000, 0.00, 2, 'USD'),
-(22, 'AKS-021', 'Zincir', 'set', NULL, NULL, NULL, NULL, NULL, NULL, 5.00, 1.000, 0.00, 2, 'USD');
+(17, 'ALU-015', 'Motor Borusu', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dba8ccbd6a4.05135182.png', NULL, 4.00, 1.000, 0.00, 2, 'USD'),
+(18, 'FIT-001', 'Motor Kutu Contası', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbaa5c1c036.57568229.png', NULL, 0.80, 1.000, 20.00, 3, 'USD'),
+(19, 'FIT-002', 'Kanat Contası', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbabf730f57.59776694.png', NULL, 0.70, 1.000, 20.00, 3, 'USD'),
+(20, 'PRD-01', 'Kıl Fitil', 'm', NULL, NULL, NULL, NULL, 'uploads/prod_689dbad192dca3.02797000.jpg', NULL, 0.20, 1.000, 20.00, 3, 'USD'),
+(21, 'AKS-001', 'Plastik Set', 'set', NULL, NULL, NULL, NULL, 'uploads/prod_689daf670db319.58780229.png', NULL, 38.00, 1.000, 0.00, 2, 'USD'),
+(22, 'AKS-021', 'Zincir', 'set', NULL, NULL, NULL, NULL, 'uploads/prod_68ac63b68913d6.69131013.png', NULL, 20.00, 1.000, 0.00, 2, 'USD'),
+(24, 'PRD-02', 'Cam', 'm²', NULL, NULL, NULL, NULL, NULL, NULL, 42.00, 1.000, 0.00, 4, 'USD');
 
 -- --------------------------------------------------------
 
@@ -387,7 +385,7 @@ ALTER TABLE `users`
 -- Tablo için AUTO_INCREMENT değeri `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `company`
@@ -405,19 +403,19 @@ ALTER TABLE `customers`
 -- Tablo için AUTO_INCREMENT değeri `generaloffers`
 --
 ALTER TABLE `generaloffers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `guillotinesystems`
 --
 ALTER TABLE `guillotinesystems`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `roles`
