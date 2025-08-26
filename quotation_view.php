@@ -414,7 +414,12 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
 ?>
 <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
 <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
-<?php if (defined('APP_DEBUG') && APP_DEBUG && $debug): ?>
+<?php
+if (!defined('APP_DEBUG')) {
+    define('APP_DEBUG', false); // Set to true for debugging
+}
+?>
+<?php if (!empty($debug) && defined('APP_DEBUG') && APP_DEBUG): ?>
     <div class="alert alert-warning"><strong>Debug:</strong> <?= e($debug) ?></div>
 <?php endif; ?>
 <div class="card mb-4">
