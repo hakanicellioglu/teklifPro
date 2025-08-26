@@ -106,17 +106,7 @@ function calculateGuillotineTotals(array $input): array
         ['name' => 'Motor Kutu Contası', 'measure' => fn($w, $h, $q) => ($w - 14) * $q + $w * $q,         'qty' => fn($w, $h, $q) => 1],
         ['name' => 'Kanat Contası',      'measure' => fn($w, $h, $q) => (($h - 290) / 3) * $q * 2,        'qty' => fn($w, $h, $q) => 1],
         ['name' => 'Plastik Set',        'measure' => fn($w, $h, $q) => 1,                                'qty' => fn($w, $h, $q) => $q],
-        // Zincir unit price was previously treated as 900 TRY via outdated DB data.
-        // Force the correct unit price (680 TRY) here to keep calculations consistent
-        // even if the database still holds an old value.
-        [
-            'name'       => 'Zincir',
-            'measure'    => fn($w, $h, $q) => 1,
-            'qty'        => fn($w, $h, $q) => $q,
-            'unit_price' => 680.0,
-            'unit'       => 'set',
-            'category'   => 'Aksesuar',
-        ],
+        ['name' => 'Zincir',       'measure'    => fn($w, $h, $q) => 1,                             'qty'        => fn($w, $h, $q) => $q],
     ]);
 
     // Glass product rule using calculated dimensions and quantity
@@ -252,7 +242,7 @@ function calculateGuillotineTotals(array $input): array
             'pieces'           => $rq,
             'total'            => $lineTotal,
             'currency'         => $lineCurrency,
-            'original_currency'=> $originalCurrency,
+            'original_currency' => $originalCurrency,
         ];
     }
 
@@ -417,7 +407,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             'glass_type'    => $row['glass_type'] ?? '',
             'profit_rate'   => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
             'currency'      => 'TRY',
-            'exchange_rates'=> $exchangeRates,
+            'exchange_rates' => $exchangeRates,
             'provider'      => $provider,
         ]);
     } catch (Throwable $e) {
