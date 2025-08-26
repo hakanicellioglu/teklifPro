@@ -90,6 +90,7 @@ if (!$id) {
 $error = null;
 $success = null;
 $debug = null;
+$debugSteps = [];
 
 if (!empty($_SESSION['flash_success'])) {
     $success = $_SESSION['flash_success'];
@@ -279,8 +280,10 @@ if ($gPost) {
     $token = $_POST['csrf_token'] ?? '';
     if (!hash_equals($csrfToken, $token)) {
         $error = 'Geçersiz CSRF tokenı.';
+        $debugSteps[] = 'CSRF token mismatch';
     } else {
         try {
+            $debugSteps[] = 'Ensuring required columns';
             ensureColumn($pdo, 'guillotinesystems', 'profit_margin', "DECIMAL(5,2) DEFAULT NULL AFTER glass_color");
             ensureColumn($pdo, 'guillotinesystems', 'paint_face', "VARCHAR(100) DEFAULT NULL AFTER ral_code");
 
@@ -315,7 +318,9 @@ if ($gPost) {
 
             if (!$validNumbers) {
                 $error = 'Tüm sayısal alanlar pozitif olmalıdır.';
+                $debugSteps[] = 'Numeric validation failed';
             } else {
+                $debugSteps[] = 'Numeric validation passed';
                 if ($gId) {
                     $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, paint_face=:paint_face, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin WHERE id=:id AND general_offer_id=:goid';
                     $params = [
@@ -349,6 +354,7 @@ if ($gPost) {
                         ':profit_margin' => $profitMargin,
                     ];
                 }
+                $debugSteps[] = 'Executing SQL statement';
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($params);
 
@@ -356,6 +362,7 @@ if ($gPost) {
                 $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE id = :gid AND general_offer_id = :goid');
                 $gFetch->execute([':gid' => $gId, ':goid' => $id]);
                 if ($row = $gFetch->fetch(PDO::FETCH_ASSOC)) {
+                    $debugSteps[] = 'Recalculating totals';
                     $totals = calculateGuillotineTotals([
                         'width'       => $row['width'],
                         'height'      => $row['height'],
@@ -382,10 +389,12 @@ if ($gPost) {
                 $updStmt = $pdo->prepare('UPDATE generaloffers SET total_amount = :total WHERE id = :id');
                 $updStmt->execute([':total' => $overall, ':id' => $id]);
                 $success = $isUpdate ? 'Giyotin sistemi güncellendi.' : 'Giyotin sistemi eklendi.';
+                $debugSteps[] = 'Offer totals updated';
             }
         } catch (Exception $e) {
             $error = 'Giyotin sistemi kaydedilemedi.';
             $debug = $e->getMessage();
+            $debugSteps[] = 'Exception: ' . $e->getMessage();
         }
     }
 }
@@ -449,6 +458,12 @@ if (!defined('APP_DEBUG')) {
     <div class="alert alert-danger"><?= e($error) ?></div>
     <?php if (!empty($debug) && APP_DEBUG): ?>
         <div class="alert alert-warning"><strong>Debug:</strong> <?= e($debug) ?></div>
+    <?php endif; ?>
+    <?php if (!empty($debugSteps) && APP_DEBUG): ?>
+        <?php foreach ($debugSteps as $msg): ?>
+            <div class="alert alert-warning"><?= e($msg) ?></div>
+            <script>console.warn(<?= json_encode($msg) ?>);</script>
+        <?php endforeach; ?>
     <?php endif; ?>
 <?php endif; ?>
 <div class="card mb-4">
