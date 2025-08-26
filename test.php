@@ -159,7 +159,7 @@ function calculateGuillotineTotals(array $input): array
         ['name' => 'Flatbelt Kayış',     'measure' => fn($w, $h, $q) => $h - (($h - 290) / 3) - 221 + 600, 'qty' => fn($w, $h, $q) => 2 * $q],
         ['name' => 'Motor Borusu',       'measure' => fn($w, $h, $q) => $w - 75,                          'qty' => fn($w, $h, $q) => $q],
         ['name' => 'Motor Kutu Contası', 'measure' => fn($w, $h, $q) => ($w - 14) * $q + $w * $q,         'qty' => fn($w, $h, $q) => 1],
-        ['name' => 'Kanat Contası',      'measure' => fn($w, $h, $q) => (($h - 290) / 3) * $q * 2,        'qty' => fn($w, $h, $q) => 1],
+        ['name' => 'Kanat Contası',      'measure' => fn($w, $h, $q) => ((($h - 291) / 3) * 2) * 2 * $q,  'qty' => fn($w, $h, $q) => 1],
         ['name' => 'Plastik Set',        'measure' => fn($w, $h, $q) => 1,                                'qty' => fn($w, $h, $q) => $q],
         ['name' => 'Zincir',       'measure'    => fn($w, $h, $q) => 1,                             'qty'        => fn($w, $h, $q) => $q],
     ]);
