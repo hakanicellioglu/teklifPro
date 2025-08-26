@@ -2,13 +2,25 @@
 
 declare(strict_types=1);
 
+//
+// Cam Birim Fiyatı
+// Metrekare başına cam maliyetini temsil eder ve hesaplamalarda kullanılır.
+//
 const GLASS_UNIT_PRICE = 1680; // TRY per m²
 
+//
+// Ürün Sağlayıcı Arayüzü
+// Hesaplamalarda kullanılacak ürün bilgilerini sağlayacak yöntemleri tanımlar.
+//
 /**
  * Provides product information required for calculations.
  */
 interface ProductProviderInterface
 {
+    //
+    // Ürün Bilgisi Alma
+    // Verilen isimdeki ürünü bulur; bulunmazsa null döner.
+    //
     /**
      * Return product fields: unit, unit_price, weight_per_meter, category, price_unit.
      * Return null if product is not found.
@@ -16,6 +28,10 @@ interface ProductProviderInterface
     public function getProduct(string $name): ?array;
 }
 
+//
+// Giyotin Hesaplayıcı Fonksiyonu
+// Sistem parçalarının maliyetlerini hesaplayarak detaylı bir özet döndürür.
+//
 /**
  * Calculates cost breakdown for a guillotine system.
  *
@@ -52,27 +68,55 @@ interface ProductProviderInterface
  */
 function calculateGuillotineTotals(array $input): array
 {
+    //
+    // Sağlayıcı Doğrulaması
+    // Hesaplama için geçerli bir ürün sağlayıcı nesnesi gereklidir.
+    //
     if (!isset($input['provider']) || !$input['provider'] instanceof ProductProviderInterface) {
         throw new InvalidArgumentException('Valid product provider is required');
     }
+
+    //
+    // Sağlayıcı ve Para Birimi
+    // Kullanılacak ürün sağlayıcıyı ve para birimini girişten alır.
+    //
     $provider = $input['provider'];
     $currency = strtoupper((string) ($input['currency'] ?? 'TRY'));
     $exchangeRates = array_change_key_case($input['exchange_rates'] ?? [], CASE_UPPER);
 
+    //
+    // Temel Ölçüler
+    // Genişlik, yükseklik ve adet değerlerini sayısal ve pozitif olacak şekilde hazırlar.
+    //
     $width  = max(0.0, (float) ($input['width'] ?? 0));
     $height = max(0.0, (float) ($input['height'] ?? 0));
     $qty    = max(0, (int) ($input['quantity'] ?? 0));
 
+    //
+    // Ölçü Doğrulaması
+    // Negatif veya sıfır değerler hatalı olduğundan işlem durdurulur.
+    //
     if ($width <= 0 || $height <= 0 || $qty <= 0) {
         throw new InvalidArgumentException('Width, height and quantity must be positive');
     }
 
+    //
+    // Kâr Oranı
+    // Kullanıcının belirttiği kâr yüzdesini alır.
+    //
     $profitRate = (float) ($input['profit_rate'] ?? $input['profit_margin'] ?? 0);
 
+    //
+    // Cam Türü
+    // Cam türüne göre ek cam çıtası hesaplanıp hesaplanmayacağını belirler.
+    //
     $glassType = strtolower(str_replace([' ', '-', '_', 'ı'], ['', '', '', 'i'], (string) ($input['glass_type'] ?? '')));
     $includeGlassStrips = $glassType === 'tek' || $glassType === 'tekcam';
 
-    // Glass dimension and quantity calculations
+    //
+    // Cam Ölçüleri Hesabı
+    // Cam genişliği, yüksekliği ve adetini giriş ölçülerine göre hesaplar.
+    //
     $verticalBaseMeasure = max(0.0, ($height - 290) / 3);
     $glassWidth  = max(0.0, $width - 221);
     $glassHeight = max(0.0, $verticalBaseMeasure + 25);
@@ -80,6 +124,10 @@ function calculateGuillotineTotals(array $input): array
     $baseCount   = 4 * $qty;
     $glassQty    = ($wingCount + $baseCount) / 2;
 
+    //
+    // Temel Parça Kuralları
+    // Giyotin sisteminde kullanılacak ana parçaların ölçü ve adet hesaplamalarını içerir.
+    //
     $rules = [
         ['name' => 'Motor Kutusu',       'measure' => fn($w, $h, $q) => $w - 14,                        'qty' => fn($w, $h, $q) => $q],
         ['name' => 'Motor Kapak',        'measure' => fn($w, $h, $q) => $w - 15,                        'qty' => fn($w, $h, $q) => $q],
@@ -90,11 +138,19 @@ function calculateGuillotineTotals(array $input): array
         ['name' => 'Küpeşte',           'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => $q],
     ];
 
+    //
+    // Cam Çıtası Ekleri
+    // Tek cam kullanıldığında yatay ve dikey çıtalar listeye eklenir.
+    //
     if ($includeGlassStrips) {
         $rules[] = ['name' => 'Yatay Tek Cam Çıtası', 'measure' => fn($w, $h, $q) => ($w - 185) - 52,      'qty' => fn($w, $h, $q) => 11 * $q];
         $rules[] = ['name' => 'Dikey Tek Cam Çıtası', 'measure' => fn($w, $h, $q) => (($h - 290) / 3) - 6, 'qty' => fn($w, $h, $q) => 11 * $q];
     }
 
+    //
+    // Ek Parça Kuralları
+    // Diğer tüm profil ve aksesuarların ölçü hesapları bu listeye eklenir.
+    //
     $rules = array_merge($rules, [
         ['name' => 'Dikme',              'measure' => fn($w, $h, $q) => $h - 166,                        'qty' => fn($w, $h, $q) => 2 * $q],
         ['name' => 'Orta Dikme',         'measure' => fn($w, $h, $q) => $h - 166,                        'qty' => fn($w, $h, $q) => 2 * $q],
@@ -109,7 +165,10 @@ function calculateGuillotineTotals(array $input): array
         ['name' => 'Zincir',       'measure'    => fn($w, $h, $q) => 1,                             'qty'        => fn($w, $h, $q) => $q],
     ]);
 
-    // Glass product rule using calculated dimensions and quantity
+    //
+    // Cam Ürünü Kuralı
+    // Önceden hesaplanan cam ölçülerini kullanarak cam malzemesini listeye ekler.
+    //
     $rules[] = [
         'name'    => 'Cam',
         'measure' => fn($w, $h, $q) => $glassWidth,
@@ -118,6 +177,10 @@ function calculateGuillotineTotals(array $input): array
         'qty'     => fn($w, $h, $q) => $glassQty,
     ];
 
+    //
+    // Sonuç Biriktiricileri
+    // Hesaplama sırasında kullanılan satırlar ve maliyet toplamlarını başlatır.
+    //
     $lines        = [];
     $aluCost      = 0.0;
     $glassCost    = 0.0;
@@ -125,7 +188,15 @@ function calculateGuillotineTotals(array $input): array
     $aksesuarCost = 0.0;
     $fitilCost    = 0.0;
 
+    //
+    // Kural Döngüsü
+    // Her parça kuralını hesaplayarak sonuç listesine ekler.
+    //
     foreach ($rules as $rule) {
+        //
+        // Ölçü ve Adet Hesabı
+        // Her kural için ölçüleri hesaplayıp geçerli olup olmadığını kontrol eder.
+        //
         $measure    = max(0.0, $rule['measure']($width, $height, $qty));
         $rq         = max(0, (int) $rule['qty']($width, $height, $qty));
         $ruleWidth  = isset($rule['width'])  ? max(0.0, $rule['width']($width, $height, $qty))  : $width;
@@ -134,6 +205,10 @@ function calculateGuillotineTotals(array $input): array
             continue;
         }
 
+        //
+        // Ürün Bilgisi Seçimi
+        // Kural cam ise sabit değerler kullanılır, değilse veritabanından alınır.
+        //
         if ($rule['name'] === 'Cam') {
             $product = [
                 'unit'            => 'm²',
@@ -158,7 +233,10 @@ function calculateGuillotineTotals(array $input): array
                     $product['price_unit'] = $rule['price_unit'];
                 }
             } elseif (isset($rule['unit_price'])) {
-                // Fallback when product row is missing; use data provided in the rule.
+                //
+                // Ürün Bulunamadı
+                // Veritabanında ürün yoksa kuraldaki bilgiler kullanılır.
+                //
                 $product = [
                     'unit'            => $rule['unit'] ?? 'adet',
                     'unit_price'      => $rule['unit_price'],
@@ -171,12 +249,20 @@ function calculateGuillotineTotals(array $input): array
             }
         }
 
+        //
+        // Para Birimi ve Birim Bilgileri
+        // Ürünün fiyat birimini, ölçü birimini ve kategorisini hazırlar.
+        //
         $lineCurrency  = strtoupper((string) ($product['price_unit'] ?? 'TRY'));
         $unit          = strtolower((string) ($product['unit'] ?? ''));
         $unitPrice     = (float) ($product['unit_price'] ?? 0);
         $wpm           = (float) ($product['weight_per_meter'] ?? 0);
         $category      = (string) ($product['category'] ?? 'Diğer');
 
+        //
+        // Kur Dönüşümü
+        // Ürün para birimi hedef para biriminden farklıysa kur çarpanı uygulanır.
+        //
         $originalCurrency = $lineCurrency;
         if ($lineCurrency !== $currency) {
             $rate = $exchangeRates[$lineCurrency] ?? null;
@@ -187,10 +273,18 @@ function calculateGuillotineTotals(array $input): array
             $lineCurrency = $currency;
         }
 
+        //
+        // Miktar ve Toplam
+        // Ürünün ölçü birimine göre miktar ve toplam tutar hesaplanır.
+        //
         $qtyDisplay = 0.0;
         $lineTotal  = 0.0;
         $kg         = 0.0;
 
+        //
+        // Birim Dönüşümü
+        // Farklı birim türleri için uygun hesaplama yapılır.
+        //
         switch ($unit) {
             case 'kilogram':
             case 'kg':
@@ -222,6 +316,10 @@ function calculateGuillotineTotals(array $input): array
                 break;
         }
 
+        //
+        // Kategoriye Göre Toplama
+        // Hesaplanan tutarları kategori bazlı toplamlara ekler.
+        //
         if (strtolower($category) === 'alüminyum') {
             $aluCost += $lineTotal;
             $aluKg   += $kg;
@@ -233,6 +331,10 @@ function calculateGuillotineTotals(array $input): array
             $fitilCost += $lineTotal;
         }
 
+        //
+        // Satır Kaydı
+        // Hesaplanan değerleri çıktı listesine ekler.
+        //
         $lines[] = [
             'category'         => $category,
             'name'             => $rule['name'],
@@ -246,9 +348,17 @@ function calculateGuillotineTotals(array $input): array
         ];
     }
 
+    //
+    // Alüminyum Ağırlıkları
+    // Boyama ve fire oranlarına göre alüminyum ağırlıkları hesaplanır.
+    //
     $aluPaintedKg = $aluKg * 1.01;
     $aluFireKg    = $aluPaintedKg * 0.07;
 
+    //
+    // Ek Maliyetler
+    // Boya, fire ve işçilik gibi ek giderleri hesaplar.
+    //
     $extras = [
         'paint'  => $aluPaintedKg * 200,
         // Fire cost calculated per kilogram of aluminum waste
@@ -257,14 +367,20 @@ function calculateGuillotineTotals(array $input): array
     $area = ($width * $height * $qty) / 1000000; // m²
     $extras['labor'] = $area * 40;
 
+    //
+    // Ekstra Maliyet Ayrıştırma
+    // Boya ve fire dışındaki diğer ekstra giderleri toplar.
+    //
     $paintCost       = $extras['paint'] ?? 0.0;
     $fireCost        = $extras['waste'] ?? 0.0;
     $otherExtras     = $extras;
     unset($otherExtras['paint'], $otherExtras['waste']);
     $otherExtrasCost = array_sum($otherExtras);
 
-    // Grand total no longer includes the aluminum cost; it consists only of
-    // paint, fire, accessories, seal, glass and other extras costs.
+    //
+    // Genel Toplam Hesabı
+    // Alüminyum hariç tüm kalemlerin toplamını belirler.
+    //
     $grandTotal = $paintCost
         + $fireCost
         + $aksesuarCost
@@ -272,11 +388,19 @@ function calculateGuillotineTotals(array $input): array
         + $glassCost
         + $otherExtrasCost;
 
+    //
+    // Kâr ve Giderler
+    // Kâr oranı ve genel giderleri ekleyerek nihai tutarı hesaplar.
+    //
     $profit         = $grandTotal * ($profitRate / 100);
     $totalAmount    = $grandTotal + $profit;
     $generalExpense = $totalAmount * 0.01;
     $finalTotal     = $totalAmount + $generalExpense;
 
+    //
+    // Toplamlar Dizisi
+    // Hesaplanan tüm maliyetleri özetler.
+    //
     $totals = [
         'alu_cost'        => $aluCost,
         'glass_cost'      => $glassCost,
@@ -288,6 +412,10 @@ function calculateGuillotineTotals(array $input): array
         'grand_total'     => $finalTotal,
     ];
 
+    //
+    // Sonuç Dizisi
+    // Satır detayları ve toplamları içeren nihai sonucu döndürür.
+    //
     return [
         'lines'          => $lines,
         'totals'         => $totals,
@@ -304,17 +432,25 @@ function calculateGuillotineTotals(array $input): array
 }
 
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
+    //
+    // Sayfa Başlatma
+    // Dosya doğrudan çalıştırıldığında başlık dosyasını dahil eder.
+    //
     require __DIR__ . '/header.php';
 
+    //
+    // HTML Kaçış Fonksiyonu
+    // Çıktıya güvenli metin yazmak için özel karakterleri dönüştürür.
+    //
     function e(?string $v): string
     {
         return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8');
     }
 
-    /**
-     * Format a numeric value based on its unit.
-     * Uses 0 decimals for pieces/mm and 2 decimals for metric units.
-     */
+    //
+    // Birim Formatlama Fonksiyonu
+    // Verilen birimi temel alarak sayısal değeri uygun biçimde gösterir.
+    //
     function fmtUnit(float $value, string $unit): string
     {
         $unit = strtolower(trim($unit));
@@ -323,6 +459,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         return number_format($value, $decimals, ',', '.');
     }
 
+    //
+    // Para Birimi Sembolü
+    // Verilen para birimine karşılık gelen sembolü döndürür.
+    //
     function currencySymbol(string $currency): string
     {
         return match (strtoupper($currency)) {
@@ -333,11 +473,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         };
     }
 
-    /**
-     * Fetch exchange rates for given currencies relative to a base currency.
-     * Returns an array mapping currency code to multiplier for converting
-     * prices from that currency to the base currency.
-     */
+    //
+    // Kur Oranlarını Alma
+    // Belirtilen para birimleri için baz para birimine göre çeviri katsayısı döndürür.
+    //
     function fetchExchangeRates(string $base, array $currencies): array
     {
         $base = strtoupper($base);
@@ -364,10 +503,18 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         return $rates;
     }
 
+    //
+    // PDO Ürün Sağlayıcı Sınıfı
+    // Ürün bilgilerini veritabanından okumak için PDO kullanır.
+    //
     class PdoProductProvider implements ProductProviderInterface
     {
         public function __construct(private PDO $pdo) {}
 
+        //
+        // Ürün Sorgusu
+        // Verilen isimle eşleşen ürün kaydını veritabanından getirir.
+        //
         public function getProduct(string $name): ?array
         {
             $stmt = $this->pdo->prepare('SELECT p.unit, p.unit_price, p.weight_per_meter, p.price_unit, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
@@ -379,6 +526,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         }
     }
 
+    //
+    // Giyotin Kimliği
+    // URL'den gelen teklif kimliğini doğrular.
+    //
     $id = filter_input(INPUT_GET, 'quote_id', FILTER_VALIDATE_INT);
     if (!$id) {
         echo '<div class="container mt-4"><div class="alert alert-danger">Geçersiz giyotin.</div></div>';
@@ -386,6 +537,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         exit;
     }
 
+    //
+    // Giyotin Verileri
+    // Veritabanından ilgili ölçü ve ayarları çeker.
+    //
     $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, profit_rate, profit_margin FROM guillotinesystems WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -395,10 +550,18 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         exit;
     }
 
+    //
+    // Sağlayıcı ve Kur Oranları
+    // Ürün sağlayıcı nesnesini oluşturur ve güncel kur bilgilerini alır.
+    //
     $provider = new PdoProductProvider($pdo);
 
     $exchangeRates = fetchExchangeRates('TRY', ['USD', 'EUR']);
 
+    //
+    // Hesaplama Denemesi
+    // Giyotin verileri ile toplam maliyet hesaplanır; hata olursa yakalanır.
+    //
     try {
         $result = calculateGuillotineTotals([
             'width'         => $row['width'],
@@ -419,6 +582,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<div class="container mt-4">';
     echo '<h3>Kalemler</h3>';
 
+    //
+    // Kategori Listesi
+    // Hesaplanan satırları kategori bazında gruplamak için boş dizi oluşturur.
+    //
     $categories = [];
     foreach ($result['lines'] as $line) {
         if (strtolower($line['category']) === 'cam') {
@@ -431,28 +598,52 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         $categories[$key]['lines'][] = $line;
     }
 
+    //
+    // Toplam ve Cam Bilgisi
+    // Hesaplamanın genel sonuçlarını ve cam ölçülerini alır.
+    //
     $tot       = $result['totals'];
     $glassInfo = $result['glass'] ?? null;
     $currencySymbol = currencySymbol($result['currency']);
 
+    //
+    // Kategori Döngüsü
+    // Her kategori için tablo oluşturarak satırları listeler.
+    //
     foreach ($categories as $cat) {
         $isAlu = strcasecmp($cat['title'], 'Alüminyum') === 0;
         echo '<h5>' . e($cat['title']) . '</h5>';
         echo '<div class="table-responsive">';
         echo '<table class="table table-sm table-striped mb-3">';
         echo '<thead><tr><th>Ad</th><th>Ölçü (mm)</th>';
+        //
+        // Alüminyum Kolonu
+        // Kategori alüminyum ise adet sütunu başlığa eklenir.
+        //
         if ($isAlu) {
             echo '<th>Adet</th>';
         }
         echo '<th>Miktar</th><th>Birim</th><th class="text-end">Tutar</th></tr></thead><tbody>';
+        //
+        // Kategori Toplayıcıları
+        // Miktar, toplam tutar ve adet değerlerini sıfırlar.
+        //
         $qtySum   = 0.0;
         $totalSum = 0.0;
         $unit     = '';
         $pieceSum = 0;
+        //
+        // Satır Döngüsü
+        // Her kategori içindeki satırları tabloda gösterir.
+        //
         foreach ($cat['lines'] as $line) {
             echo '<tr>';
             echo '<td>' . e($line['name']) . '</td>';
             echo '<td>' . e(number_format($line['measure'], 0, ',', '.')) . '</td>';
+            //
+            // Adet Bilgisi
+            // Sadece alüminyum kalemlerde adet sütunu gösterilir.
+            //
             if ($isAlu) {
                 echo '<td>' . e(number_format((int) ($line['pieces'] ?? 0), 0, ',', '.')) . '</td>';
             }
@@ -465,6 +656,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             if ($isAlu) {
                 $pieceSum += (int) ($line['pieces'] ?? 0);
             }
+            //
+            // Birim Tutarlılığı
+            // Farklı satırlarda birim değişirse toplam satırda birim gösterilmez.
+            //
             if ($unit === '') {
                 $unit = $line['unit'];
             } elseif ($unit !== $line['unit']) {
@@ -473,6 +668,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         }
         echo '<tr>';
         echo '<td colspan="2" class="text-end"><strong>Toplam</strong></td>';
+        //
+        // Adet Toplamı
+        // Alüminyum kalemler için toplam adet değeri gösterilir.
+        //
         if ($isAlu) {
             echo '<td>' . e(number_format($pieceSum, 0, ',', '.')) . '</td>';
         }
@@ -483,8 +682,20 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '</tbody></table></div>';
     }
 
+    //
+    // Cam Bilgisi Kontrolü
+    // Cam satırı varsa alanı ve maliyeti gösterir.
+    //
     if ($glassInfo && $glassInfo['quantity'] > 0) {
+        //
+        // Tek Cam Alanı
+        // Bir cam parçasının metrekare alanını hesaplar.
+        //
         $singleArea = ($glassInfo['width'] * $glassInfo['height']) / 1000000;
+        //
+        // Toplam Cam Alanı
+        // Tüm cam parçalarının toplam metrekare alanını bulur.
+        //
         $totalArea  = $singleArea * $glassInfo['quantity'];
         echo '<h5>Cam</h5>';
         echo '<div class="table-responsive">';
@@ -510,6 +721,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<table class="table table-bordered table-sm">';
     echo '<tbody>';
 
+    //
+    // Kâr Dahil Genel Toplam
+    // Nihai toplam tutarı saklar ve özet tabloda kullanır.
+    //
     $grandTotalWithProfit = $tot['grand_total'];
 
     echo '<tr><th>Alüminyum Boyalı ' . e(number_format($result['alu_painted_kg'], 2, ',', '.')) . ' kg</th><td>'
@@ -534,5 +749,9 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '</div>';
     echo '</div>';
 
+    //
+    // Sayfa Sonu
+    // Alt bilgi şablonunu dahil eder ve sayfayı sonlandırır.
+    //
     require __DIR__ . '/footer.php';
 }
