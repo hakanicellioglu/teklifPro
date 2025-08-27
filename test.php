@@ -23,7 +23,7 @@ interface ProductProviderInterface
     // Verilen isimdeki ürünü bulur; bulunmazsa null döner.
     //
     /**
-     * Return product fields: unit, unit_price, weight_per_meter, category, price_unit.
+     * Return product fields: unit, unit_price, vat_rate, weight_per_meter, category, price_unit.
      * Return null if product is not found.
      */
     public function getProduct(string $name): ?array;
@@ -235,6 +235,7 @@ function calculateGuillotineTotals(array $input): array
                 'weight_per_meter' => 0,
                 'category'        => $rule['category'] ?? 'Diğer',
                 'price_unit'      => $rule['price_unit'] ?? 'TRY',
+                'vat_rate'        => 0,
             ];
         } else {
             continue;
@@ -247,6 +248,8 @@ function calculateGuillotineTotals(array $input): array
         $lineCurrency  = strtoupper((string) ($product['price_unit'] ?? 'TRY'));
         $unit          = strtolower((string) ($product['unit'] ?? ''));
         $unitPrice     = (float) ($product['unit_price'] ?? 0);
+        $vatRate       = (float) ($product['vat_rate'] ?? 0);
+        $unitPrice    *= (1 + $vatRate / 100);
         $wpm           = (float) ($product['weight_per_meter'] ?? 0);
         $category      = (string) ($product['category'] ?? 'Diğer');
 
@@ -479,7 +482,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         //
         public function getProduct(string $name): ?array
         {
-            $stmt = $this->pdo->prepare('SELECT p.unit, p.unit_price, p.weight_per_meter, p.price_unit, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
+            $stmt = $this->pdo->prepare('SELECT p.unit, p.unit_price, p.vat_rate, p.weight_per_meter, p.price_unit, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
             $stmt->execute([':name' => $name]);
 
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
