@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 ob_start();
 
@@ -63,8 +62,7 @@ try {
             if ($cStmt) {
                 $company = array_merge($company, $cStmt->fetch(PDO::FETCH_ASSOC) ?: []);
             }
-        } catch (Throwable $e2) { /* ignore */
-        }
+        } catch (Throwable $e2) { /* ignore */ }
     }
 
     $uStmt = $pdo->prepare('SELECT TRIM(CONCAT(first_name, " ", last_name)) AS full_name, username FROM users WHERE id = :id');
@@ -144,205 +142,343 @@ $grandTotal = $subTotal + $vatAmount;
 
 $validUntil = '';
 if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
-    $validUntil = date('Y-m-d', strtotime($quote['offer_date'] . ' +' . ((int)$quote['validity_days']) . ' days'));
+    $validUntil = date('d.m.Y', strtotime($quote['offer_date'] . ' +' . ((int)$quote['validity_days']) . ' days'));
 }
 
 ?>
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Teklif Önizleme</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="../assets/app.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fiyat Teklifi - <?= h($quote['quote_no'] ?? '') ?></title>
     <style>
-        .signature-box{height:60px;}
-        .action-bar{position:sticky;bottom:0;z-index:1020;}
-        @media print{
-            .d-print-none{display:none!important;}
-            thead{display:table-header-group;}
-            @page{margin:10mm;}
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.4; color: #1f2937; background-color: #f9fafb; font-size: 12px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 15px; background-color: #ffffff; min-height: 100vh; }
+
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #2563eb; }
+        .header-left { display: flex; align-items: flex-start; gap: 15px; flex: 1; }
+        .logo-container { width: 100px; height: 50px; background-color: #f8fafc; border: 2px dashed #e5e7eb; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; flex-shrink: 0; }
+        .logo-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .logo-placeholder { color: #6b7280; font-size: 8px; font-weight: 600; text-align: center; }
+        .logo-path { color: #9ca3af; font-size: 6px; text-align: center; margin-top: 2px; font-family: monospace; }
+
+        .company-info { flex: 1; }
+        .company-name { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 4px; }
+        .company-details { font-size: 9px; color: #4b5563; line-height: 1.3; }
+
+        .header-right { text-align: right; flex-shrink: 0; }
+        .quote-info { font-size: 9px; color: #4b5563; line-height: 1.4; }
+        .quote-info strong { color: #1f2937; }
+
+        .document-title { text-align: center; font-size: 18px; font-weight: 700; color: #1f2937; margin-bottom: 15px; letter-spacing: 1px; text-transform: uppercase; }
+
+        .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+        .info-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
+        .card-header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; padding: 6px 8px; font-weight: 600; font-size: 9px; letter-spacing: 0.5px; }
+        .card-body { padding: 8px; }
+        .info-row { display: flex; margin-bottom: 3px; align-items: flex-start; }
+        .info-label { font-weight: 600; color: #374151; min-width: 50px; margin-right: 6px; font-size: 8px; }
+        .info-value { color: #1f2937; flex: 1; font-size: 8px; }
+        .badge { background: #dbeafe; color: #1e40af; padding: 1px 4px; border-radius: 3px; font-size: 7px; font-weight: 500; }
+
+        .table-section { margin: 12px 0; }
+        .section-title { font-size: 11px; font-weight: 700; color: #1f2937; margin-bottom: 8px; padding-bottom: 3px; border-bottom: 1px solid #e5e7eb; }
+
+        .modern-table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); font-size: 7px; }
+        .modern-table th { background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); color: #374151; font-weight: 600; padding: 4px 3px; text-align: left; font-size: 7px; letter-spacing: 0.3px; border-bottom: 1px solid #cbd5e1; }
+        .modern-table td { padding: 3px; border-bottom: 1px solid #f1f5f9; font-size: 7px; color: #1f2937; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        /* ÖZET KART (tutarlar) */
+        .summary-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
+        .summary-table { width: 100%; border-collapse: collapse; }
+        .summary-row { display: flex; justify-content: space-between; padding: 3px 6px; border-bottom: 1px solid #f1f5f9; }
+        .summary-label { font-size: 8px; color: #374151; font-weight: 500; }
+        .summary-value { font-size: 8px; color: #1f2937; font-weight: 500; }
+        .total-row { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); font-weight: 700; color: #1e40af; font-size: 9px; }
+
+        /* *** YAN YANA DÜZEN İÇİN GÜNCELLENDİ *** */
+        .summary-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* İki sütun */
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .approval-section { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 4px; padding: 10px; margin: 12px 0; }
+        .approval-title { font-size: 10px; font-weight: 700; color: #1f2937; margin-bottom: 6px; text-align: center; }
+        .checkbox-container { margin-bottom: 6px; }
+        .checkbox-container input[type="checkbox"] { margin-right: 4px; transform: scale(0.9); }
+        .checkbox-container label { font-size: 8px; }
+        .approval-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 6px; }
+        .field-group { display: flex; flex-direction: column; }
+        .field-label { font-weight: 600; color: #374151; margin-bottom: 2px; font-size: 8px; }
+        .field-input { padding: 4px; border: 1px solid #d1d5db; border-radius: 3px; font-size: 7px; color: #1f2937; background: #ffffff; }
+        .field-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
+        .signature-box { height: 30px; border: 1px dashed #d1d5db; border-radius: 3px; background: #ffffff; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 7px; font-style: italic; }
+
+        .action-bar { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-top: 1px solid #e5e7eb; padding: 8px 0; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); z-index: 1000; }
+        .action-buttons { max-width: 1200px; margin: 0 auto; padding: 0 15px; display: flex; gap: 8px; }
+        .btn { padding: 6px 12px; border: none; border-radius: 4px; font-weight: 600; font-size: 9px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: all 0.3s ease; letter-spacing: 0.3px; }
+        .btn-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; }
+        .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .btn-secondary { background: #6b7280; color: #ffffff; }
+        .btn-secondary:hover { background: #4b5563; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3); }
+        .alert { padding: 8px; border-radius: 4px; margin-bottom: 8px; font-weight: 500; font-size: 8px; }
+        .alert-danger { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+        .alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; }
+
+        @media print {
+            body { background: #ffffff; font-size: 7px; }
+            .container { max-width: none; margin: 0; padding: 8mm; box-shadow: none; }
+            .action-bar, .d-print-none { display: none !important; }
+            .info-card, .modern-table { box-shadow: none; border: 1px solid #e5e7eb; }
+            @page { margin: 8mm; size: A4; }
+            .header { border-bottom: 2px solid #2563eb; margin-bottom: 8px; padding-bottom: 8px; }
+            .modern-table th { background: #f1f5f9 !important; }
+            .document-title { margin-bottom: 8px; font-size: 14px; }
+            .info-grid { margin-bottom: 8px; }
+            .table-section { margin: 8px 0; }
+            .summary-section { margin: 8px 0; }
+            .approval-section { margin: 8px 0; padding: 8px; }
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .header { flex-direction: column; align-items: center; text-align: center; }
+            .header-left { flex-direction: column; align-items: center; gap: 8px; }
+            .header-right { margin-top: 15px; text-align: center; }
+            .info-grid { grid-template-columns: 1fr; }
+            .summary-section { grid-template-columns: 1fr; } /* mobil tek sütun */
+            .approval-fields { grid-template-columns: 1fr; }
+            .action-buttons { padding: 0 10px; justify-content: center; }
         }
     </style>
 </head>
 
-<body class="bg-white">
-    <div class="container my-2">
+<body>
+    <div class="container">
         <?php if ($error): ?>
-            <div class="alert alert-danger" role="alert"><?= h($error) ?></div>
+            <div class="alert alert-danger"><?= h($error) ?></div>
         <?php else: ?>
-            <div class="row row-cols-1 row-cols-md-3 g-3 mb-3">
-                <div class="col">
-                    <div class="card h-100">
-                        <div class="card-header fw-semibold">Müşteri Bilgileri</div>
-                        <div class="card-body small">
-                            <div><span class="fw-semibold">Firma:</span> <?= h($quote['customer_company'] ?? '') ?></div>
-                            <div><span class="fw-semibold">İlgili:</span> <?= h(trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''))) ?></div>
-                            <div><span class="fw-semibold">Telefon:</span> <?= h($quote['customer_phone'] ?? '') ?></div>
-                            <div><span class="fw-semibold">Adres:</span> <?= nl2br(h($quote['customer_address'] ?? '')) ?></div>
-                            <div><span class="fw-semibold">E-posta:</span> <?= h($quote['customer_email'] ?? '') ?></div>
+
+            <div class="header">
+                <div class="header-left">
+                    <div class="logo-container">
+                        <?php if (!empty($company['logo']) && file_exists('../assets/' . $company['logo'])): ?>
+                            <img src="../assets/<?= h($company['logo']) ?>" alt="<?= h($company['name']) ?> Logo">
+                        <?php else: ?>
+                            <div class="logo-placeholder">FİRMA LOGOSU</div>
+                            <div class="logo-path">/assets/logo.png</div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="company-info">
+                        <div class="company-name"><?= h($company['name']) ?></div>
+                        <div class="company-details">
+                            <?= h($company['email']) ?><br>
+                            <?= h($company['phone']) ?><br>
+                            <?= nl2br(h($company['address'])) ?>
                         </div>
                     </div>
                 </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <div class="card-header fw-semibold">Teklif Bilgileri</div>
-                        <div class="card-body small">
-                            <div><span class="fw-semibold">Teslimat:</span> <?= h($quote['delivery_time'] ?? '') ?></div>
-                            <div><span class="fw-semibold">Ödeme:</span> <span class="badge bg-info text-dark"><?= h($paymentText) ?></span></div>
-                            <div><span class="fw-semibold">Vade:</span> <?= h($quote['payment_term'] ?? '') ?></div>
-                            <div><span class="fw-semibold">Geçerlilik:</span> <?= h($validUntil) ?></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <div class="card-header fw-semibold">Genel Bilgiler</div>
-                        <div class="card-body small">
-                            <div><span class="fw-semibold">Teklif No:</span> <?= h($quote['quote_no'] ?? '') ?></div>
-                            <div><span class="fw-semibold">Tarih:</span> <?= h($quote['offer_date'] ?? '') ?></div>
-                            <div><span class="fw-semibold">Hazırlayan:</span> <?= h($preparedBy) ?></div>
-                            <?php if ($approveUrl): ?>
-                            <div class="d-print-none"><span class="fw-semibold">Onay:</span> <a href="<?= h($approveUrl) ?>"><?= h($approveUrl) ?></a><button type="button" class="btn btn-sm btn-outline-secondary share-btn ms-2" data-url="<?= h($approveUrl) ?>">Paylaş</button></div>
-                            <?php endif; ?>
-                            <div><span class="fw-semibold">E-posta:</span> <?= h($company['email']) ?></div>
-                        </div>
+
+                <div class="header-right">
+                    <div class="quote-info">
+                        <strong>Teklif No:</strong> <?= h($quote['quote_no'] ?? '') ?><br>
+                        <strong>Tarih:</strong> <?= h(date('d.m.Y', strtotime($quote['offer_date'] ?? 'now'))) ?><br>
+                        <strong>Hazırlayan:</strong> <?= h($preparedBy) ?>
                     </div>
                 </div>
             </div>
 
+            <h1 class="document-title">Fiyat Teklifi</h1>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="card-header">Müşteri Bilgileri</div>
+                    <div class="card-body">
+                        <div class="info-row"><span class="info-label">Firma:</span><span class="info-value"><?= h($quote['customer_company'] ?? '') ?></span></div>
+                        <div class="info-row"><span class="info-label">İlgili:</span><span class="info-value"><?= h(trim(($quote['first_name'] ?? '') . ' ' . ($quote['last_name'] ?? ''))) ?></span></div>
+                        <div class="info-row"><span class="info-label">Telefon:</span><span class="info-value"><?= h($quote['customer_phone'] ?? '') ?></span></div>
+                        <div class="info-row"><span class="info-label">E-posta:</span><span class="info-value"><?= h($quote['customer_email'] ?? '') ?></span></div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="card-header">Teklif Detayları</div>
+                    <div class="card-body">
+                        <div class="info-row"><span class="info-label">Teslimat:</span><span class="info-value"><?= h($quote['delivery_time'] ?? '') ?></span></div>
+                        <div class="info-row"><span class="info-label">Ödeme:</span><span class="info-value"><span class="badge"><?= h($paymentText) ?></span></span></div>
+                        <div class="info-row"><span class="info-label">Vade:</span><span class="info-value"><?= h($quote['payment_term'] ?? '') ?></span></div>
+                        <?php if ($validUntil): ?>
+                        <div class="info-row"><span class="info-label">Geçerlilik:</span><span class="info-value"><?= h($validUntil) ?></span></div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="card-header">Ek Bilgiler</div>
+                    <div class="card-body">
+                        <?php if ($approveUrl): ?>
+                        <div class="info-row d-print-none">
+                            <span class="info-label">Onay Linki:</span>
+                            <span class="info-value">
+                                <a href="<?= h($approveUrl) ?>" style="color: #2563eb; text-decoration: none; font-weight: 500;"><?= h($approveUrl) ?></a>
+                            </span>
+                        </div>
+                        <?php else: ?>
+                        <div class="info-row">
+                            <span class="info-label">Adres:</span>
+                            <span class="info-value"><?= nl2br(h($quote['customer_address'] ?? '')) ?></span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
 
             <?php if ($systems): ?>
-                <div class="table-responsive mb-3">
-                    <table class="table table-sm table-striped align-middle" aria-label="Sistem Tablosu">
-                        <thead class="table-light sticky-top" style="top:0;z-index:1;">
-                        <tr>
-                            <th scope="col">RAL</th>
-                            <th scope="col">Cam Rengi</th>
-                            <th scope="col">Sistem</th>
-                            <th scope="col">Açıklama</th>
-                            <th scope="col" class="text-end">Adet</th>
-                            <th scope="col" class="text-end">Genişlik</th>
-                            <th scope="col" class="text-end">Yükseklik</th>
-                            <th scope="col" class="text-end">m²</th>
-                            <th scope="col" class="text-end">Toplam m²</th>
-                            <th scope="col" class="text-end">Tutar</th>
-                        </tr>
-                    </thead>
+            <div class="table-section">
+                <h2 class="section-title">Sistem Detayları</h2>
+                <div style="overflow-x: auto;">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 8%;">RAL</th>
+                                <th style="width: 10%;">Cam</th>
+                                <th style="width: 12%;">Sistem</th>
+                                <th style="width: 15%;">Açıklama</th>
+                                <th style="width: 6%;" class="text-right">Adet</th>
+                                <th style="width: 8%;" class="text-right">En</th>
+                                <th style="width: 8%;" class="text-right">Boy</th>
+                                <th style="width: 6%;" class="text-right">m²</th>
+                                <th style="width: 10%;" class="text-right">Tutar</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             <?php foreach ($systems as $row): ?>
-                                <tr>
-                                    <td><?= h($row['ral']) ?></td>
-                                    <td><?= h($row['glass']) ?></td>
-                                    <td><?= h($row['system']) ?></td>
-                                    <td><?= h($row['desc']) ?></td>
-                                    <td class="text-end"><?= h((string)$row['qty']) ?></td>
-                                    <td class="text-end"><?= h(number_format($row['width'], 2, ',', '.')) ?></td>
-                                    <td class="text-end"><?= h(number_format($row['height'], 2, ',', '.')) ?></td>
-                                    <td class="text-end"><?= h(number_format($row['area'], 2, ',', '.')) ?></td>
-                                    <td class="text-end"><?= h(number_format($row['total_area'], 2, ',', '.')) ?></td>
-                                    <td class="text-end"><?= number_format($row['total'], 2, ',', '.') ?></td>
-                                </tr>
+                            <tr>
+                                <td><?= h($row['ral']) ?></td>
+                                <td><?= h($row['glass']) ?></td>
+                                <td><?= h($row['system']) ?></td>
+                                <td><?= h($row['desc']) ?></td>
+                                <td class="text-right"><?= h((string)$row['qty']) ?></td>
+                                <td class="text-right"><?= h(number_format($row['width'], 0, ',', '.')) ?></td>
+                                <td class="text-right"><?= h(number_format($row['height'], 0, ',', '.')) ?></td>
+                                <td class="text-right"><?= h(number_format($row['total_area'], 2, ',', '.')) ?></td>
+                                <td class="text-right"><?= number_format($row['total'], 2, ',', '.') ?></td>
+                            </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
+            </div>
             <?php else: ?>
-                <div class="alert alert-info" role="alert">Sistem bulunamadı.</div>
+            <div class="alert alert-info"><strong>Bilgi:</strong> Henüz sistem eklenmemiş.</div>
             <?php endif; ?>
 
-            <div class="row row-cols-1 row-cols-md-3 g-3 mb-3">
-                <div class="col">
-                    <div class="card h-100">
-                        <div class="card-header fw-semibold">Açıklamalar</div>
-                        <div class="card-body small">
-                            <?php if (trim($quote['remarks'] ?? '') !== ''): ?>
-                                <div class="text-break" style="white-space:pre-wrap;"><?= h($quote['remarks'] ?? '') ?></div>
-                            <?php else: ?>
-                                <div class="alert alert-secondary mb-0" role="alert">Açıklama bulunmamaktadır.</div>
-                            <?php endif; ?>
-                        </div>
+            <!-- TUTAR ÖZETİ -->
+            <div class="summary-card">
+                <div class="card-header">Tutar Özeti</div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="summary-row"><span class="summary-label">Ara Toplam:</span><span class="summary-value"><?= number_format($grossTotal, 2, ',', '.') ?> ₺</span></div>
+                    <div class="summary-row"><span class="summary-label">İskonto:</span><span class="summary-value">-<?= number_format($discountAmount, 2, ',', '.') ?> ₺</span></div>
+                    <div class="summary-row"><span class="summary-label">Alt Toplam:</span><span class="summary-value"><?= number_format($subTotal, 2, ',', '.') ?> ₺</span></div>
+                    <div class="summary-row"><span class="summary-label">KDV (%<?= h((string)$vatRate) ?>):</span><span class="summary-value"><?= number_format($vatAmount, 2, ',', '.') ?> ₺</span></div>
+                    <div class="summary-row total-row"><span class="summary-label">GENEL TOPLAM:</span><span class="summary-value"><?= number_format($grandTotal, 2, ',', '.') ?> ₺</span></div>
+                </div>
+            </div>
+
+            <!-- AÇIKLAMALAR + BANKA BİLGİLERİ (YAN YANA) -->
+            <div class="summary-section">
+                <div class="summary-card">
+                    <div class="card-header">Açıklamalar</div>
+                    <div class="card-body">
+                        <?php if (trim($quote['remarks'] ?? '') !== ''): ?>
+                            <div style="white-space: pre-wrap; font-size: 8px; line-height: 1.4;">
+                                <?= nl2br(h($quote['remarks'] ?? '')) ?>
+                            </div>
+                        <?php else: ?>
+                            <div style="color: #6b7280; font-style: italic; font-size: 8px;">
+                                Özel açıklama bulunmamaktadır.
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <div class="card-header fw-semibold">Banka Bilgileri</div>
-                        <div class="card-body small">
-                            <?php if (!empty($company['bank_account'])): ?>
-                                <div class="text-break" style="white-space:pre-wrap;"><?= nl2br(h($company['bank_account'])) ?></div>
-                            <?php else: ?>
-                                <div class="alert alert-secondary mb-0" role="alert">Banka bilgisi bulunmamaktadır.</div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <div class="card-header fw-semibold">Tutar Özeti</div>
-                        <div class="card-body p-0">
-                            <table class="table table-sm mb-0">
-                                <tbody>
-                                    <tr>
-                                        <th scope="row">Ara Toplam</th>
-                                        <td class="text-end"><?= number_format($subTotal, 2, ',', '.') ?> ₺</td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">İskonto</th>
-                                        <td class="text-end"><?= number_format($discountAmount, 2, ',', '.') ?> ₺</td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">KDV</th>
-                                        <td class="text-end"><?= number_format($vatAmount, 2, ',', '.') ?> ₺</td>
-                                    </tr>
-                                </tbody>
-                                <tfoot class="table-light">
-                                    <tr>
-                                        <th scope="row">Genel Toplam</th>
-                                        <td class="text-end fw-bold"><?= number_format($grandTotal, 2, ',', '.') ?> ₺</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+
+                <div class="summary-card">
+                    <div class="card-header">Banka Bilgileri</div>
+                    <div class="card-body">
+                        <?php if (!empty($company['bank_account'])): ?>
+                            <div style="white-space: pre-wrap; font-size: 8px; line-height: 1.4;">
+                                <?= nl2br(h($company['bank_account'])) ?>
+                            </div>
+                        <?php else: ?>
+                            <div style="color: #6b7280; font-style: italic; font-size: 8px;">
+                                Banka bilgisi eklenmemiş.
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
 
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="confirmBox">
-                        <label class="form-check-label" for="confirmBox">Yukarıdaki şartları okudum ve onaylıyorum.</label>
+            <!-- ONAY BÖLÜMÜ -->
+            <div class="approval-section">
+                <h3 class="approval-title">Teklif Onay Bölümü</h3>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="confirmBox">
+                    <label for="confirmBox" style="font-size: 8px; color: #374151; font-weight: 500;">
+                        Yukarıda belirtilen şart ve koşulları okudum, anladım ve onaylıyorum.
+                    </label>
+                </div>
+
+                <div class="approval-fields">
+                    <div class="field-group">
+                        <label class="field-label">Onaylayan Adı Soyadı</label>
+                        <input type="text" class="field-input" id="approverName" placeholder="Ad ve soyadınızı yazın">
                     </div>
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label" for="approverName">Onaylayan Adı</label>
-                            <input type="text" class="form-control" id="approverName" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="approvalDate">Tarih</label>
-                            <input type="date" class="form-control" id="approvalDate" value="<?= h(date('Y-m-d')) ?>" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="signatureBox">İmza</label>
-                            <div id="signatureBox" class="border signature-box"></div>
-                        </div>
+                    <div class="field-group">
+                        <label class="field-label">Onay Tarihi</label>
+                        <input type="date" class="field-input" id="approvalDate" value="<?= h(date('Y-m-d')) ?>">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">İmza</label>
+                        <div class="signature-box" id="signatureBox">İmza alanı</div>
                     </div>
                 </div>
             </div>
+
         <?php endif; ?>
     </div>
-    <div class="action-bar d-print-none border-top bg-light">
-        <div class="container py-2 d-flex gap-2">
-            <a href="render_quotation_pdf.php?id=<?= h((string)$id) ?>" class="btn btn-primary" aria-label="PDF indir"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
-            <button class="btn btn-secondary" onclick="window.print()" aria-label="Yazdır"><i class="bi bi-printer me-1"></i>Yazdır</button>
+
+    <div class="action-bar d-print-none">
+        <div class="action-buttons">
+            <a href="render_quotation_pdf.php?id=<?= h((string)$id) ?>" class="btn btn-primary">📄 PDF İndir</a>
+            <button class="btn btn-secondary" onclick="window.print()">🖨️ Yazdır</button>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../assets/app.js"></script>
-</body>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const shareButtons = document.querySelectorAll('.share-btn');
+            shareButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const url = this.dataset.url;
+                    if (navigator.share) {
+                        navigator.share({ title: 'Teklif Onay Linki', url });
+                    } else {
+                        navigator.clipboard.writeText(url).then(() => { alert('Link panoya kopyalandı!'); });
+                    }
+                });
+            });
+
+            window.addEventListener('beforeprint', function() { document.body.style.paddingBottom = '0'; });
+            window.addEventListener('afterprint', function() { document.body.style.paddingBottom = ''; });
+        });
+    </script>
+</body>
 </html>
 <?php ob_end_flush(); ?>
