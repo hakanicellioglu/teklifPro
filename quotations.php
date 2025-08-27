@@ -192,8 +192,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create') {
   if (!$createErrors) {
     try {
       $approvalToken = bin2hex(random_bytes(16));
-      $stmt = $pdo->prepare("INSERT INTO generaloffers (customer_id, offer_date, assembly_type, payment_method, validity_days, installment_term, term_months, interest_value, approval_token) VALUES (:customer_id, :offer_date, :assembly_type, :payment_method, :validity_days, :installment_term, :term_months, :interest_value, :approval_token)");
+      $stmt = $pdo->prepare("INSERT INTO generaloffers (customer_id, company_id, offer_date, assembly_type, payment_method, validity_days, installment_term, term_months, interest_value, approval_token) VALUES (:customer_id, :company_id, :offer_date, :assembly_type, :payment_method, :validity_days, :installment_term, :term_months, :interest_value, :approval_token)");
       $stmt->bindValue(':customer_id', $customerId, PDO::PARAM_INT);
+      $stmt->bindValue(':company_id', $_SESSION['company_id'] ?? null, isset($_SESSION['company_id']) ? PDO::PARAM_INT : PDO::PARAM_NULL);
       $stmt->bindValue(':offer_date', $offerDate);
       $stmt->bindValue(':assembly_type', $assembly);
       $stmt->bindValue(':payment_method', $payment);

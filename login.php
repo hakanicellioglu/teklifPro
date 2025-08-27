@@ -5,6 +5,12 @@ if (session_status() === PHP_SESSION_NONE) {
 require __DIR__ . '/config.php';
 
 $errors = [];
+$hasCompanyColumn = false;
+try {
+    $hasCompanyColumn = $pdo->query("SHOW COLUMNS FROM users LIKE 'company_id'")->rowCount() > 0;
+} catch (Exception $e) {
+    $hasCompanyColumn = false;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
@@ -15,13 +21,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $stmt = $pdo->prepare('SELECT id, password FROM users WHERE username = :username AND status = "active"');
+        $sql = 'SELECT id, password' . ($hasCompanyColumn ? ', company_id' : '') . ' FROM users WHERE username = :username AND status = "active"';
+        $stmt = $pdo->prepare($sql);
         $stmt->execute(['username' => $username]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password'])) {
             session_regenerate_id(true);
             $_SESSION['user_id'] = $user['id'];
+            if ($hasCompanyColumn && isset($user['company_id'])) {
+                $_SESSION['company_id'] = (int)$user['company_id'];
+            }
             header('Location: dashboard');
             exit;
         } else {

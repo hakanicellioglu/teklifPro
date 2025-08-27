@@ -88,6 +88,17 @@ try {
     $coverColor = '#343a40';
 }
 
+// Fetch company settings for the logged-in user
+$company = [];
+if (!empty($_SESSION['company_id'])) {
+    require_once __DIR__ . '/company.php';
+    try {
+        $company = getCompanyById($pdo, (int)$_SESSION['company_id']);
+    } catch (Exception $e) {
+        $company = [];
+    }
+}
+
 $initial  = strtoupper(substr($user['first_name'] ?? ($user['username'] ?? ''), 0, 1));
 $fullName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
 
@@ -288,6 +299,23 @@ $acceptRate = $totalOffers > 0 ? round(($acceptedOffers / $totalOffers) * 100) :
                     </div>
                 </div>
             </div>
+            <?php if (!empty($company)): ?>
+            <div class="card mt-3 rounded-3 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Firma Bilgileri</h5>
+                    <div><strong>Ad:</strong> <?= htmlspecialchars($company['name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                    <?php if (!empty($company['email'])): ?>
+                        <div><strong>E-posta:</strong> <?= htmlspecialchars($company['email'], ENT_QUOTES, 'UTF-8'); ?></div>
+                    <?php endif; ?>
+                    <?php if (!empty($company['phone'])): ?>
+                        <div><strong>Telefon:</strong> <?= htmlspecialchars($company['phone'], ENT_QUOTES, 'UTF-8'); ?></div>
+                    <?php endif; ?>
+                    <?php if (!empty($company['address'])): ?>
+                        <div><strong>Adres:</strong> <?= nl2br(htmlspecialchars($company['address'], ENT_QUOTES, 'UTF-8')); ?></div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
 
         <div class="tab-pane fade" id="profile-edit" role="tabpanel" aria-labelledby="profile-edit-tab">
