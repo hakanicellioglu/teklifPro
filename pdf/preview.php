@@ -268,8 +268,8 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
             <div class="header">
                 <div class="header-left">
                     <div class="logo-container">
-                        <?php if (!empty($company['logo']) && file_exists('../assets/' . $company['logo'])): ?>
-                            <img src="../assets/<?= h($company['logo']) ?>" alt="<?= h($company['name']) ?> Logo">
+                        <?php if (!empty($company['logo']) && file_exists(__DIR__ . '/../assets/' . $company['logo'])): ?>
+                            <img src="/assets/<?= h($company['logo']) ?>" alt="<?= h($company['name']) ?> Logo">
                         <?php else: ?>
                             <div class="logo-placeholder">FİRMA LOGOSU</div>
                             <div class="logo-path">/assets/logo.png</div>
