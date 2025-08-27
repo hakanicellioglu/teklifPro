@@ -402,6 +402,8 @@ foreach ($slidings as $s) {
 }
 $subtotalCalc = round($totalAmount / 1.2, 2);
 $vatAmountCalc = round($totalAmount - $subtotalCalc, 2);
+$subtotalFormatted = tr_money($subtotalCalc) . ' ₺';
+$vatFormatted = tr_money($vatAmountCalc) . ' ₺';
 $totalFormatted = tr_money($totalAmount) . ' ₺';
 $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
 
@@ -657,8 +659,27 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                 <p class="mb-3">Kayıt yok</p>
                 <a href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-sm btn-primary">Yeni Ekle</a>
             </div>
-        <?php endif; ?>
+<?php endif; ?>
     </div>
+</div>
+
+<div class="d-flex justify-content-end mb-4">
+    <table class="table table-sm w-auto mb-0">
+        <tbody>
+            <tr>
+                <th class="text-end">Hesaplanan Tutar (Vergisiz)</th>
+                <td class="text-end"><?= e($subtotalFormatted) ?></td>
+            </tr>
+            <tr>
+                <th class="text-end">KDV Tutarı</th>
+                <td class="text-end"><?= e($vatFormatted) ?></td>
+            </tr>
+            <tr>
+                <th class="text-end">Toplam Tutar (Vergili)</th>
+                <td class="text-end"><?= e($totalFormatted) ?></td>
+            </tr>
+        </tbody>
+    </table>
 </div>
 </div>
 
