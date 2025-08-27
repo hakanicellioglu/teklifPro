@@ -393,13 +393,15 @@ if (!$error) {
     }
 }
 
-$totalAmount = 0;
+$guillotineTotal = 0;
 foreach ($guillotines as $g) {
-    $totalAmount += (float)$g['total_amount'];
+    $guillotineTotal += (float)$g['total_amount'];
 }
+$slidingTotal = 0;
 foreach ($slidings as $s) {
-    $totalAmount += (float)$s['total_amount'];
+    $slidingTotal += (float)$s['total_amount'];
 }
+$totalAmount = $guillotineTotal + $slidingTotal;
 $subtotalCalc = round($totalAmount / 1.2, 2);
 $vatAmountCalc = round($totalAmount - $subtotalCalc, 2);
 $subtotalFormatted = tr_money($subtotalCalc) . ' ₺';
@@ -415,6 +417,14 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
         background: var(--bs-body-bg);
         z-index: 1;
         box-shadow: 0 2px 0 rgba(0,0,0,.05);
+    }
+    .table-sticky-header tfoot th,
+    .table-sticky-header tfoot td {
+        position: sticky;
+        bottom: 0;
+        background: var(--bs-body-bg);
+        z-index: 1;
+        box-shadow: 0 -2px 0 rgba(0,0,0,.05);
     }
     .w-total { min-width: 8rem; }
     .spin { animation: spin 1s linear infinite; display:inline-block; }
@@ -605,6 +615,13 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="7" class="text-end">Toplam</th>
+                            <th class="text-end w-total"><?= e(tr_money($guillotineTotal)) ?> ₺</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         <?php else: ?>
@@ -651,6 +668,12 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="7" class="text-end">Toplam</th>
+                            <th class="text-end w-total"><?= e(tr_money($slidingTotal)) ?> ₺</th>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         <?php else: ?>
