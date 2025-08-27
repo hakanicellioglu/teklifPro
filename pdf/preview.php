@@ -32,6 +32,7 @@ $slidings = [];
 $systems = [];
 $error = null;
 $approveUrl = '';
+$company = ['name' => '', 'logo' => null, 'email' => '', 'phone' => '', 'address' => '', 'bank_account' => ''];
 
 try {
     $stmt = $pdo->prepare('SELECT g.*, c.first_name, c.last_name, c.company_name AS customer_company, c.email AS customer_email, c.phone AS customer_phone, c.address AS customer_address, co.name AS company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id LEFT JOIN company co ON g.company_id = co.id WHERE g.id = :id');
@@ -50,7 +51,6 @@ try {
     $sStmt->execute([':id' => $id]);
     $slidings = $sStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $company = ['name' => '', 'logo' => null, 'email' => '', 'phone' => '', 'address' => '', 'bank_account' => ''];
     try {
         $cStmt = $pdo->query('SELECT name, logo, email, phone, address, bank_account FROM company LIMIT 1');
         if ($cStmt) {
@@ -78,6 +78,14 @@ try {
     error_log($e->getMessage());
     $error = 'Veriler yüklenemedi.';
 }
+
+$logoDb = $company['logo'] ?? '';
+$logoFile = ltrim($logoDb, "/\\");
+$logoFsPath = __DIR__ . '/../assets/' . $logoFile;
+$logoExists = $logoFile !== '' && file_exists($logoFsPath);
+$logoReadable = $logoExists && is_readable($logoFsPath);
+$logoUrl = '/assets/' . $logoFile;
+$logoDebug = isset($_GET['logo_debug']) && $_GET['logo_debug'] === '1';
 
 $paymentLabels = [
     'cash' => 'Peşin',
@@ -261,6 +269,19 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
 
 <body>
     <div class="container">
+        <?php if ($logoDebug): ?>
+            <div class="d-print-none" style="background:#fff7ed;border:1px solid #fdba74;padding:8px;margin-bottom:10px;font-size:10px;font-family:monospace;">
+                <strong>Logo Debug</strong><br>
+                DB: <?= h($logoDb) ?><br>
+                Normalized: <?= h($logoFile) ?><br>
+                FS Path: <?= h($logoFsPath) ?><br>
+                getcwd(): <?= h(getcwd()) ?><br>
+                file_exists: <?= $logoExists ? '1' : '0' ?><br>
+                is_readable: <?= $logoReadable ? '1' : '0' ?><br>
+                URL: <?= h($logoUrl) ?><br>
+            </div>
+        <?php endif; ?>
+
         <?php if ($error): ?>
             <div class="alert alert-danger"><?= h($error) ?></div>
         <?php else: ?>
@@ -268,8 +289,8 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
             <div class="header">
                 <div class="header-left">
                     <div class="logo-container">
-                        <?php if (!empty($company['logo']) && file_exists('../assets/' . $company['logo'])): ?>
-                            <img src="../assets/<?= h($company['logo']) ?>" alt="<?= h($company['name']) ?> Logo">
+                        <?php if ($logoReadable): ?>
+                            <img src="<?= h($logoUrl) ?>" alt="<?= h($company['name']) ?> Logo">
                         <?php else: ?>
                             <div class="logo-placeholder">FİRMA LOGOSU</div>
                             <div class="logo-path">/assets/logo.png</div>
