@@ -204,10 +204,10 @@ $acceptRate = $totalOffers > 0 ? round(($acceptedOffers / $totalOffers) * 100) :
                     <?php endif; ?>
                 </div>
                 <div class="d-none d-md-flex gap-2">
-                    <button type="button" class="btn btn-light btn-sm" onclick="document.getElementById('profile-edit-tab').click();">
+                    <button type="button" class="btn btn-light btn-sm" onclick="openTab('profile-edit-tab');">
                         <i class="bi bi-person-gear me-1"></i>Profili Düzenle
                     </button>
-                    <button type="button" class="btn btn-outline-light btn-sm" onclick="document.getElementById('security-tab').click();">
+                    <button type="button" class="btn btn-outline-light btn-sm" onclick="openTab('security-tab');">
                         <i class="bi bi-shield-lock me-1"></i>Güvenlik
                     </button>
                 </div>
@@ -227,6 +227,9 @@ $acceptRate = $totalOffers > 0 ? round(($acceptedOffers / $totalOffers) * 100) :
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab">Aktiviteler</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="company-tab" data-bs-toggle="tab" data-bs-target="#company" type="button" role="tab">Şirket</button>
         </li>
     </ul>
 
@@ -367,6 +370,12 @@ $acceptRate = $totalOffers > 0 ? round(($acceptedOffers / $totalOffers) * 100) :
                 </div>
             </div>
         </div>
+        <div class="tab-pane fade" id="company" role="tabpanel" aria-labelledby="company-tab">
+            <?php
+            define('SETTINGS_COMPANY_EMBED', true);
+            require __DIR__ . '/company.php';
+            ?>
+        </div>
     </div>
 </div>
 
@@ -382,19 +391,50 @@ $acceptRate = $totalOffers > 0 ? round(($acceptedOffers / $totalOffers) * 100) :
         <?php endforeach; ?>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.toast').forEach(el => new bootstrap.Toast(el).show());
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.bootstrap?.Toast) {
+                document.querySelectorAll('.toast').forEach(el => new bootstrap.Toast(el).show());
+            }
         });
     </script>
 <?php endif; ?>
 
 <script>
-    // Kapak rengi canlı önizleme
+function openTab(buttonId) {
+    const trigger = document.getElementById(buttonId);
+    if (!trigger) return;
+    if (window.bootstrap?.Tab) {
+        new bootstrap.Tab(trigger).show();
+    } else {
+        document.querySelectorAll('#settingsTabs [data-bs-toggle="tab"]').forEach(btn => {
+            const pane = document.querySelector(btn.getAttribute('data-bs-target'));
+            const active = btn === trigger;
+            btn.classList.toggle('active', active);
+            pane?.classList.toggle('show', active);
+            pane?.classList.toggle('active', active);
+        });
+    }
+    localStorage.setItem('settingsActiveTab', buttonId);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const stored = localStorage.getItem('settingsActiveTab');
+    if (stored) openTab(stored);
+
+    document.querySelectorAll('#settingsTabs [data-bs-toggle="tab"]').forEach(btn => {
+        if (window.bootstrap?.Tab) {
+            btn.addEventListener('shown.bs.tab', () => {
+                localStorage.setItem('settingsActiveTab', btn.id);
+            });
+        } else {
+            btn.addEventListener('click', () => openTab(btn.id));
+        }
+    });
+
     document.getElementById('coverColor')?.addEventListener('input', (e) => {
         document.getElementById('coverCard')?.style.setProperty('--cover-color', e.target.value);
     });
 
-    // Şifre göster/gizle
     document.querySelectorAll('.toggle-pass').forEach(btn => {
         btn.addEventListener('click', () => {
             const input = btn.parentElement.querySelector('input');
@@ -405,7 +445,6 @@ $acceptRate = $totalOffers > 0 ? round(($acceptedOffers / $totalOffers) * 100) :
         });
     });
 
-    // Basit şifre gücü metriği
     const newPwd = document.getElementById('newPwd');
     const newPwd2 = document.getElementById('newPwd2');
     const bar = document.getElementById('pwdBar');
@@ -419,10 +458,11 @@ $acceptRate = $totalOffers > 0 ? round(($acceptedOffers / $totalOffers) * 100) :
         if (/[a-zçğıöşü]/.test(val)) s += 1;
         if (/\d/.test(val)) s += 1;
         if (/[^A-Za-z0-9çğıöşüÇĞİÖŞÜ]/.test(val)) s += 1;
-        return s; // 0..5
+        return s;
     }
 
     function updateStrength() {
+        if (!bar || !hint || !matchHint) return;
         const v = newPwd?.value ?? '';
         const sc = scorePwd(v);
         const pct = (sc / 5) * 100;
@@ -439,10 +479,10 @@ $acceptRate = $totalOffers > 0 ? round(($acceptedOffers / $totalOffers) * 100) :
         }
         bar.style.background = color;
         hint.textContent = 'Güç: ' + txt;
-        // Eşleşme kontrolü
         if (newPwd2?.value) {
-            matchHint.textContent = newPwd.value === newPwd2.value ? 'Parolalar eşleşiyor.' : 'Parolalar eşleşmiyor.';
-            matchHint.className = 'form-hint ' + (newPwd.value === newPwd2.value ? 'text-success' : 'text-danger');
+            const match = newPwd.value === newPwd2.value;
+            matchHint.textContent = match ? 'Parolalar eşleşiyor.' : 'Parolalar eşleşmiyor.';
+            matchHint.className = 'form-hint ' + (match ? 'text-success' : 'text-danger');
         } else {
             matchHint.textContent = '';
             matchHint.className = 'form-hint';
@@ -451,7 +491,6 @@ $acceptRate = $totalOffers > 0 ? round(($acceptedOffers / $totalOffers) * 100) :
     newPwd?.addEventListener('input', updateStrength);
     newPwd2?.addEventListener('input', updateStrength);
 
-    // Basit client-side doğrulama
     document.getElementById('pwdForm')?.addEventListener('submit', (e) => {
         if (!newPwd || !newPwd2) return;
         if (newPwd.value.length < 8) {
@@ -462,8 +501,7 @@ $acceptRate = $totalOffers > 0 ? round(($acceptedOffers / $totalOffers) * 100) :
             alert('Yeni parola eşleşmiyor.');
         }
     });
+});
 </script>
 
-</body>
-
-</html>
+<?php require __DIR__ . '/footer.php'; ?>
