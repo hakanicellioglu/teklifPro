@@ -336,7 +336,7 @@ require __DIR__ . '/header.php';
 
   .image-upload-area:hover,
   .image-upload-area.dragover {
-    background-color: #f8f9fa;
+    background-color: #FFFFFF;
   }
 
   .image-upload-area .image-input {
@@ -354,13 +354,13 @@ require __DIR__ . '/header.php';
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: #6c757d;
+    color: #02A676;
   }
 
   .upload-instructions {
     margin-top: 0.5rem;
     font-size: 0.875rem;
-    color: #6c757d;
+    color: #02A676;
   }
 </style>
 <div class="container py-4">
@@ -398,7 +398,7 @@ require __DIR__ . '/header.php';
               <img src="<?= e($p['image_url']) ?>" class="card-img-top" alt="<?= e($p['name']) ?>">
             <?php else: ?>
               <svg class="bd-placeholder-img card-img-top" width="100%" height="180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder" preserveAspectRatio="xMidYMid slice" focusable="false">
-                <rect width="100%" height="100%" fill="#e9ecef"></rect><text x="50%" y="50%" fill="#6c757d" dy=".3em" text-anchor="middle">Resim yok</text>
+                <rect width="100%" height="100%" fill="#e9ecef"></rect><text x="50%" y="50%" fill="#02A676" dy=".3em" text-anchor="middle">Resim yok</text>
               </svg>
             <?php endif; ?>
             <div class="card-body">

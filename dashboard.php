@@ -75,6 +75,6 @@ try {
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const qCtx = document.getElementById('quotationChart');
-new Chart(qCtx,{type:'doughnut',data:{labels:<?= json_encode(array_keys($quotationStatuses)) ?>,datasets:[{data:<?= json_encode(array_values($quotationStatuses)) ?>,backgroundColor:['#0d6efd','#ffc107','#198754']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+new Chart(qCtx,{type:'doughnut',data:{labels:<?= json_encode(array_keys($quotationStatuses)) ?>,datasets:[{data:<?= json_encode(array_values($quotationStatuses)) ?>,backgroundColor:['#003840','#02A676','#198754']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
 </script>
 <?php require __DIR__ . '/footer.php'; ?>

@@ -157,11 +157,11 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.4; color: #1f2937; background-color: #f9fafb; font-size: 12px; }
         .container { max-width: 1200px; margin: 0 auto; padding: 15px; background-color: #ffffff; min-height: 100vh; }
 
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #2563eb; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #003840; }
         .header-left { display: flex; align-items: flex-start; gap: 15px; flex: 1; }
         .logo-container { width: 100px; height: 50px; background-color: #f8fafc; border: 2px dashed #e5e7eb; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; flex-shrink: 0; }
         .logo-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .logo-placeholder { color: #6b7280; font-size: 8px; font-weight: 600; text-align: center; }
+        .logo-placeholder { color: #02A676; font-size: 8px; font-weight: 600; text-align: center; }
         .logo-path { color: #9ca3af; font-size: 6px; text-align: center; margin-top: 2px; font-family: monospace; }
 
         .company-info { flex: 1; }
@@ -176,12 +176,12 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
 
         .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
         .info-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
-        .card-header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; padding: 6px 8px; font-weight: 600; font-size: 9px; letter-spacing: 0.5px; }
+        .card-header { background: linear-gradient(135deg, #003840 0%, #02A676 100%); color: #FFFFFF; padding: 6px 8px; font-weight: 600; font-size: 9px; letter-spacing: 0.5px; }
         .card-body { padding: 8px; }
         .info-row { display: flex; margin-bottom: 3px; align-items: flex-start; }
         .info-label { font-weight: 600; color: #374151; min-width: 50px; margin-right: 6px; font-size: 8px; }
         .info-value { color: #1f2937; flex: 1; font-size: 8px; }
-        .badge { background: #dbeafe; color: #1e40af; padding: 1px 4px; border-radius: 3px; font-size: 7px; font-weight: 500; }
+        .badge { background: #02A676; color: #FFFFFF; padding: 1px 4px; border-radius: 3px; font-size: 7px; font-weight: 500; }
 
         .table-section { margin: 12px 0; }
         .section-title { font-size: 11px; font-weight: 700; color: #1f2937; margin-bottom: 8px; padding-bottom: 3px; border-bottom: 1px solid #e5e7eb; }
@@ -198,7 +198,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
         .summary-row { display: flex; justify-content: space-between; padding: 3px 6px; border-bottom: 1px solid #f1f5f9; }
         .summary-label { font-size: 8px; color: #374151; font-weight: 500; }
         .summary-value { font-size: 8px; color: #1f2937; font-weight: 500; }
-        .total-row { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); font-weight: 700; color: #1e40af; font-size: 9px; }
+        .total-row { background: linear-gradient(135deg, #003840 0%, #02A676 100%); font-weight: 700; color: #FFFFFF; font-size: 9px; }
 
         /* *** YAN YANA DÜZEN İÇİN GÜNCELLENDİ *** */
         .summary-section {
@@ -217,19 +217,19 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
         .field-group { display: flex; flex-direction: column; }
         .field-label { font-weight: 600; color: #374151; margin-bottom: 2px; font-size: 8px; }
         .field-input { padding: 4px; border: 1px solid #d1d5db; border-radius: 3px; font-size: 7px; color: #1f2937; background: #ffffff; }
-        .field-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
+        .field-input:focus { outline: none; border-color: #003840; box-shadow: 0 0 0 2px rgba(0, 56, 64, 0.1); }
         .signature-box { height: 30px; border: 1px dashed #d1d5db; border-radius: 3px; background: #ffffff; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 7px; font-style: italic; }
 
         .action-bar { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-top: 1px solid #e5e7eb; padding: 8px 0; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); z-index: 1000; }
         .action-buttons { max-width: 1200px; margin: 0 auto; padding: 0 15px; display: flex; gap: 8px; }
         .btn { padding: 6px 12px; border: none; border-radius: 4px; font-weight: 600; font-size: 9px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: all 0.3s ease; letter-spacing: 0.3px; }
-        .btn-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; }
-        .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
-        .btn-secondary { background: #6b7280; color: #ffffff; }
-        .btn-secondary:hover { background: #4b5563; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3); }
+        .btn-primary { background: linear-gradient(135deg, #003840 0%, #02A676 100%); color: #FFFFFF; }
+        .btn-primary:hover { background: linear-gradient(135deg, #02A676 0%, #003840 100%); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 56, 64, 0.3); }
+        .btn-secondary { background: #02A676; color: #FFFFFF; }
+        .btn-secondary:hover { background: #02865F; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(2, 134, 95, 0.3); }
         .alert { padding: 8px; border-radius: 4px; margin-bottom: 8px; font-weight: 500; font-size: 8px; }
         .alert-danger { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
-        .alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; }
+        .alert-info { background: #e6f7f2; border: 1px solid #02A676; color: #003840; }
 
         @media print {
             body { background: #ffffff; font-size: 7px; }
@@ -237,7 +237,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
             .action-bar, .d-print-none { display: none !important; }
             .info-card, .modern-table { box-shadow: none; border: 1px solid #e5e7eb; }
             @page { margin: 8mm; size: A4; }
-            .header { border-bottom: 2px solid #2563eb; margin-bottom: 8px; padding-bottom: 8px; }
+            .header { border-bottom: 2px solid #003840; margin-bottom: 8px; padding-bottom: 8px; }
             .modern-table th { background: #f1f5f9 !important; }
             .document-title { margin-bottom: 8px; font-size: 14px; }
             .info-grid { margin-bottom: 8px; }
@@ -327,7 +327,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
                         <div class="info-row d-print-none">
                             <span class="info-label">Onay Linki:</span>
                             <span class="info-value">
-                                <a href="<?= h($approveUrl) ?>" style="color: #2563eb; text-decoration: none; font-weight: 500;"><?= h($approveUrl) ?></a>
+                                <a href="<?= h($approveUrl) ?>" style="color: #003840; text-decoration: none; font-weight: 500;"><?= h($approveUrl) ?></a>
                             </span>
                         </div>
                         <?php else: ?>
@@ -402,7 +402,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
                                 <?= nl2br(h($quote['remarks'] ?? '')) ?>
                             </div>
                         <?php else: ?>
-                            <div style="color: #6b7280; font-style: italic; font-size: 8px;">
+                            <div style="color: #02A676; font-style: italic; font-size: 8px;">
                                 Özel açıklama bulunmamaktadır.
                             </div>
                         <?php endif; ?>
@@ -417,7 +417,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
                                 <?= nl2br(h($company['bank_account'])) ?>
                             </div>
                         <?php else: ?>
-                            <div style="color: #6b7280; font-style: italic; font-size: 8px;">
+                            <div style="color: #02A676; font-style: italic; font-size: 8px;">
                                 Banka bilgisi eklenmemiş.
                             </div>
                         <?php endif; ?>
