@@ -41,8 +41,6 @@ interface ProductProviderInterface
  *   height: float|int|string,
  *   quantity: int|string,
  *   glass_type?: string,
- *   profit_rate?: float|int|string,
- *   profit_margin?: float|int|string,
  *   currency?: string,
  *   exchange_rates?: array<string,float>,
  *   provider: ProductProviderInterface
@@ -56,7 +54,6 @@ interface ProductProviderInterface
  *     aksesuar_cost: float,
  *     fitil_cost: float,
  *     extras: array{paint: float, waste: float, labor: float},
- *     profit: float,
  *     general_expense: float,
  *     grand_total: float
  *   },
@@ -100,12 +97,6 @@ function calculateGuillotineTotals(array $input): array
     if ($width <= 0 || $height <= 0 || $qty <= 0) {
         throw new InvalidArgumentException('Width, height and quantity must be positive');
     }
-
-    //
-    // Kâr Oranı
-    // Kullanıcının belirttiği kâr yüzdesini alır.
-    //
-    $profitRate = (float) ($input['profit_rate'] ?? $input['profit_margin'] ?? 0);
 
     //
     // Cam Türü
@@ -380,13 +371,10 @@ function calculateGuillotineTotals(array $input): array
         + $otherExtrasCost;
 
     //
-    // Kâr ve Giderler
-    // Kâr oranı ve genel giderleri ekleyerek nihai tutarı hesaplar.
-    //
-    $profit         = $grandTotal * ($profitRate / 100);
-    $totalAmount    = $grandTotal + $profit;
-    $generalExpense = $totalAmount * 0.01;
-    $finalTotal     = $totalAmount + $generalExpense;
+    // Genel Giderler
+    // Genel giderleri ekleyerek nihai tutarı hesaplar.
+    $generalExpense = $grandTotal * 0.01;
+    $finalTotal     = $grandTotal + $generalExpense;
 
     //
     // Toplamlar Dizisi
@@ -398,7 +386,6 @@ function calculateGuillotineTotals(array $input): array
         'aksesuar_cost'   => $aksesuarCost,
         'fitil_cost'      => $fitilCost,
         'extras'          => $extras,
-        'profit'          => $profit,
         'general_expense' => $generalExpense,
         'grand_total'     => $finalTotal,
     ];
@@ -503,7 +490,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     // Giyotin Verileri
     // Veritabanından ilgili ölçü ve ayarları çeker.
     //
-    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, profit_rate, profit_margin FROM guillotinesystems WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type FROM guillotinesystems WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
@@ -530,7 +517,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             'height'        => $row['height'],
             'quantity'      => $row['quantity'],
             'glass_type'    => $row['glass_type'] ?? '',
-            'profit_rate'   => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
             'currency'      => 'TRY',
             'exchange_rates' => $exchangeRates,
             'provider'      => $provider,
@@ -725,12 +711,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<table class="table table-bordered table-sm">';
     echo '<tbody>';
 
-    //
-    // Kâr Dahil Genel Toplam
-    // Nihai toplam tutarı saklar ve özet tabloda kullanır.
-    //
-    $grandTotalWithProfit = $tot['grand_total'];
-
     echo '<tr><th>Alüminyum Boyalı ' . e(number_format($result['alu_painted_kg'], 2, ',', '.')) . ' kg</th><td>'
         . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
     echo '<tr><th>Alüminyum Fire ' . e(number_format($result['alu_fire_kg'], 2, ',', '.')) . ' kg</th><td>'
@@ -739,13 +719,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<tr><th>Fitil</th><td>' . e(number_format($tot['fitil_cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
     echo '<tr><th>İmalat İşçiliği</th><td>' . e(number_format($tot['extras']['labor'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
 
-    echo '<tr class="table-light fw-bold">';
-    echo '<td>Kâr</td><td>' . e(number_format($tot['profit'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-    echo '</tr>';
     echo '<tr><th>Genel Gider</th><td>' . e(number_format($tot['general_expense'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
 
     echo '<tr class="table-success fw-bold">';
-    echo '<td>Genel Toplam</td><td>' . e(number_format($grandTotalWithProfit, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+    echo '<td>Genel Toplam</td><td>' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
     echo '</tr>';
 
     echo '</tbody>';
