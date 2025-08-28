@@ -67,7 +67,7 @@ $statusClasses = [
 ];
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
-    echo '<div class="container mt-4"><div class="alert alert-danger">Teklif bulunamadı.</div></div></body></html>';
+    echo '<div class="container mt-4"><div class="alert alert-danger">Geçersiz teklif ID\'si. <a href="quotations.php">Teklif listesine dön</a>.</div></div></body></html>';
     exit;
 }
 
@@ -205,13 +205,13 @@ try {
         SELECT g.*, c.first_name, c.last_name, c.company AS customer_company, co.name AS company_name
         FROM generaloffers g
         JOIN customers c ON g.customer_id = c.id
-        LEFT JOIN company co ON g.company_id = co.id
-        WHERE g.id = :id AND co.user_id = :uid
+        LEFT JOIN company co ON g.company_id = co.id AND co.user_id = :uid
+        WHERE g.id = :id AND (g.company_id IS NULL OR co.id IS NOT NULL)
     ');
     $stmt->execute([':id' => $id, ':uid' => $userId]);
     $offer = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$offer) {
-        echo '<div class="container mt-4"><div class="alert alert-danger">Teklif bulunamadı.</div></div></body></html>';
+        echo '<div class="container mt-4"><div class="alert alert-danger">Teklif bulunamadı veya erişim yetkiniz yok. <a href="quotations.php">Teklif listesine dön</a>.</div></div></body></html>';
         exit;
     }
 } catch (Exception $e) {
@@ -220,7 +220,7 @@ try {
 }
 
 if (!$offer) {
-    echo '<div class="container mt-4"><div class="alert alert-danger">' . e($error) . '</div></div></body></html>';
+    echo '<div class="container mt-4"><div class="alert alert-danger">' . e($error) . ' <a href="quotations.php">Teklif listesine dön</a>.</div></div></body></html>';
     exit;
 }
 
