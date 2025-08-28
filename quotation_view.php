@@ -35,6 +35,8 @@ if (empty($_SESSION['csrf_token'])) {
 }
 $csrfToken = $_SESSION['csrf_token'];
 
+$userId = (int)($_SESSION['user_id'] ?? 0);
+
 $assemblyTypes = [
     'demonte' => 'Demonte',
     'musteri' => 'Müşteri Montajlı',
@@ -204,9 +206,9 @@ try {
         FROM generaloffers g
         JOIN customers c ON g.customer_id = c.id
         LEFT JOIN company co ON g.company_id = co.id
-        WHERE g.id = :id
+        WHERE g.id = :id AND co.user_id = :uid
     ');
-    $stmt->execute([':id' => $id]);
+    $stmt->execute([':id' => $id, ':uid' => $userId]);
     $offer = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$offer) {
         echo '<div class="container mt-4"><div class="alert alert-danger">Teklif bulunamadı.</div></div></body></html>';
