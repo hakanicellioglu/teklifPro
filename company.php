@@ -114,7 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['company_form'])) {
             $company['logo'] = $logoPath;
             $success = 'Şirket bilgileri güncellendi.';
         } catch (Exception $e) {
-            $errors['general'] = 'Bilgiler kaydedilemedi.';
+            error_log('Company save failed [' . $e->getCode() . ']: ' . $e->getMessage());
+            $errors['general'] = 'Şirket bilgileri kaydedilemedi. Lütfen daha sonra tekrar deneyin.';
         }
     }
 }
