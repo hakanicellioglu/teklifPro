@@ -35,8 +35,8 @@ $error = null;
 $approveUrl = '';
 
 try {
-    $stmt = $pdo->prepare('SELECT g.*, c.first_name, c.last_name, c.company_name AS customer_company, c.email AS customer_email, c.phone AS customer_phone, c.address AS customer_address, co.name AS company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id LEFT JOIN company co ON g.company_id = co.id WHERE g.id = :id');
-    $stmt->execute([':id' => $id]);
+    $stmt = $pdo->prepare('SELECT g.*, c.first_name, c.last_name, c.company_name AS customer_company, c.email AS customer_email, c.phone AS customer_phone, c.address AS customer_address, co.name AS company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id LEFT JOIN company co ON g.company_id = co.id WHERE g.id = :id AND co.user_id = :uid');
+    $stmt->execute([':id' => $id, ':uid' => $userId]);
     $quote = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$quote) {
         http_response_code(404);
@@ -53,16 +53,14 @@ try {
 
     $company = ['name' => '', 'logo' => null, 'email' => '', 'phone' => '', 'address' => '', 'bank_account' => ''];
     try {
-        $cStmt = $pdo->query('SELECT name, logo, email, phone, address, bank_account FROM company LIMIT 1');
-        if ($cStmt) {
-            $company = array_merge($company, $cStmt->fetch(PDO::FETCH_ASSOC) ?: []);
-        }
+        $cStmt = $pdo->prepare('SELECT name, logo, email, phone, address, bank_account FROM company WHERE user_id = :uid LIMIT 1');
+        $cStmt->execute([':uid' => $userId]);
+        $company = array_merge($company, $cStmt->fetch(PDO::FETCH_ASSOC) ?: []);
     } catch (Throwable $e) {
         try {
-            $cStmt = $pdo->query('SELECT name, logo, email, phone, address FROM company LIMIT 1');
-            if ($cStmt) {
-                $company = array_merge($company, $cStmt->fetch(PDO::FETCH_ASSOC) ?: []);
-            }
+            $cStmt = $pdo->prepare('SELECT name, logo, email, phone, address FROM company WHERE user_id = :uid LIMIT 1');
+            $cStmt->execute([':uid' => $userId]);
+            $company = array_merge($company, $cStmt->fetch(PDO::FETCH_ASSOC) ?: []);
         } catch (Throwable $e2) { /* ignore */
         }
     }

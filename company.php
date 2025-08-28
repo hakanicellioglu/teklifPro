@@ -14,6 +14,8 @@ $csrfToken = $_SESSION['csrf_token'];
 $errors = [];
 $success = '';
 
+$userId = (int)($_SESSION['user_id'] ?? 0);
+
 // Fetch existing company record
 $company = [
     'id' => null,
@@ -25,7 +27,8 @@ $company = [
 ];
 
 try {
-    $stmt = $pdo->query('SELECT id, name, email, phone, address, logo FROM company LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id, name, email, phone, address, logo FROM company WHERE user_id = :uid LIMIT 1');
+    $stmt->execute([':uid' => $userId]);
     if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $company = array_merge($company, $row);
     }
@@ -82,23 +85,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['company_form'])) {
     if (!$errors) {
         try {
             if ($company['id']) {
-                $stmt = $pdo->prepare('UPDATE company SET name = :name, email = :email, phone = :phone, address = :address, logo = :logo WHERE id = :id');
+                $stmt = $pdo->prepare('UPDATE company SET name = :name, email = :email, phone = :phone, address = :address, logo = :logo WHERE id = :id AND user_id = :uid');
                 $stmt->execute([
                     'name' => $name,
                     'email' => $email,
                     'phone' => $phone,
                     'address' => $address,
                     'logo' => $logoPath,
-                    'id' => $company['id']
+                    'id' => $company['id'],
+                    'uid' => $userId
                 ]);
             } else {
-                $stmt = $pdo->prepare('INSERT INTO company (name, email, phone, address, logo) VALUES (:name, :email, :phone, :address, :logo)');
+                $stmt = $pdo->prepare('INSERT INTO company (name, email, phone, address, logo, user_id) VALUES (:name, :email, :phone, :address, :logo, :uid)');
                 $stmt->execute([
                     'name' => $name,
                     'email' => $email,
                     'phone' => $phone,
                     'address' => $address,
-                    'logo' => $logoPath
+                    'logo' => $logoPath,
+                    'uid' => $userId
                 ]);
                 $company['id'] = (int)$pdo->lastInsertId();
             }
