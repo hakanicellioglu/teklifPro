@@ -228,6 +228,9 @@ $acceptRate = $totalOffers > 0 ? round(($acceptedOffers / $totalOffers) * 100) :
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab">Aktiviteler</button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="company-tab" data-bs-toggle="tab" data-bs-target="#company" type="button" role="tab">Şirket</button>
+        </li>
     </ul>
 
     <div class="tab-content pt-3">
@@ -366,6 +369,12 @@ $acceptRate = $totalOffers > 0 ? round(($acceptedOffers / $totalOffers) * 100) :
                     </ul>
                 </div>
             </div>
+        </div>
+        <div class="tab-pane fade" id="company" role="tabpanel" aria-labelledby="company-tab">
+            <?php
+            define('SETTINGS_COMPANY_EMBED', true);
+            require __DIR__ . '/company.php';
+            ?>
         </div>
     </div>
 </div>
