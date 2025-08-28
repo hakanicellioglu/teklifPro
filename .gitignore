@@ -5,3 +5,4 @@ storage/
 /node_modules/
 *.log
 .vscode/settings.json
+*.png
