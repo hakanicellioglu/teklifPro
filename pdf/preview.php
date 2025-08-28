@@ -23,7 +23,7 @@ $userId = (int)$_SESSION['user_id'];
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
     http_response_code(400);
-    exit('Geçersiz istek');
+    exit('Geçersiz teklif ID\'si. <a href="../quotations.php">Teklif listesine dön</a>.');
 }
 
 $quote = null;
@@ -34,12 +34,12 @@ $error = null;
 $approveUrl = '';
 
 try {
-    $stmt = $pdo->prepare('SELECT g.*, c.first_name, c.last_name, c.company_name AS customer_company, c.email AS customer_email, c.phone AS customer_phone, c.address AS customer_address, co.name AS company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id LEFT JOIN company co ON g.company_id = co.id WHERE g.id = :id AND co.user_id = :uid');
+    $stmt = $pdo->prepare('SELECT g.*, c.first_name, c.last_name, c.company_name AS customer_company, c.email AS customer_email, c.phone AS customer_phone, c.address AS customer_address, co.name AS company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id LEFT JOIN company co ON g.company_id = co.id AND co.user_id = :uid WHERE g.id = :id AND (g.company_id IS NULL OR co.id IS NOT NULL)');
     $stmt->execute([':id' => $id, ':uid' => $userId]);
     $quote = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$quote) {
         http_response_code(404);
-        exit('Teklif bulunamadı');
+        exit('Teklif bulunamadı veya erişim yetkiniz yok. <a href="../quotations.php">Teklif listesine dön</a>.');
     }
 
     $gStmt = $pdo->prepare('SELECT system_type, width, height, quantity, motor_system, ral_code, glass_type, glass_color, total_amount FROM guillotinesystems WHERE general_offer_id = :id');
