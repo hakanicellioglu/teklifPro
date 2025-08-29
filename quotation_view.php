@@ -50,15 +50,16 @@ function mergeGuillotineDuplicates(PDO $pdo, int $offerId): void
         $keepId   = (int) $group['keep_id'];
         $totalQty = (int) $group['total_qty'];
 
-        $fetch = $pdo->prepare('SELECT quantity, profit_amount, total_amount FROM guillotinesystems WHERE id = :id');
+        $fetch = $pdo->prepare('SELECT quantity, COALESCE(profit_amount,0) AS profit_amount, COALESCE(total_amount,0) AS total_amount FROM guillotinesystems WHERE id = :id');
         $fetch->execute([':id' => $keepId]);
         $row = $fetch->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
             continue;
         }
 
-        $unitProfit = ((float) $row['profit_amount']) / max(1, (int) $row['quantity']);
-        $unitTotal  = ((float) $row['total_amount']) / max(1, (int) $row['quantity']);
+        $qty        = max(1, (int) $row['quantity']);
+        $unitProfit = (float) $row['profit_amount'] / $qty;
+        $unitTotal  = (float) $row['total_amount'] / $qty;
 
         $pdo->prepare('UPDATE guillotinesystems SET quantity = :q, profit_amount = :p, total_amount = :t WHERE id = :id')
             ->execute([
@@ -304,6 +305,7 @@ if ($gDel) {
             }
         } catch (Exception $e) {
             $_SESSION['flash_error'] = 'Giyotin sistemi silinemedi.';
+            error_log($e->getMessage());
         }
     }
     header('Location: quotation_view.php?id=' . $id);
@@ -323,29 +325,37 @@ if ($gPost) {
                 $pdo->exec('ALTER TABLE guillotinesystems ADD COLUMN profit_margin DECIMAL(5,2) DEFAULT NULL AFTER glass_color');
             }
 
+            $pdo->beginTransaction();
+
             $gId = filter_input(INPUT_POST, 'guillotine_id', FILTER_VALIDATE_INT);
             $width = filter_input(INPUT_POST, 'width', FILTER_VALIDATE_FLOAT);
             $height = filter_input(INPUT_POST, 'height', FILTER_VALIDATE_FLOAT);
             $quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
-            $motor = $_POST['motor_system'] ?? null;
-            $glassType = $_POST['glass_type'] ?? null;
-            $glassColor = $_POST['glass_color'] ?? null;
-            $remoteQty = filter_input(INPUT_POST, 'remote_quantity', FILTER_VALIDATE_INT);
-            $ralCode = trim($_POST['ral_code'] ?? '');
+            $motor      = trim($_POST['motor_system'] ?? '') ?: '';
+            $glassType  = trim($_POST['glass_type'] ?? '') ?: '';
+            $glassColor = trim($_POST['glass_color'] ?? '') ?: '';
+            $remoteQty  = filter_input(INPUT_POST, 'remote_quantity', FILTER_VALIDATE_INT);
+            $remoteQty  = ($remoteQty === null || $remoteQty === false || $remoteQty < 0) ? 0 : $remoteQty;
+            $ralCode    = trim($_POST['ral_code'] ?? '') ?: '';
             $profitMargin = filter_input(INPUT_POST, 'profit_margin', FILTER_VALIDATE_FLOAT);
+            $profitMargin = ($profitMargin === null || $profitMargin === false || $profitMargin < 0) ? 0.0 : $profitMargin;
 
             $validNumbers = $width !== false && $width > 0
                 && $height !== false && $height > 0
                 && $quantity !== false && $quantity > 0
-                && $profitMargin !== false && $profitMargin >= 0
-                && ($remoteQty === null || ($remoteQty !== false && $remoteQty > 0));
+                && $profitMargin >= 0
+                && $remoteQty >= 0;
 
             if (!$validNumbers) {
                 $error = 'Tüm sayısal alanlar pozitif olmalıdır.';
             } else {
-                $exchangeRates = fetchExchangeRates('TRY', ['USD', 'EUR']);
-                if (empty($exchangeRates)) {
-                    $error = 'Kur bilgileri alınamadı.';
+                // Fetch exchange rates for all product currencies
+                $curStmt = $pdo->query('SELECT DISTINCT price_unit FROM products');
+                $productCurrencies = array_map('strtoupper', array_filter($curStmt->fetchAll(PDO::FETCH_COLUMN)));
+                $exchangeRates = fetchExchangeRates('TRY', $productCurrencies);
+                $missing = array_diff($productCurrencies, array_keys($exchangeRates));
+                if ($missing) {
+                    $error = 'Kur bilgileri alınamadı: ' . implode(', ', $missing);
                 } else {
                     if ($gId) {
                         $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin WHERE id=:id AND general_offer_id=:goid';
@@ -385,40 +395,60 @@ if ($gPost) {
                     $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE id = :gid AND general_offer_id = :goid');
                     $gFetch->execute([':gid' => $gId, ':goid' => $id]);
                     if ($row = $gFetch->fetch(PDO::FETCH_ASSOC)) {
-                        $totals = calculateGuillotineTotals([
-                            'width'         => $row['width'],
-                            'height'        => $row['height'],
-                            'quantity'      => $row['quantity'],
-                            'glass_type'    => $row['glass_type'] ?? '',
-                            'profit_rate'   => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
-                            'currency'      => 'TRY',
-                            'exchange_rates'=> $exchangeRates,
-                            'provider'      => $productProvider,
-                        ]);
-                        $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
-                        $gUpd->execute([
-                            ':pamount' => $totals['totals']['profit'],
-                            ':tamount' => $totals['totals']['grand_total'],
-                            ':id' => $gId,
-                        ]);
+                        try {
+                            $totals = calculateGuillotineTotals([
+                                'width'         => $row['width'],
+                                'height'        => $row['height'],
+                                'quantity'      => $row['quantity'],
+                                'glass_type'    => $row['glass_type'] ?? '',
+                                'profit_rate'   => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
+                                'currency'      => 'TRY',
+                                'exchange_rates'=> $exchangeRates,
+                                'provider'      => $productProvider,
+                            ]);
+                        } catch (Throwable $e) {
+                            $error = 'Hesaplama hatası: ' . $e->getMessage();
+                            error_log($e->getMessage());
+                            $totals = null;
+                        }
+                        if (!$error && $totals) {
+                            $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
+                            $gUpd->execute([
+                                ':pamount' => $totals['totals']['profit'],
+                                ':tamount' => $totals['totals']['grand_total'],
+                                ':id' => $gId,
+                            ]);
+                        }
                     }
 
-                    // Merge duplicate rows (same dimensions) and recalc totals
-                    mergeGuillotineDuplicates($pdo, $id);
+                    if (!$error) {
+                        // Merge duplicate rows (same dimensions) and recalc totals
+                        mergeGuillotineDuplicates($pdo, $id);
 
-                    $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
-                    $gSumStmt->execute([':id' => $id]);
-                    $gSum = (float)$gSumStmt->fetchColumn();
-                    $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
-                    $sSumStmt->execute([':id' => $id]);
-                    $sSum = (float)$sSumStmt->fetchColumn();
-                    $overall = $gSum + $sSum;
-                    $updStmt = $pdo->prepare('UPDATE generaloffers SET total_amount = :total WHERE id = :id');
-                    $updStmt->execute([':total' => $overall, ':id' => $id]);
-                    $success = $gId ? 'Giyotin sistemi güncellendi.' : 'Giyotin sistemi eklendi.';
+                        $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
+                        $gSumStmt->execute([':id' => $id]);
+                        $gSum = (float)$gSumStmt->fetchColumn();
+                        $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :id');
+                        $sSumStmt->execute([':id' => $id]);
+                        $sSum = (float)$sSumStmt->fetchColumn();
+                        $overall = $gSum + $sSum;
+                        $updStmt = $pdo->prepare('UPDATE generaloffers SET total_amount = :total WHERE id = :id');
+                        $updStmt->execute([':total' => $overall, ':id' => $id]);
+                        $success = $gId ? 'Giyotin sistemi güncellendi.' : 'Giyotin sistemi eklendi.';
+                    }
                 }
             }
+
+            if (!$error) {
+                $pdo->commit();
+            } elseif ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
         } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            error_log($e->getMessage());
             $error = 'Giyotin sistemi kaydedilemedi.';
         }
     }
@@ -435,6 +465,7 @@ if (!$error) {
         $gStmt->execute([':id' => $id]);
         $guillotines = $gStmt->fetchAll();
     } catch (Exception $e) {
+        error_log($e->getMessage());
         $error = 'Giyotin sistemi verileri alınamadı.';
     }
 }
@@ -444,6 +475,7 @@ if (!$error) {
         $sStmt->execute([':id' => $id]);
         $slidings = $sStmt->fetchAll();
     } catch (Exception $e) {
+        error_log($e->getMessage());
         $error = 'Sürme sistemi verileri alınamadı.';
     }
 }
