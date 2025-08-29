@@ -30,6 +30,62 @@ class PdoProductProvider implements ProductProviderInterface
 
 $productProvider = new PdoProductProvider($pdo);
 
+//
+// Merge duplicate guillotine records (same dimensions and attributes)
+// by summing their quantities and recalculating totals.
+//
+/**
+ * @param array<string,float> $exchangeRates
+ */
+function mergeGuillotineDuplicates(PDO $pdo, int $offerId, ProductProviderInterface $provider, array $exchangeRates): void
+{
+    $dupStmt = $pdo->prepare(
+        'SELECT width, height, motor_system, remote_quantity, ral_code, glass_type, glass_color, profit_margin, '
+        . 'MIN(id) AS keep_id, SUM(quantity) AS total_qty, GROUP_CONCAT(id ORDER BY id) AS ids, COUNT(*) AS cnt '
+        . 'FROM guillotinesystems WHERE general_offer_id = :id '
+        . 'GROUP BY width, height, motor_system, remote_quantity, ral_code, glass_type, glass_color, profit_margin '
+        . 'HAVING cnt > 1'
+    );
+    $dupStmt->execute([':id' => $offerId]);
+
+    foreach ($dupStmt->fetchAll(PDO::FETCH_ASSOC) as $group) {
+        $ids      = array_map('intval', explode(',', (string)$group['ids']));
+        $keepId   = (int) $group['keep_id'];
+        $totalQty = (int) $group['total_qty'];
+
+        $pdo->prepare('UPDATE guillotinesystems SET quantity = :q WHERE id = :id')
+            ->execute([':q' => $totalQty, ':id' => $keepId]);
+
+        $fetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE id = :id');
+        $fetch->execute([':id' => $keepId]);
+        if ($row = $fetch->fetch(PDO::FETCH_ASSOC)) {
+            $totals = calculateGuillotineTotals([
+                'width'         => $row['width'],
+                'height'        => $row['height'],
+                'quantity'      => $row['quantity'],
+                'glass_type'    => $row['glass_type'] ?? '',
+                'profit_rate'   => $row['profit_rate'] ?? ($row['profit_margin'] ?? 0),
+                'currency'      => 'TRY',
+                'exchange_rates'=> $exchangeRates,
+                'provider'      => $provider,
+            ]);
+            $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:p, total_amount=:t WHERE id=:id')
+                ->execute([
+                    ':p' => $totals['totals']['profit'],
+                    ':t' => $totals['totals']['grand_total'],
+                    ':id' => $keepId,
+                ]);
+        }
+
+        $idsToDelete = array_diff($ids, [$keepId]);
+        if ($idsToDelete) {
+            $placeholders = implode(',', array_fill(0, count($idsToDelete), '?'));
+            $del = $pdo->prepare("DELETE FROM guillotinesystems WHERE id IN ($placeholders)");
+            $del->execute(array_values($idsToDelete));
+        }
+    }
+}
+
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -356,6 +412,9 @@ if ($gPost) {
                         ]);
                     }
 
+                    // Merge duplicate rows (same dimensions) and recalc totals
+                    mergeGuillotineDuplicates($pdo, $id, $productProvider, $exchangeRates);
+
                     $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :id');
                     $gSumStmt->execute([':id' => $id]);
                     $gSum = (float)$gSumStmt->fetchColumn();
@@ -378,6 +437,12 @@ $guillotines = [];
 $slidings = [];
 if (!$error) {
     try {
+        // Ensure duplicate rows are merged before fetching
+        $exchangeRates = fetchExchangeRates('TRY', ['USD', 'EUR']);
+        if ($exchangeRates) {
+            mergeGuillotineDuplicates($pdo, $id, $productProvider, $exchangeRates);
+        }
+
         $gStmt = $pdo->prepare('SELECT id, system_type, width, height, quantity, motor_system, remote_quantity, ral_code, glass_type, glass_color, profit_margin, total_amount FROM guillotinesystems WHERE general_offer_id = :id');
         $gStmt->execute([':id' => $id]);
         $guillotines = $gStmt->fetchAll();
