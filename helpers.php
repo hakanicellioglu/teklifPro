@@ -11,15 +11,18 @@ declare(strict_types=1);
  * @param string $base       Base currency code.
  * @param array  $currencies Target currency codes.
  *
- * @return array<string,float>
+ * @return array<string,float>|null Returns null if rates couldn't be fetched.
  */
-function fetchExchangeRates(string $base, array $currencies): array
+function fetchExchangeRates(string $base, array $currencies): ?array
 {
     $base = strtoupper($base);
     $json = @file_get_contents("https://open.er-api.com/v6/latest/{$base}");
-    $data = $json ? json_decode($json, true) : null;
+    if ($json === false) {
+        throw new RuntimeException('Exchange rate API request failed.');
+    }
+    $data = json_decode($json, true);
     if (!is_array($data) || (($data['result'] ?? '') !== 'success') || empty($data['rates'])) {
-        return [];
+        throw new RuntimeException('Invalid exchange rate API response.');
     }
     $rates = [];
     foreach ($currencies as $cur) {
@@ -33,5 +36,5 @@ function fetchExchangeRates(string $base, array $currencies): array
             $rates[$curUpper] = 1 / $rate;
         }
     }
-    return $rates;
+    return $rates ?: null;
 }

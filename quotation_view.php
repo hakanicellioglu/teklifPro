@@ -194,7 +194,16 @@ if (
             if ((float)($row['width'] ?? 0) <= 0 || (float)($row['height'] ?? 0) <= 0 || (int)($row['quantity'] ?? 0) <= 0) {
                 throw new Exception('Geçersiz giyotin satırı.');
             }
-            $exchangeRates = fetchExchangeRates('TRY', ['USD', 'EUR']);
+            $exchangeSource = 'API';
+            try {
+                $exchangeRates = fetchExchangeRates('TRY', ['USD', 'EUR']);
+            } catch (Throwable $e) {
+                $exchangeRates = null;
+            }
+            if (empty($exchangeRates)) {
+                $exchangeRates = array_change_key_case(LOCAL_EXCHANGE_RATES ?? [], CASE_UPPER);
+                $exchangeSource = empty($exchangeRates) ? $exchangeSource : 'local';
+            }
             if (empty($exchangeRates)) {
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
@@ -203,6 +212,7 @@ if (
                 echo json_encode(['error' => 'Kur bilgileri alınamadı.']);
                 exit;
             }
+            error_log('Exchange rates source: ' . $exchangeSource . ' ' . json_encode($exchangeRates));
             $totals = calculateGuillotineTotals([
                 'width'         => $row['width'],
                 'height'        => $row['height'],
@@ -232,7 +242,11 @@ if (
 
             $pdo->commit();
             header('Content-Type: application/json');
-            echo json_encode(['success' => true]);
+            echo json_encode([
+                'success' => true,
+                'exchange_rates' => $exchangeRates,
+                'exchange_source' => $exchangeSource,
+            ]);
             exit;
         } else {
             throw new Exception('Giyotin satırı bulunamadı.');
@@ -343,10 +357,20 @@ if ($gPost) {
             if (!$validNumbers) {
                 $error = 'Tüm sayısal alanlar pozitif olmalıdır.';
             } else {
-                $exchangeRates = fetchExchangeRates('TRY', ['USD', 'EUR']);
+                $exchangeSource = 'API';
+                try {
+                    $exchangeRates = fetchExchangeRates('TRY', ['USD', 'EUR']);
+                } catch (Throwable $e) {
+                    $exchangeRates = null;
+                }
+                if (empty($exchangeRates)) {
+                    $exchangeRates = array_change_key_case(LOCAL_EXCHANGE_RATES ?? [], CASE_UPPER);
+                    $exchangeSource = empty($exchangeRates) ? $exchangeSource : 'local';
+                }
                 if (empty($exchangeRates)) {
                     $error = 'Kur bilgileri alınamadı.';
                 } else {
+                    error_log('Exchange rates source: ' . $exchangeSource . ' ' . json_encode($exchangeRates));
                     if ($gId) {
                         $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin WHERE id=:id AND general_offer_id=:goid';
                         $params = [
@@ -415,7 +439,8 @@ if ($gPost) {
                     $overall = $gSum + $sSum;
                     $updStmt = $pdo->prepare('UPDATE generaloffers SET total_amount = :total WHERE id = :id');
                     $updStmt->execute([':total' => $overall, ':id' => $id]);
-                    $success = $gId ? 'Giyotin sistemi güncellendi.' : 'Giyotin sistemi eklendi.';
+                    $success = ($gId ? 'Giyotin sistemi güncellendi.' : 'Giyotin sistemi eklendi.')
+                        . ' (Kur kaynağı: ' . ($exchangeSource === 'API' ? 'API' : 'Yerel') . ')';
                 }
             }
         } catch (Exception $e) {

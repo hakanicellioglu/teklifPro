@@ -7,6 +7,12 @@ const DB_NAME = 'teklifpro';
 const DB_USER = 'root';
 const DB_PASS = '';
 
+// Local fallback exchange rates used if the external API fails.
+const LOCAL_EXCHANGE_RATES = [
+    'USD' => 30.0,
+    'EUR' => 32.0,
+];
+
 try {
     $pdo = new PDO(
         'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
