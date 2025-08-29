@@ -120,6 +120,7 @@ if (!$id) {
 
 $error = null;
 $success = null;
+$exchangeRateError = false;
 
 if (!empty($_SESSION['flash_success'])) {
     $success = $_SESSION['flash_success'];
@@ -346,6 +347,7 @@ if ($gPost) {
                 $exchangeRates = fetchExchangeRates('TRY', ['USD', 'EUR']);
                 if (empty($exchangeRates)) {
                     $error = 'Kur bilgileri alınamadı.';
+                    $exchangeRateError = true;
                 } else {
                     if ($gId) {
                         $sql = 'UPDATE guillotinesystems SET width=:width, height=:height, quantity=:quantity, motor_system=:motor, remote_quantity=:remote, ral_code=:ral, glass_type=:glass_type, glass_color=:glass_color, profit_margin=:profit_margin WHERE id=:id AND general_offer_id=:goid';
@@ -916,4 +918,15 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
         });
     });
 </script>
+<?php if ($exchangeRateError): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.showToast) {
+            window.showToast('Kur bilgileri alınamadı. Lütfen tekrar deneyin.', 'danger');
+        } else {
+            alert('Kur bilgileri alınamadı. Lütfen tekrar deneyin.');
+        }
+    });
+</script>
+<?php endif; ?>
 <?php require __DIR__ . '/footer.php'; ?>
