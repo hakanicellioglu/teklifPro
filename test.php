@@ -501,7 +501,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     // Giyotin Verileri
     // Veritabanından ilgili ölçü ve ayarları çeker.
     //
-    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, motor_system, remote_quantity, profit_margin FROM guillotinesystems WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, motor_system, remote_quantity, profit_margin, general_offer_id FROM guillotinesystems WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
@@ -658,7 +658,24 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         $demonteTotal     += $item['total'];
     }
     unset($item);
-    $salesTotal = $tot['grand_total'] + $demonteTotal;
+    $salesTotal     = $tot['grand_total'] + $demonteTotal;
+    $updatedProfit  = $tot['profit'] + $demonteProfitSum;
+
+    //
+    // Veritabanı Güncellemesi
+    // Hesaplanan kâr ve satış tutarı ilgili giyotin satırına ve teklife kaydedilir.
+    //
+    $upd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount = :p, total_amount = :t WHERE id = :id');
+    $upd->execute([':p' => $updatedProfit, ':t' => $salesTotal, ':id' => $id]);
+
+    $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :gid');
+    $gSumStmt->execute([':gid' => $row['general_offer_id']]);
+    $gSum = (float) $gSumStmt->fetchColumn();
+    $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :gid');
+    $sSumStmt->execute([':gid' => $row['general_offer_id']]);
+    $sSum = (float) $sSumStmt->fetchColumn();
+    $offerUpd = $pdo->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id');
+    $offerUpd->execute([':t' => $gSum + $sSum, ':id' => $row['general_offer_id']]);
 
     //
     // Kategori Döngüsü
