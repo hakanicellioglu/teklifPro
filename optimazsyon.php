@@ -23,8 +23,8 @@ interface ProductProviderInterface
     // Verilen isimdeki ürünü bulur; bulunmazsa null döner.
     //
     /**
-     * Return product fields: unit, unit_price, weight_per_meter, category, price_unit.
-     * Return null if product is not found.
+     * Return product fields: code, unit, unit_price, weight_per_meter,
+     * category, price_unit and image_url. Return null if product is not found.
      */
     public function getProduct(string $name): ?array;
 }
@@ -48,7 +48,7 @@ interface ProductProviderInterface
  * } $input
  *
  * @return array{
- *   lines: array<int, array{category:string,name:string,measure:float,unit:string,quantity:float,pieces:int,total:float,currency:string,original_currency:string,image_url:?string}>,
+ *   lines: array<int, array{category:string,name:string,code:?string,measure:float,unit:string,quantity:float,pieces:int,total:float,currency:string,original_currency:string,image_url:?string}>,
  *   totals: array{
  *     alu_cost: float,
  *     glass_cost: float,
@@ -320,15 +320,16 @@ function calculateGuillotineTotals(array $input): array
         // Hesaplanan değerleri çıktı listesine ekler.
         //
         $lines[] = [
-            'category'         => $category,
-            'name'             => $rule['name'],
-            'measure'          => $measure,
-            'unit'             => $unit,
-            'quantity'         => $qtyDisplay,
-            'pieces'           => $rq,
-            'total'            => $lineTotal,
-            'image_url'        => $product['image_url'] ?? null,
-            'currency'         => $lineCurrency,
+            'category'          => $category,
+            'name'              => $rule['name'],
+            'code'              => $product['code'] ?? null,
+            'measure'           => $measure,
+            'unit'              => $unit,
+            'quantity'          => $qtyDisplay,
+            'pieces'            => $rq,
+            'total'             => $lineTotal,
+            'image_url'         => $product['image_url'] ?? null,
+            'currency'          => $lineCurrency,
             'original_currency' => $originalCurrency,
         ];
     }
@@ -478,7 +479,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         //
         public function getProduct(string $name): ?array
         {
-            $stmt = $this->pdo->prepare('SELECT p.unit, p.unit_price, p.weight_per_meter, p.price_unit, p.image_url, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
+            $stmt = $this->pdo->prepare('SELECT p.code, p.unit, p.unit_price, p.weight_per_meter, p.price_unit, p.image_url, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
             $stmt->execute([':name' => $name]);
 
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -502,7 +503,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     // Giyotin Verileri
     // Veritabanından ilgili ölçü ve ayarları çeker.
     //
-    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, motor_system, remote_quantity, profit_margin, general_offer_id FROM guillotinesystems WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, motor_system, remote_quantity, ral_code, profit_margin, general_offer_id FROM guillotinesystems WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
@@ -510,6 +511,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         require __DIR__ . '/footer.php';
         exit;
     }
+
+    $custStmt = $pdo->prepare('SELECT TRIM(CONCAT(c.first_name, " ", c.last_name)) AS name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id WHERE g.id = :id');
+    $custStmt->execute([':id' => $row['general_offer_id']]);
+    $customerName = (string) $custStmt->fetchColumn();
 
     //
     // Sağlayıcı ve Kur Oranları
@@ -539,6 +544,47 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         require __DIR__ . '/footer.php';
         exit;
     }
+    $tot       = $result['totals'];
+    $glassInfo = $result['glass'] ?? null;
+    $currencySymbol = currencySymbol($result['currency']);
+
+    $singleArea = $totalArea = 0.0;
+    if ($glassInfo && $glassInfo['quantity'] > 0) {
+        $singleArea = ($glassInfo['width'] * $glassInfo['height']) / 1000000;
+        $totalArea  = $singleArea * $glassInfo['quantity'];
+    }
+
+    $systemWeightKg = ($row['width'] * $row['height'] * $row['quantity']) / 1000;
+
+    echo '<div class="d-flex justify-content-between mb-3">';
+    echo '<div>';
+    if ($glassInfo && $glassInfo['quantity'] > 0) {
+        echo '<h5>Cam Ölçüleri</h5>';
+        echo '<table class="table table-sm table-striped w-auto mb-3">';
+        echo '<thead><tr><th>Genişlik (mm)</th><th>Yükseklik (mm)</th><th>Adet</th><th>Birim m²</th><th>Toplam m²</th></tr></thead><tbody>';
+        echo '<tr>';
+        echo '<td>' . e(number_format($glassInfo['width'], 0, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($glassInfo['height'], 0, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($glassInfo['quantity'], 0, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($singleArea, 2, ',', '.')) . '</td>';
+        echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
+        echo '</tr>';
+        echo '</tbody></table>';
+    }
+    echo '<ul class="list-unstyled small mb-0">';
+    echo '<li>Genişlik: ' . e(number_format((float)$row['width'], 0, ',', '.')) . ' mm</li>';
+    echo '<li>Yükseklik: ' . e(number_format((float)$row['height'], 0, ',', '.')) . ' mm</li>';
+    echo '<li>Adet: ' . e(number_format((int)$row['quantity'], 0, ',', '.')) . '</li>';
+    echo '<li>Motor: ' . e($row['motor_system'] ?? '-') . '</li>';
+    echo '<li>Kumanda: ' . e(number_format((int)$row['remote_quantity'], 0, ',', '.')) . '</li>';
+    echo '<li>RAL Kod: ' . e($row['ral_code'] ?? '-') . '</li>';
+    echo '<li>Sistem: ' . e(number_format($systemWeightKg, 2, ',', '.')) . ' kg</li>';
+    echo '<li>Alüminyum: ' . e(number_format($result['alu_kg'], 2, ',', '.')) . ' kg</li>';
+    echo '<li>Cam: ' . e(number_format($totalArea, 2, ',', '.')) . ' m²</li>';
+    echo '</ul>';
+    echo '</div>';
+    echo '<div class="text-end"><strong>Müşteri:</strong><br>' . e($customerName) . '</div>';
+    echo '</div>';
 
     echo '<h3 class="mt-4">Kalemler</h3>';
 
@@ -557,14 +603,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         }
         $categories[$key]['lines'][] = $line;
     }
-
-    //
-    // Toplam ve Cam Bilgisi
-    // Hesaplamanın genel sonuçlarını ve cam ölçülerini alır.
-    //
-    $tot       = $result['totals'];
-    $glassInfo = $result['glass'] ?? null;
-    $currencySymbol = currencySymbol($result['currency']);
 
     //
     // Demonte Kalemleri
@@ -657,58 +695,28 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     // Her kategori için kart görünümü oluşturur.
     //
     foreach ($categories as $cat) {
-        $isAlu = strcasecmp($cat['title'], 'Alüminyum') === 0;
         echo '<h5>' . e($cat['title']) . '</h5>';
-        echo '<div class="row row-cols-1 row-cols-md-3 g-2 mb-3">';
+        echo '<div class="row row-cols-2 row-cols-md-4 g-2 mb-3">';
         foreach ($cat['lines'] as $line) {
             echo '<div class="col">';
-            echo '<div class="card">';
-            if (!empty($line['image_url'])) {
-                echo '<img src="' . e($line['image_url']) . '" class="card-img-top p-1" style="height:100px;object-fit:contain;" alt="' . e($line['name']) . '">';
-            } else {
-                echo '<div class="d-flex align-items-center justify-content-center bg-light" style="height:100px;"><span class="text-muted small">Resim yok</span></div>';
-            }
+            echo '<div class="card h-100">';
             echo '<div class="card-body p-2">';
             echo '<h6 class="card-title mb-1 small">' . e($line['name']) . '</h6>';
+            echo '<p class="card-text mb-1 small">Kod: ' . e($line['code'] ?? '-') . '</p>';
             echo '<p class="card-text mb-1 small">Ölçü: ' . e(number_format($line['measure'], 0, ',', '.')) . ' mm</p>';
-            if ($isAlu) {
-                echo '<p class="card-text mb-0 small">Adet: ' . e(number_format((int) ($line['pieces'] ?? 0), 0, ',', '.')) . '</p>';
-            }
+            echo '<p class="card-text mb-0 small">Adet: ' . e(number_format((int) ($line['pieces'] ?? 0), 0, ',', '.')) . '</p>';
             echo '</div>';
+            if (!empty($line['image_url'])) {
+                echo '<img src="' . e($line['image_url']) . '" class="card-img-bottom p-1" style="height:100px;object-fit:contain;" alt="' . e($line['name']) . '">';
+            } else {
+                echo '<div class="d-flex align-items-center justify-content-center bg-light card-img-bottom" style="height:100px;"><span class="text-muted small">Resim yok</span></div>';
+            }
             echo '</div>';
             echo '</div>';
         }
         echo '</div>';
     }
 
-    //
-    // Cam Bilgisi Kontrolü
-    // Cam satırı varsa alanı ve maliyeti gösterir.
-    //
-    if ($glassInfo && $glassInfo['quantity'] > 0) {
-        //
-        // Tek Cam Alanı
-        // Bir cam parçasının metrekare alanını hesaplar.
-        //
-        $singleArea = ($glassInfo['width'] * $glassInfo['height']) / 1000000;
-        //
-        // Toplam Cam Alanı
-        // Tüm cam parçalarının toplam metrekare alanını bulur.
-        //
-        $totalArea  = $singleArea * $glassInfo['quantity'];
-        echo '<h5>Cam</h5>';
-        echo '<div class="table-responsive">';
-        echo '<table class="table table-sm table-striped mb-3">';
-        echo '<thead><tr><th>Genişlik (mm)</th><th>Yükseklik (mm)</th><th>Adet</th><th>Birim m²</th><th>Toplam m²</th></tr></thead><tbody>';
-        echo '<tr>';
-        echo '<td>' . e(number_format($glassInfo['width'], 0, ',', '.')) . '</td>';
-        echo '<td>' . e(number_format($glassInfo['height'], 0, ',', '.')) . '</td>';
-        echo '<td>' . e(number_format($glassInfo['quantity'], 0, ',', '.')) . '</td>';
-        echo '<td>' . e(number_format($singleArea, 2, ',', '.')) . '</td>';
-        echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
-        echo '</tr>';
-        echo '</tbody></table></div>';
-    }
     echo '<div class="mt-3">';
     echo '<table class="table table-bordered table-sm">';
     echo '<tbody>';
