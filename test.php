@@ -41,6 +41,7 @@ interface ProductProviderInterface
  *   height: float|int|string,
  *   quantity: int|string,
  *   glass_type?: string,
+ *   profit_rate?: float|int|string,
  *   currency?: string,
  *   exchange_rates?: array<string,float>,
  *   provider: ProductProviderInterface
@@ -55,6 +56,7 @@ interface ProductProviderInterface
  *     fitil_cost: float,
  *     extras: array{paint: float, waste: float, labor: float},
  *     general_expense: float,
+ *     profit: float,
  *     grand_total: float
  *   },
  *   currency: string,
@@ -374,7 +376,15 @@ function calculateGuillotineTotals(array $input): array
     // Genel Giderler
     // Genel giderleri ekleyerek nihai tutarı hesaplar.
     $generalExpense = $grandTotal * 0.01;
-    $finalTotal     = $grandTotal + $generalExpense;
+    $baseTotal      = $grandTotal + $generalExpense;
+
+    //
+    // Kâr Hesabı
+    // Belirtilen kâr oranına göre kâr tutarını hesaplar ve son toplamı günceller.
+    //
+    $profitRate = max(0.0, (float) ($input['profit_rate'] ?? 0));
+    $profit     = $baseTotal * $profitRate / 100;
+    $finalTotal = $baseTotal + $profit;
 
     //
     // Toplamlar Dizisi
@@ -387,6 +397,7 @@ function calculateGuillotineTotals(array $input): array
         'fitil_cost'      => $fitilCost,
         'extras'          => $extras,
         'general_expense' => $generalExpense,
+        'profit'          => $profit,
         'grand_total'     => $finalTotal,
     ];
 
@@ -720,6 +731,8 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<tr><th>İmalat İşçiliği</th><td>' . e(number_format($tot['extras']['labor'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
 
     echo '<tr><th>Genel Gider</th><td>' . e(number_format($tot['general_expense'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
+
+    echo '<tr><th>Kâr</th><td>' . e(number_format($tot['profit'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
 
     echo '<tr class="table-success fw-bold">';
     echo '<td>Genel Toplam</td><td>' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
