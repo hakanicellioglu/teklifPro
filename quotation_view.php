@@ -552,7 +552,7 @@ page_header($title, $actions, true);
                 <?php if ($approveUrl): ?>
                     <div class="mb-2">
                         <span class="text-muted small d-block">Onay Linki</span>
-                        <button type="button" class="btn btn-sm btn-outline-secondary share-btn offer-action" data-url="<?= e($approveUrl) ?>">
+                        <button type="button" class="btn btn-sm btn-outline-secondary share-btn offer-action" data-url="<?= e($approveUrl) ?>" data-id="<?= e((string)$offer['id']) ?>" data-csrf="<?= e($csrfToken) ?>">
                             <i class="bi bi-share me-1" aria-hidden="true"></i><span class="visually-hidden">Bağlantıyı kopyala</span> Paylaş
                         </button>
                     </div>

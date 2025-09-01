@@ -7,6 +7,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+}
+$csrfToken = $_SESSION['csrf_token'];
+
 if (empty($_SESSION['user_id']) || !filter_var($_SESSION['user_id'], FILTER_VALIDATE_INT)) {
     http_response_code(403);
     exit('Forbidden');
@@ -204,7 +209,7 @@ if (!empty($quote['offer_date']) && !empty($quote['validity_days'])) {
                             <div><span class="fw-semibold">Tarih:</span> <?= h($quote['offer_date'] ?? '') ?></div>
                             <div><span class="fw-semibold">Hazırlayan:</span> <?= h($preparedBy) ?></div>
                             <?php if ($approveUrl): ?>
-                            <div class="d-print-none"><span class="fw-semibold">Onay:</span> <a href="<?= h($approveUrl) ?>"><?= h($approveUrl) ?></a><button type="button" class="btn btn-sm btn-outline-secondary share-btn ms-2" data-url="<?= h($approveUrl) ?>">Paylaş</button></div>
+                            <div class="d-print-none"><span class="fw-semibold">Onay:</span> <a href="<?= h($approveUrl) ?>"><?= h($approveUrl) ?></a><button type="button" class="btn btn-sm btn-outline-secondary share-btn ms-2" data-url="<?= h($approveUrl) ?>" data-id="<?= h((string)$id) ?>" data-csrf="<?= h($csrfToken) ?>">Paylaş</button></div>
                             <?php endif; ?>
                             <div><span class="fw-semibold">E-posta:</span> <?= h($company['email']) ?></div>
                         </div>

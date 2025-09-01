@@ -79,10 +79,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.share-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const url = btn.getAttribute('data-url');
+      const offerId = btn.getAttribute('data-id');
+      const csrf = btn.getAttribute('data-csrf');
       if (!url) return;
+      let ok = false;
       if (navigator.share) {
         try {
           await navigator.share({ url });
+          ok = true;
         } catch (e) {
           /* ignore */
         }
@@ -90,8 +94,22 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           await navigator.clipboard.writeText(url);
           window.showToast && window.showToast('Bağlantı panoya kopyalandı', 'info');
+          ok = true;
         } catch (e) {
           window.showToast && window.showToast('Bağlantı kopyalanamadı', 'danger');
+        }
+      }
+      if (ok && offerId && csrf) {
+        try {
+          const fd = new FormData();
+          fd.append('csrf_token', csrf);
+          const res = await fetch(`/offers/${offerId}/share`, {method:'POST', body: fd});
+          if (!res.ok) {
+            const data = await res.json().catch(() => null);
+            window.showToast && window.showToast(data?.error || 'Durum güncellenemedi', 'danger');
+          }
+        } catch (err) {
+          window.showToast && window.showToast('Durum güncellenemedi', 'danger');
         }
       }
     });
