@@ -16,7 +16,7 @@ class PdoProductProvider implements ProductProviderInterface
     public function getProduct(string $name): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT p.unit, p.unit_price, p.vat_rate, p.weight_per_meter, p.price_unit, c.name AS category '
+            'SELECT p.product_code AS code, p.unit, p.unit_price, p.vat_rate, p.weight_per_meter, p.price_unit, c.name AS category '
                 . 'FROM products p LEFT JOIN categories c ON p.category_id = c.id '
                 . 'WHERE LOWER(p.name) = LOWER(:name)'
         );
