@@ -35,3 +35,21 @@ function fetchExchangeRates(string $base, array $currencies): array
     }
     return $rates;
 }
+
+/**
+ * Determines whether the given offer has expired.
+ *
+ * @param array $offer Offer row including status and valid_until fields.
+ */
+function isExpired(array $offer): bool
+{
+    $status = strtolower((string)($offer['status'] ?? ''));
+    if ($status === 'expired') {
+        return true;
+    }
+    $validUntil = $offer['valid_until'] ?? null;
+    if ($validUntil && strtotime((string)$validUntil) < time()) {
+        return true;
+    }
+    return false;
+}

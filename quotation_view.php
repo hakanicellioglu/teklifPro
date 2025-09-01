@@ -271,6 +271,7 @@ if (!$offer) {
     exit;
 }
 
+$expired = isExpired($offer);
 $approveUrl = '';
 if (!empty($offer['approval_token'])) {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -488,14 +489,20 @@ $assemblyLabel = $assemblyTypes[$offer['assembly_type']] ?? 'Bilinmiyor';
         <li class="breadcrumb-item active" aria-current="page">#<?= e((string)$offer['id']) ?></li>
     </ol>
 </nav>
+<?php if ($expired): ?>
+    <style>body.offer-expired{filter:grayscale(1);}</style>
+    <script>document.body.classList.add('offer-expired');</script>
+<?php endif; ?>
 <?php
 ob_start();
-?>
+if ($expired): ?>
+    <button id="reactivateTrigger" class="btn btn-primary me-2 d-print-none" data-bs-toggle="modal" data-bs-target="#reactivateModal">Teklifi Yeniden Aktifleştir</button>
+<?php endif; ?>
 <div class="d-none d-md-inline-flex btn-group d-print-none" role="group" aria-label="Eylemler">
-    <a href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-primary" data-bs-toggle="tooltip" title="Düzenle" aria-label="Düzenle"><i class="bi bi-pencil"></i></a>
-    <a href="/pdf/preview.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-secondary" target="_blank" rel="noopener" data-bs-toggle="tooltip" title="PDF Önizleme" aria-label="PDF Önizleme"><i class="bi bi-file-earmark-pdf"></i></a>
+    <a href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-primary offer-action" data-bs-toggle="tooltip" title="Düzenle" aria-label="Düzenle"><i class="bi bi-pencil"></i></a>
+    <a href="/pdf/preview.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-secondary offer-action" target="_blank" rel="noopener" data-bs-toggle="tooltip" title="PDF Önizleme" aria-label="PDF Önizleme"><i class="bi bi-file-earmark-pdf"></i></a>
     <?php if ($role === 'admin'): ?>
-        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" aria-label="Sil" title="Sil"><i class="bi bi-trash"></i></button>
+        <button type="button" class="btn btn-danger offer-action" data-bs-toggle="modal" data-bs-target="#deleteModal" aria-label="Sil" title="Sil"><i class="bi bi-trash"></i></button>
     <?php endif; ?>
 </div>
 <div class="dropdown d-md-none d-print-none">
@@ -503,17 +510,21 @@ ob_start();
         Eylemler
     </button>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionMenu">
-        <li><a class="dropdown-item" href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>"><i class="bi bi-pencil me-1"></i> Düzenle</a></li>
-        <li><a class="dropdown-item" href="/pdf/preview.php?id=<?= e((string)$offer['id']) ?>" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf me-1"></i> PDF Önizleme</a></li>
+        <li><a class="dropdown-item offer-action" href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>"><i class="bi bi-pencil me-1"></i> Düzenle</a></li>
+        <li><a class="dropdown-item offer-action" href="/pdf/preview.php?id=<?= e((string)$offer['id']) ?>" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf me-1"></i> PDF Önizleme</a></li>
         <?php if ($role === 'admin'): ?>
             <li><hr class="dropdown-divider"></li>
-            <li><button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="bi bi-trash me-1"></i> Sil</button></li>
+            <li><button class="dropdown-item text-danger offer-action" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="bi bi-trash me-1"></i> Sil</button></li>
         <?php endif; ?>
     </ul>
 </div>
 <?php
 $actions = ob_get_clean();
-page_header('Teklif #' . e((string)$offer['id']), $actions);
+$title = 'Teklif #' . e((string)$offer['id']);
+if ($expired) {
+    $title .= ' <span class="badge bg-secondary">Süresi Doldu</span>';
+}
+page_header($title, $actions, true);
 ?>
 <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
 <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
@@ -541,7 +552,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                 <?php if ($approveUrl): ?>
                     <div class="mb-2">
                         <span class="text-muted small d-block">Onay Linki</span>
-                        <button type="button" class="btn btn-sm btn-outline-secondary share-btn" data-url="<?= e($approveUrl) ?>">
+                        <button type="button" class="btn btn-sm btn-outline-secondary share-btn offer-action" data-url="<?= e($approveUrl) ?>">
                             <i class="bi bi-share me-1" aria-hidden="true"></i><span class="visually-hidden">Bağlantıyı kopyala</span> Paylaş
                         </button>
                     </div>
@@ -649,7 +660,7 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                                             </li>
                                             <?php if ($role === 'admin'): ?>
                                                 <li>
-                                                    <button type="button" class="dropdown-item text-danger delete-guillotine" data-id="<?= e((string)$g['id']) ?>" data-bs-toggle="modal" data-bs-target="#deleteGuillotineModal">
+                                                    <button type="button" class="dropdown-item text-danger delete-guillotine offer-row-action" data-id="<?= e((string)$g['id']) ?>" data-bs-toggle="modal" data-bs-target="#deleteGuillotineModal">
                                                         <i class="bi bi-trash me-1"></i> Sil
                                                     </button>
                                                 </li>
@@ -913,7 +924,64 @@ page_header('Teklif #' . e((string)$offer['id']), $actions);
                 window.showToast && window.showToast('Hesaplama sırasında sorun oluştu, sayfa açılıyor…', 'warning');
             }
             window.location.href = url;
-        });
     });
+});
+</script>
+<?php if ($expired): ?>
+<div class="modal fade" id="reactivateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Teklifi Yeniden Aktifleştir</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">Bu teklifi yeniden aktifleştirmek istediğinizden emin misiniz?</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
+        <button type="button" class="btn btn-primary" id="reactivateConfirm">Evet, Aktifleştir</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div id="reactivateToast" class="toast text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">Teklif yeniden aktifleştirildi.</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Kapat"></button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+<script>
+const offerExpired = <?= $expired ? 'true' : 'false' ?>;
+if (offerExpired) {
+    document.querySelectorAll('input, select, textarea, button').forEach(el => {
+        if (!el.closest('#reactivateModal') && el.id !== 'reactivateTrigger') {
+            el.disabled = true;
+        }
+    });
+    document.querySelectorAll('.offer-action').forEach(el => {
+        el.setAttribute('aria-disabled','true');
+        el.setAttribute('tabindex','-1');
+        el.classList.add('disabled');
+        if (el.tagName === 'A') {
+            el.removeAttribute('href');
+        }
+    });
+    document.querySelectorAll('.offer-row-action').forEach(el => el.classList.add('d-none'));
+}
+document.getElementById('reactivateConfirm')?.addEventListener('click', async function(){
+    const fd = new FormData();
+    fd.append('csrf_token','<?= e($csrfToken) ?>');
+    const res = await fetch('/offers/<?= e((string)$offer['id']) ?>/reactivate', {method:'POST', body: fd});
+    const data = await res.json();
+    if (data.success) {
+        const toastEl = document.getElementById('reactivateToast');
+        toastEl && new bootstrap.Toast(toastEl).show();
+        setTimeout(()=>location.reload(),1500);
+    } else {
+        alert(data.error || 'Hata');
+    }
+});
 </script>
 <?php require __DIR__ . '/footer.php'; ?>

@@ -25,6 +25,11 @@ if (!in_array($uri, $publicRoutes, true) && empty($_SESSION['user_id'])) {
 
 $file = __DIR__ . '/' . $uri . '.php';
 
+if (preg_match('#^offers/(\d+)/reactivate$#', $uri, $m)) {
+    $_GET['id'] = (int)$m[1];
+    $file = __DIR__ . '/offers/reactivate.php';
+}
+
 if (is_file($file)) {
     include $file;
     exit;
