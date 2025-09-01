@@ -821,11 +821,16 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             echo '</tr>';
         }
         echo '<tr class="table-success fw-bold">';
-        echo '<td>SATIŞ</td><td></td><td></td>';
+        echo '<td>Demonte Toplamı</td><td></td><td></td>';
         echo '<td class="text-end">' . e(number_format($costSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
         echo '<td></td>';
         echo '<td class="text-end">' . e(number_format($profitSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
         echo '<td class="text-end">' . e(number_format($totalSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+        echo '</tr>';
+        $salesTotal = $totalSum + $tot['grand_total'];
+        echo '<tr class="table-primary fw-bold">';
+        echo '<td>SATIŞ</td><td colspan="5"></td>';
+        echo '<td class="text-end">' . e(number_format($salesTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
         echo '</tr>';
         echo '</tbody></table></div></div>';
     }
