@@ -501,7 +501,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     // Giyotin Verileri
     // Veritabanından ilgili ölçü ve ayarları çeker.
     //
-    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type FROM guillotinesystems WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, motor_system, remote_quantity, profit_margin, general_offer_id FROM guillotinesystems WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
@@ -528,6 +528,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             'height'        => $row['height'],
             'quantity'      => $row['quantity'],
             'glass_type'    => $row['glass_type'] ?? '',
+            'profit_rate'   => $row['profit_margin'] ?? 0,
             'currency'      => 'TRY',
             'exchange_rates' => $exchangeRates,
             'provider'      => $provider,
@@ -589,6 +590,92 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $tot       = $result['totals'];
     $glassInfo = $result['glass'] ?? null;
     $currencySymbol = currencySymbol($result['currency']);
+
+    //
+    // Demonte Kalemleri
+    // Motor ve kumanda için maliyet hesaplamaları yapılır.
+    //
+    $profitRate   = (float) ($row['profit_margin'] ?? 0);
+    $demonteItems = [];
+
+    $systemQty = (int) ($row['quantity'] ?? 0);
+    $motorName = (string) ($row['motor_system'] ?? '');
+    if ($motorName !== '') {
+        $motorProduct = $provider->getProduct($motorName);
+        if ($motorProduct) {
+            $motorCurrency = strtoupper((string) ($motorProduct['price_unit'] ?? 'TRY'));
+            $motorPrice    = (float) ($motorProduct['unit_price'] ?? 0);
+            if ($motorCurrency !== $result['currency']) {
+                $rate = $exchangeRates[$motorCurrency] ?? null;
+                if ($rate !== null) {
+                    $motorPrice *= $rate;
+                }
+            }
+            $motorCost = $motorPrice * $systemQty;
+            $demonteItems[] = [
+                'name'       => $motorName,
+                'unit_price' => $motorPrice,
+                'qty'        => $systemQty,
+                'cost'       => $motorCost,
+            ];
+        }
+    }
+
+    $remoteQty = (int) ($row['remote_quantity'] ?? 0);
+    if ($remoteQty > 0) {
+        $remoteProduct = $provider->getProduct('Kumanda');
+        if ($remoteProduct) {
+            $remoteCurrency = strtoupper((string) ($remoteProduct['price_unit'] ?? 'TRY'));
+            $remotePrice    = (float) ($remoteProduct['unit_price'] ?? 0);
+            if ($remoteCurrency !== $result['currency']) {
+                $rate = $exchangeRates[$remoteCurrency] ?? null;
+                if ($rate !== null) {
+                    $remotePrice *= $rate;
+                }
+            }
+            $remoteCost = $remotePrice * $remoteQty;
+            $demonteItems[] = [
+                'name'       => 'Kumanda',
+                'unit_price' => $remotePrice,
+                'qty'        => $remoteQty,
+                'cost'       => $remoteCost,
+            ];
+        }
+    }
+
+    //
+    // Demonte Toplamları
+    // Motor ve kumanda kalemlerinin kâr ve toplam tutarlarını önceden hesaplar.
+    //
+    $demonteCostSum   = 0.0;
+    $demonteProfitSum = 0.0;
+    $demonteTotal     = 0.0;
+    foreach ($demonteItems as &$item) {
+        $item['profit'] = $item['cost'] * $profitRate / 100;
+        $item['total']  = $item['cost'] + $item['profit'];
+        $demonteCostSum   += $item['cost'];
+        $demonteProfitSum += $item['profit'];
+        $demonteTotal     += $item['total'];
+    }
+    unset($item);
+    $salesTotal     = $tot['grand_total'] + $demonteTotal;
+    $updatedProfit  = $tot['profit'] + $demonteProfitSum;
+
+    //
+    // Veritabanı Güncellemesi
+    // Hesaplanan kâr ve satış tutarı ilgili giyotin satırına ve teklife kaydedilir.
+    //
+    $upd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount = :p, total_amount = :t WHERE id = :id');
+    $upd->execute([':p' => $updatedProfit, ':t' => $salesTotal, ':id' => $id]);
+
+    $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :gid');
+    $gSumStmt->execute([':gid' => $row['general_offer_id']]);
+    $gSum = (float) $gSumStmt->fetchColumn();
+    $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :gid');
+    $sSumStmt->execute([':gid' => $row['general_offer_id']]);
+    $sSum = (float) $sSumStmt->fetchColumn();
+    $offerUpd = $pdo->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id');
+    $offerUpd->execute([':t' => $gSum + $sSum, ':id' => $row['general_offer_id']]);
 
     //
     // Kategori Döngüsü
@@ -737,10 +824,43 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<tr class="table-success fw-bold">';
     echo '<td>Genel Toplam</td><td>' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
     echo '</tr>';
+    if (!empty($demonteItems)) {
+        echo '<tr><th>Demonte Toplamı</th><td>' . e(number_format($demonteTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
+        echo '<tr class="table-primary fw-bold">';
+        echo '<td>SATIŞ</td><td>' . e(number_format($salesTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+        echo '</tr>';
+    }
 
     echo '</tbody>';
     echo '</table>';
     echo '</div>';
+    // Demonte Tablosu
+    if (!empty($demonteItems)) {
+        echo '<div class="mt-3">';
+        echo '<h5>Demonte</h5>';
+        echo '<div class="table-responsive">';
+        echo '<table class="table table-sm table-striped mb-3">';
+        echo '<thead><tr><th>Ürün</th><th class="text-end">Birim Fiyat</th><th>Adet</th><th class="text-end">Maliyet</th><th class="text-end">Kâr (%)</th><th class="text-end">Demonte Kârı</th><th class="text-end">Demonte Tutarı</th></tr></thead><tbody>';
+        foreach ($demonteItems as $item) {
+            echo '<tr>';
+            echo '<td>' . e($item['name']) . '</td>';
+            echo '<td class="text-end">' . e(number_format($item['unit_price'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+            echo '<td>' . e(number_format($item['qty'], 0, ',', '.')) . '</td>';
+            echo '<td class="text-end">' . e(number_format($item['cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+            echo '<td class="text-end">' . e(number_format($profitRate, 2, ',', '.')) . ' %</td>';
+            echo '<td class="text-end">' . e(number_format($item['profit'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+            echo '<td class="text-end">' . e(number_format($item['total'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+            echo '</tr>';
+        }
+        echo '<tr class="table-success fw-bold">';
+        echo '<td>Demonte Toplamı</td><td></td><td></td>';
+        echo '<td class="text-end">' . e(number_format($demonteCostSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+        echo '<td></td>';
+        echo '<td class="text-end">' . e(number_format($demonteProfitSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+        echo '<td class="text-end">' . e(number_format($demonteTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+        echo '</tr>';
+        echo '</tbody></table></div></div>';
+    }
     echo '</div>';
 
     //
