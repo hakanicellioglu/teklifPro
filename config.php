@@ -22,3 +22,17 @@ try {
 } catch (PDOException $e) {
     throw $e;
 }
+
+// Automatically mark expired offers
+try {
+    $pdo->exec(
+        "UPDATE generaloffers
+         SET status = 'expired'
+         WHERE validity_days IS NOT NULL
+           AND offer_date IS NOT NULL
+           AND status NOT IN ('accepted', 'rejected', 'cancelled', 'expired')
+           AND DATE_ADD(offer_date, INTERVAL validity_days DAY) < CURDATE()"
+    );
+} catch (Exception $e) {
+    // Ignore errors (e.g., table does not exist)
+}
