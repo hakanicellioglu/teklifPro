@@ -3,7 +3,7 @@
     &copy; <?= date('Y'); ?> TeklifPro
   </footer>
 
-  <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+  <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3"></div>
 
   <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

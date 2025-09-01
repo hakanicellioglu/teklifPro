@@ -552,7 +552,12 @@ page_header($title, $actions, true);
                 <?php if ($approveUrl): ?>
                     <div class="mb-2">
                         <span class="text-muted small d-block">Onay Linki</span>
-                        <button type="button" class="btn btn-sm btn-outline-secondary share-btn offer-action" data-url="<?= e($approveUrl) ?>">
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-secondary share-btn offer-action"
+                            data-url="<?= e($approveUrl) ?>"
+                            data-offer-id="<?= e((string)$offer['id']) ?>"
+                            data-csrf="<?= e($csrfToken) ?>">
                             <i class="bi bi-share me-1" aria-hidden="true"></i><span class="visually-hidden">Bağlantıyı kopyala</span> Paylaş
                         </button>
                     </div>
@@ -573,7 +578,7 @@ page_header($title, $actions, true);
                         </form>
                     <?php else: ?>
                         <span class="text-muted small d-block">Durum</span>
-                        <span class="badge bg-<?= e($statusClasses[$offer['status']] ?? 'secondary') ?>"><?= e($statusLabels[$offer['status']] ?? $offer['status']) ?></span>
+                        <span id="statusBadge" class="badge bg-<?= e($statusClasses[$offer['status']] ?? 'secondary') ?>"><?= e($statusLabels[$offer['status']] ?? $offer['status']) ?></span>
                     <?php endif; ?>
                 </div>
             </div>
@@ -952,6 +957,11 @@ page_header($title, $actions, true);
   </div>
 </div>
 <?php endif; ?>
+<script>
+window.statusLabels = <?= json_encode($statusLabels, JSON_UNESCAPED_UNICODE) ?>;
+window.statusClasses = <?= json_encode($statusClasses, JSON_UNESCAPED_UNICODE) ?>;
+window.isAdmin = <?= $role === 'admin' ? 'true' : 'false' ?>;
+</script>
 <script>
 const offerExpired = <?= $expired ? 'true' : 'false' ?>;
 if (offerExpired) {

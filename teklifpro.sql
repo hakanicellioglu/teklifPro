@@ -127,18 +127,21 @@ CREATE TABLE `generaloffers` (
   `status` varchar(20) NOT NULL DEFAULT 'pending',
   `approval_token` varchar(64) DEFAULT NULL,
   `approved_at` datetime DEFAULT NULL,
-  `note` text DEFAULT NULL
+  `note` text DEFAULT NULL,
+  `shared_at` datetime DEFAULT NULL,
+  `shared_by` int(11) DEFAULT NULL,
+  `share_count` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
 --
 -- Tablo döküm verisi `generaloffers`
 --
 
-INSERT INTO `generaloffers` (`id`, `quote_no`, `customer_id`, `company_id`, `offer_date`, `assembly_type`, `delivery_time`, `payment_method`, `validity_days`, `installment_term`, `payment_type`, `term_months`, `interest_mode`, `interest_value`, `interest_amount`, `total_with_interest`, `monthly_installment`, `grace_days`, `payment_term`, `offer_validity`, `maturity_period`, `discount_rate`, `discount_amount`, `vat_rate`, `vat_amount`, `total_amount`, `profit_percent`, `profit_amount`, `status`, `approval_token`, `approved_at`, `note`) VALUES
-(11, NULL, 1, NULL, '2025-08-22', 'demonte', NULL, 'cash', 10, NULL, 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 6761.20, NULL, NULL, 'sent', '6a11fec84c4615436d2015e24e35e184', '2025-08-23 08:36:37', NULL),
-(13, NULL, 2, NULL, '2025-08-25', 'demonte', NULL, 'vadeli', 10, NULL, 'cash', 1, NULL, 5.00, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 'accepted', NULL, '2025-08-26 08:58:43', NULL),
-(14, NULL, 1, NULL, '2025-08-26', 'demonte', NULL, 'cash', 10, NULL, 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 13665.28, NULL, NULL, 'draft', NULL, '2025-08-26 15:31:44', NULL),
-(15, NULL, 2, NULL, '2025-08-26', 'demonte', NULL, 'cash', NULL, NULL, 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 95607.96, NULL, NULL, 'pending', '2ee79016512d3738b795028bb3593a6e', NULL, NULL);
+INSERT INTO `generaloffers` (`id`, `quote_no`, `customer_id`, `company_id`, `offer_date`, `assembly_type`, `delivery_time`, `payment_method`, `validity_days`, `installment_term`, `payment_type`, `term_months`, `interest_mode`, `interest_value`, `interest_amount`, `total_with_interest`, `monthly_installment`, `grace_days`, `payment_term`, `offer_validity`, `maturity_period`, `discount_rate`, `discount_amount`, `vat_rate`, `vat_amount`, `total_amount`, `profit_percent`, `profit_amount`, `status`, `approval_token`, `approved_at`, `note`, `shared_at`, `shared_by`, `share_count`) VALUES
+(11, NULL, 1, NULL, '2025-08-22', 'demonte', NULL, 'cash', 10, NULL, 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 6761.20, NULL, NULL, 'sent', '6a11fec84c4615436d2015e24e35e184', '2025-08-23 08:36:37', NULL, NULL, NULL, 0),
+(13, NULL, 2, NULL, '2025-08-25', 'demonte', NULL, 'vadeli', 10, NULL, 'cash', 1, NULL, 5.00, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 'accepted', NULL, '2025-08-26 08:58:43', NULL, NULL, NULL, 0),
+(14, NULL, 1, NULL, '2025-08-26', 'demonte', NULL, 'cash', 10, NULL, 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 13665.28, NULL, NULL, 'draft', NULL, '2025-08-26 15:31:44', NULL, NULL, NULL, 0),
+(15, NULL, 2, NULL, '2025-08-26', 'demonte', NULL, 'cash', NULL, NULL, 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 95607.96, NULL, NULL, 'pending', '2ee79016512d3738b795028bb3593a6e', NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -365,7 +368,8 @@ ALTER TABLE `generaloffers`
   ADD PRIMARY KEY (`id`),
   ADD KEY `customer_id` (`customer_id`),
   ADD KEY `company_id` (`company_id`),
-  ADD KEY `idx_generaloffers_status` (`status`);
+  ADD KEY `idx_generaloffers_status` (`status`),
+  ADD KEY `idx_generaloffers_shared_by` (`shared_by`);
 
 --
 -- Tablo için indeksler `guillotinesystems`
@@ -482,7 +486,8 @@ ALTER TABLE `users`
 --
 ALTER TABLE `generaloffers`
   ADD CONSTRAINT `generaloffers_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`),
-  ADD CONSTRAINT `generaloffers_ibfk_2` FOREIGN KEY (`company_id`) REFERENCES `company` (`id`);
+  ADD CONSTRAINT `generaloffers_ibfk_2` FOREIGN KEY (`company_id`) REFERENCES `company` (`id`),
+  ADD CONSTRAINT `generaloffers_ibfk_3` FOREIGN KEY (`shared_by`) REFERENCES `users` (`id`);
 
 --
 -- Tablo kısıtlamaları `products`

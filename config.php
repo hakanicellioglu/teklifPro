@@ -31,6 +31,16 @@ try {
     // Ignore if the table is missing
 }
 
+// Schema adjustments for share tracking
+try {
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS shared_at DATETIME NULL");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS shared_by INT NULL");
+    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS share_count INT NOT NULL DEFAULT 0");
+    $pdo->exec("ALTER TABLE generaloffers ADD INDEX IF NOT EXISTS idx_generaloffers_shared_by (shared_by)");
+    $pdo->exec("ALTER TABLE generaloffers ADD CONSTRAINT IF NOT EXISTS fk_generaloffers_shared_by FOREIGN KEY (shared_by) REFERENCES users(id)");
+} catch (Exception $e) {
+}
+
 // Populate missing valid_until values
 try {
     $pdo->exec(

@@ -79,13 +79,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.share-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const url = btn.getAttribute('data-url');
+      const offerId = btn.getAttribute('data-offer-id');
+      const token = btn.getAttribute('data-csrf');
       if (!url) return;
+      btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
       if (navigator.share) {
-        try {
-          await navigator.share({ url });
-        } catch (e) {
-          /* ignore */
-        }
+        try { await navigator.share({ url }); } catch (e) { /* ignore */ }
       } else {
         try {
           await navigator.clipboard.writeText(url);
@@ -94,6 +94,38 @@ document.addEventListener('DOMContentLoaded', () => {
           window.showToast && window.showToast('Bağlantı kopyalanamadı', 'danger');
         }
       }
+      if (offerId && token) {
+        try {
+          const fd = new FormData();
+          fd.append('csrf_token', token);
+          fd.append('id', offerId);
+          const res = await fetch(`/offers/${offerId}/mark-shared`, { method: 'POST', body: fd });
+          if (res.ok) {
+            const data = await res.json();
+            const status = data.status;
+            const scount = data.share_count;
+            if (window.isAdmin) {
+              const sel = document.getElementById('statusSelect');
+              sel && (sel.value = status);
+            } else {
+              const badge = document.getElementById('statusBadge');
+              if (badge && window.statusLabels && window.statusClasses) {
+                badge.textContent = window.statusLabels[status] || status;
+                badge.className = `badge bg-${window.statusClasses[status] || 'secondary'}`;
+              }
+            }
+            const scEl = document.getElementById('shareCount');
+            scEl && (scEl.textContent = scount);
+            window.showToast && window.showToast('Teklif paylaşıldı ve durum Devam Ediyor olarak güncellendi.', 'success');
+          } else {
+            window.showToast && window.showToast('Paylaşım kaydı oluşturulamadı', 'danger');
+          }
+        } catch (e) {
+          window.showToast && window.showToast('Paylaşım kaydı oluşturulamadı', 'danger');
+        }
+      }
+      btn.removeAttribute('aria-busy');
+      btn.disabled = false;
     });
   });
 });
