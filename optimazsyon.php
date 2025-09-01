@@ -540,33 +540,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         exit;
     }
 
-    echo '<div class="container mt-4">';
-
-    if (!empty($exchangeRates)) {
-        echo '<div class="row">';
-
-        if (isset($exchangeRates['USD'])) {
-            echo '<div class="col-md-6">';
-            echo '<div class="alert alert-info text-center">';
-            echo '1 USD = ' . e(number_format($exchangeRates['USD'], 2, ',', '.')) . ' ' . e(currencySymbol('TRY'));
-            echo '</div>';
-            echo '</div>';
-        }
-
-        if (isset($exchangeRates['EUR'])) {
-            echo '<div class="col-md-6">';
-            echo '<div class="alert alert-success text-center">';
-            echo '1 EUR = ' . e(number_format($exchangeRates['EUR'], 2, ',', '.')) . ' ' . e(currencySymbol('TRY'));
-            echo '</div>';
-            echo '</div>';
-        }
-
-        echo '</div>'; // row
-    }
-
-    echo '</div>'; // container
-
-    echo '<h3>Kalemler</h3>';
+    echo '<h3 class="mt-4">Kalemler</h3>';
 
     //
     // Kategori Listesi
@@ -685,20 +659,20 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     foreach ($categories as $cat) {
         $isAlu = strcasecmp($cat['title'], 'Alüminyum') === 0;
         echo '<h5>' . e($cat['title']) . '</h5>';
-        echo '<div class="row row-cols-1 row-cols-md-3 g-3 mb-3">';
+        echo '<div class="row row-cols-1 row-cols-md-3 g-2 mb-3">';
         foreach ($cat['lines'] as $line) {
             echo '<div class="col">';
-            echo '<div class="card h-100">';
+            echo '<div class="card">';
             if (!empty($line['image_url'])) {
-                echo '<img src="' . e($line['image_url']) . '" class="card-img-top" alt="' . e($line['name']) . '">';
+                echo '<img src="' . e($line['image_url']) . '" class="card-img-top p-1" style="height:100px;object-fit:contain;" alt="' . e($line['name']) . '">';
             } else {
-                echo '<svg class="bd-placeholder-img card-img-top" width="100%" height="180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder" preserveAspectRatio="xMidYMid slice" focusable="false"><rect width="100%" height="100%" fill="#e9ecef"></rect><text x="50%" y="50%" fill="#6c757d" dy=".3em" text-anchor="middle">Resim yok</text></svg>';
+                echo '<div class="d-flex align-items-center justify-content-center bg-light" style="height:100px;"><span class="text-muted small">Resim yok</span></div>';
             }
-            echo '<div class="card-body">';
-            echo '<h6 class="card-title">' . e($line['name']) . '</h6>';
-            echo '<p class="card-text mb-1">Ölçü: ' . e(number_format($line['measure'], 0, ',', '.')) . ' mm</p>';
+            echo '<div class="card-body p-2">';
+            echo '<h6 class="card-title mb-1 small">' . e($line['name']) . '</h6>';
+            echo '<p class="card-text mb-1 small">Ölçü: ' . e(number_format($line['measure'], 0, ',', '.')) . ' mm</p>';
             if ($isAlu) {
-                echo '<p class="card-text mb-1">Adet: ' . e(number_format((int) ($line['pieces'] ?? 0), 0, ',', '.')) . '</p>';
+                echo '<p class="card-text mb-0 small">Adet: ' . e(number_format((int) ($line['pieces'] ?? 0), 0, ',', '.')) . '</p>';
             }
             echo '</div>';
             echo '</div>';
