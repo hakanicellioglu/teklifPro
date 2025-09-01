@@ -48,7 +48,7 @@ interface ProductProviderInterface
  * } $input
  *
  * @return array{
- *   lines: array<int, array{category:string,name:string,measure:float,unit:string,quantity:float,pieces:int,total:float,currency:string,original_currency:string}>,
+ *   lines: array<int, array{category:string,name:string,measure:float,unit:string,quantity:float,pieces:int,total:float,currency:string,original_currency:string,image_url:?string}>,
  *   totals: array{
  *     alu_cost: float,
  *     glass_cost: float,
@@ -327,6 +327,7 @@ function calculateGuillotineTotals(array $input): array
             'quantity'         => $qtyDisplay,
             'pieces'           => $rq,
             'total'            => $lineTotal,
+            'image_url'        => $product['image_url'] ?? null,
             'currency'         => $lineCurrency,
             'original_currency' => $originalCurrency,
         ];
@@ -477,7 +478,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         //
         public function getProduct(string $name): ?array
         {
-            $stmt = $this->pdo->prepare('SELECT p.unit, p.unit_price, p.weight_per_meter, p.price_unit, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
+            $stmt = $this->pdo->prepare('SELECT p.unit, p.unit_price, p.weight_per_meter, p.price_unit, p.image_url, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
             $stmt->execute([':name' => $name]);
 
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -679,89 +680,31 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     //
     // Kategori Döngüsü
-    // Her kategori için tablo oluşturarak satırları listeler.
+    // Her kategori için kart görünümü oluşturur.
     //
-    $usdRate = $exchangeRates['USD'] ?? 0.0;
     foreach ($categories as $cat) {
         $isAlu = strcasecmp($cat['title'], 'Alüminyum') === 0;
         echo '<h5>' . e($cat['title']) . '</h5>';
-        echo '<div class="table-responsive">';
-        echo '<table class="table table-sm table-striped mb-3">';
-        echo '<thead><tr><th>Ad</th><th>Ölçü (mm)</th>';
-        //
-        // Alüminyum Kolonu
-        // Kategori alüminyum ise adet sütunu başlığa eklenir.
-        //
-        if ($isAlu) {
-            echo '<th>Adet</th>';
-        }
-        echo '<th>Miktar</th><th>Birim</th><th class="text-end">Tutar</th><th class="text-end">Birim Fiyat ($)</th><th class="text-end">Toplam Tutar ($)</th></tr></thead><tbody>';
-        //
-        // Kategori Toplayıcıları
-        // Miktar, toplam tutar ve adet değerlerini sıfırlar.
-        //
-        $qtySum     = 0.0;
-        $totalSum   = 0.0;
-        $totalSumUsd = 0.0;
-        $unit       = '';
-        $pieceSum   = 0;
-        //
-        // Satır Döngüsü
-        // Her kategori içindeki satırları tabloda gösterir.
-        //
+        echo '<div class="row row-cols-1 row-cols-md-3 g-3 mb-3">';
         foreach ($cat['lines'] as $line) {
-            echo '<tr>';
-            echo '<td>' . e($line['name']) . '</td>';
-            echo '<td>' . e(number_format($line['measure'], 0, ',', '.')) . '</td>';
-            //
-            // Adet Bilgisi
-            // Sadece alüminyum kalemlerde adet sütunu gösterilir.
-            //
+            echo '<div class="col">';
+            echo '<div class="card h-100">';
+            if (!empty($line['image_url'])) {
+                echo '<img src="' . e($line['image_url']) . '" class="card-img-top" alt="' . e($line['name']) . '">';
+            } else {
+                echo '<svg class="bd-placeholder-img card-img-top" width="100%" height="180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder" preserveAspectRatio="xMidYMid slice" focusable="false"><rect width="100%" height="100%" fill="#e9ecef"></rect><text x="50%" y="50%" fill="#6c757d" dy=".3em" text-anchor="middle">Resim yok</text></svg>';
+            }
+            echo '<div class="card-body">';
+            echo '<h6 class="card-title">' . e($line['name']) . '</h6>';
+            echo '<p class="card-text mb-1">Ölçü: ' . e(number_format($line['measure'], 0, ',', '.')) . ' mm</p>';
             if ($isAlu) {
-                echo '<td>' . e(number_format((int) ($line['pieces'] ?? 0), 0, ',', '.')) . '</td>';
+                echo '<p class="card-text mb-1">Adet: ' . e(number_format((int) ($line['pieces'] ?? 0), 0, ',', '.')) . '</p>';
             }
-            echo '<td>' . e(fmtUnit($line['quantity'], $line['unit'])) . '</td>';
-            echo '<td>' . e($line['unit']) . '</td>';
-            echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ' . e(currencySymbol($line['currency'])) . '</td>';
-            $unitPriceUsd = ($usdRate > 0 && $line['quantity'] > 0)
-                ? ($line['total'] / $line['quantity']) / $usdRate
-                : 0;
-            $totalUsd = $usdRate > 0 ? $line['total'] / $usdRate : 0;
-            echo '<td class="text-end">' . e(number_format($unitPriceUsd, 2, ',', '.')) . ' $</td>';
-            echo '<td class="text-end">' . e(number_format($totalUsd, 2, ',', '.')) . ' $</td>';
-            echo '</tr>';
-            $qtySum     += $line['quantity'];
-            $totalSum   += $line['total'];
-            $totalSumUsd += $totalUsd;
-            if ($isAlu) {
-                $pieceSum += (int) ($line['pieces'] ?? 0);
-            }
-            //
-            // Birim Tutarlılığı
-            // Farklı satırlarda birim değişirse toplam satırda birim gösterilmez.
-            //
-            if ($unit === '') {
-                $unit = $line['unit'];
-            } elseif ($unit !== $line['unit']) {
-                $unit = '';
-            }
+            echo '</div>';
+            echo '</div>';
+            echo '</div>';
         }
-        echo '<tr>';
-        echo '<td colspan="2" class="text-end"><strong>Toplam</strong></td>';
-        //
-        // Adet Toplamı
-        // Alüminyum kalemler için toplam adet değeri gösterilir.
-        //
-        if ($isAlu) {
-            echo '<td>' . e(number_format($pieceSum, 0, ',', '.')) . '</td>';
-        }
-        echo '<td>' . e(fmtUnit($qtySum, $unit)) . '</td>';
-        echo '<td>' . e($unit) . '</td>';
-        echo '<td class="text-end">' . e(number_format($totalSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '<td></td>';
-        echo '<td class="text-end">' . e(number_format($totalSumUsd, 2, ',', '.')) . ' $</td>';
-        echo '</tr>';
-        echo '</tbody></table></div>';
+        echo '</div>';
     }
 
     //
@@ -782,26 +725,13 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '<h5>Cam</h5>';
         echo '<div class="table-responsive">';
         echo '<table class="table table-sm table-striped mb-3">';
-        echo '<thead><tr><th>Genişlik (mm)</th><th>Yükseklik (mm)</th><th>Adet</th><th>Birim m²</th><th>Toplam m²</th><th class="text-end">Tutar</th><th class="text-end">Birim Fiyat ($)</th><th class="text-end">Toplam Tutar ($)</th></tr></thead><tbody>';
-        $unitPriceGlassUsd = ($usdRate > 0 && $totalArea > 0) ? ($tot['glass_cost'] / $totalArea) / $usdRate : 0;
-        $totalGlassUsd = $usdRate > 0 ? $tot['glass_cost'] / $usdRate : 0;
+        echo '<thead><tr><th>Genişlik (mm)</th><th>Yükseklik (mm)</th><th>Adet</th><th>Birim m²</th><th>Toplam m²</th></tr></thead><tbody>';
         echo '<tr>';
         echo '<td>' . e(number_format($glassInfo['width'], 0, ',', '.')) . '</td>';
         echo '<td>' . e(number_format($glassInfo['height'], 0, ',', '.')) . '</td>';
         echo '<td>' . e(number_format($glassInfo['quantity'], 0, ',', '.')) . '</td>';
         echo '<td>' . e(number_format($singleArea, 2, ',', '.')) . '</td>';
         echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
-        echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '<td class="text-end">' . e(number_format($unitPriceGlassUsd, 2, ',', '.')) . ' $</td>';
-        echo '<td class="text-end">' . e(number_format($totalGlassUsd, 2, ',', '.')) . ' $</td>';
-        echo '</tr>';
-        echo '<tr>';
-        echo '<td colspan="3" class="text-end"><strong>Toplam</strong></td>';
-        echo '<td></td>';
-        echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
-        echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '<td></td>';
-        echo '<td class="text-end">' . e(number_format($totalGlassUsd, 2, ',', '.')) . ' $</td>';
         echo '</tr>';
         echo '</tbody></table></div>';
     }
