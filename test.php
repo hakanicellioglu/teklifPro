@@ -644,6 +644,23 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     }
 
     //
+    // Demonte Toplamları
+    // Motor ve kumanda kalemlerinin kâr ve toplam tutarlarını önceden hesaplar.
+    //
+    $demonteCostSum   = 0.0;
+    $demonteProfitSum = 0.0;
+    $demonteTotal     = 0.0;
+    foreach ($demonteItems as &$item) {
+        $item['profit'] = $item['cost'] * $profitRate / 100;
+        $item['total']  = $item['cost'] + $item['profit'];
+        $demonteCostSum   += $item['cost'];
+        $demonteProfitSum += $item['profit'];
+        $demonteTotal     += $item['total'];
+    }
+    unset($item);
+    $salesTotal = $tot['grand_total'] + $demonteTotal;
+
+    //
     // Kategori Döngüsü
     // Her kategori için tablo oluşturarak satırları listeler.
     //
@@ -790,6 +807,12 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<tr class="table-success fw-bold">';
     echo '<td>Genel Toplam</td><td>' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
     echo '</tr>';
+    if (!empty($demonteItems)) {
+        echo '<tr><th>Demonte Toplamı</th><td>' . e(number_format($demonteTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
+        echo '<tr class="table-primary fw-bold">';
+        echo '<td>SATIŞ</td><td>' . e(number_format($salesTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+        echo '</tr>';
+    }
 
     echo '</tbody>';
     echo '</table>';
@@ -801,36 +824,23 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '<div class="table-responsive">';
         echo '<table class="table table-sm table-striped mb-3">';
         echo '<thead><tr><th>Ürün</th><th class="text-end">Birim Fiyat</th><th>Adet</th><th class="text-end">Maliyet</th><th class="text-end">Kâr (%)</th><th class="text-end">Demonte Kârı</th><th class="text-end">Demonte Tutarı</th></tr></thead><tbody>';
-        $costSum = 0.0;
-        $profitSum = 0.0;
-        $totalSum = 0.0;
         foreach ($demonteItems as $item) {
-            $profit = $item['cost'] * $profitRate / 100;
-            $total  = $item['cost'] + $profit;
-            $costSum += $item['cost'];
-            $profitSum += $profit;
-            $totalSum  += $total;
             echo '<tr>';
             echo '<td>' . e($item['name']) . '</td>';
             echo '<td class="text-end">' . e(number_format($item['unit_price'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
             echo '<td>' . e(number_format($item['qty'], 0, ',', '.')) . '</td>';
             echo '<td class="text-end">' . e(number_format($item['cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
             echo '<td class="text-end">' . e(number_format($profitRate, 2, ',', '.')) . ' %</td>';
-            echo '<td class="text-end">' . e(number_format($profit, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-            echo '<td class="text-end">' . e(number_format($total, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+            echo '<td class="text-end">' . e(number_format($item['profit'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+            echo '<td class="text-end">' . e(number_format($item['total'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
             echo '</tr>';
         }
         echo '<tr class="table-success fw-bold">';
         echo '<td>Demonte Toplamı</td><td></td><td></td>';
-        echo '<td class="text-end">' . e(number_format($costSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+        echo '<td class="text-end">' . e(number_format($demonteCostSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
         echo '<td></td>';
-        echo '<td class="text-end">' . e(number_format($profitSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '<td class="text-end">' . e(number_format($totalSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '</tr>';
-        $salesTotal = $totalSum + $tot['grand_total'];
-        echo '<tr class="table-primary fw-bold">';
-        echo '<td>SATIŞ</td><td colspan="5"></td>';
-        echo '<td class="text-end">' . e(number_format($salesTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+        echo '<td class="text-end">' . e(number_format($demonteProfitSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+        echo '<td class="text-end">' . e(number_format($demonteTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
         echo '</tr>';
         echo '</tbody></table></div></div>';
     }
