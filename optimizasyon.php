@@ -632,6 +632,22 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '</table>';
     echo '</div>';
 
+    $systemArea = ($result['system']['width'] * $result['system']['height'] * $result['system']['quantity']) / 1000000;
+    $aluminumTotal = 0.0;
+    foreach ($lines as $line) {
+        if (strtolower($line['category']) === 'alüminyum') {
+            $aluminumTotal += ($line['measure'] * ($line['pieces'] ?? 0)) / 1000;
+        }
+    }
+    echo '<div class="mb-3">';
+    echo '<table class="table table-bordered table-sm w-auto mb-0">';
+    echo '<tbody>';
+    echo '<tr><th>Sistem</th><td>' . e(number_format($systemArea, 2, ',', '.')) . '</td></tr>';
+    echo '<tr><th>Alüminyum</th><td>' . e(number_format($aluminumTotal, 2, ',', '.')) . '</td></tr>';
+    echo '</tbody>';
+    echo '</table>';
+    echo '</div>';
+
     $motorName = trim((string) ($row['motor_system'] ?? ''));
     if ($motorName !== '') {
         echo '<div class="mb-3"><strong>Motor Sistemi:</strong> ' . e($motorName) . '</div>';
