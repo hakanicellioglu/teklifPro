@@ -63,6 +63,7 @@ interface ProductProviderInterface
  *   alu_kg: float,
  *   alu_painted_kg: float,
  *   alu_fire_kg: float,
+ *   system: array{width: float, height: float, quantity: int},
  *   glass: array{width: float, height: float, quantity: float}
  * }
  */
@@ -421,6 +422,11 @@ function calculateGuillotineTotals(array $input): array
         'alu_kg'         => $aluKg,
         'alu_painted_kg' => $aluPaintedKg,
         'alu_fire_kg'    => $aluFireKg,
+        'system'         => [
+            'width'    => $width,
+            'height'   => $height,
+            'quantity' => $qty,
+        ],
         'glass'          => [
             'width'    => $glassWidth,
             'height'   => $glassHeight,
@@ -615,6 +621,16 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         }
         echo '</div>';
     }
+
+    $sysWidth  = number_format($result['system']['width'], 0, ',', '.');
+    $sysHeight = number_format($result['system']['height'], 0, ',', '.');
+    $sysQtyVal = number_format((int) ($result['system']['quantity'] ?? 0), 0, ',', '.');
+    echo '<div class="mb-3">';
+    echo '<table class="table table-bordered table-sm w-auto mb-0">';
+    echo '<thead><tr><th>Sistem Genişliği</th><th>Sistem Yüksekliği</th><th>Sistem Adedi</th></tr></thead>';
+    echo '<tbody><tr><td>' . e($sysWidth) . '</td><td>' . e($sysHeight) . '</td><td>' . e($sysQtyVal) . '</td></tr></tbody>';
+    echo '</table>';
+    echo '</div>';
 
     echo '<div class="product-grid">';
     foreach ($lines as $line) {
