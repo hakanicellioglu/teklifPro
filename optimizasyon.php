@@ -516,7 +516,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     // Giyotin Verileri
     // Veritabanından ilgili ölçü ve ayarları çeker.
     //
-    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, motor_system, remote_quantity, profit_margin, general_offer_id FROM guillotinesystems WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, motor_system, remote_quantity, ral_code, profit_margin, general_offer_id FROM guillotinesystems WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
@@ -635,6 +635,16 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $motorName = trim((string) ($row['motor_system'] ?? ''));
     if ($motorName !== '') {
         echo '<div class="mb-3"><strong>Motor Sistemi:</strong> ' . e($motorName) . '</div>';
+    }
+
+    $remoteQty = (int) ($row['remote_quantity'] ?? 0);
+    if ($remoteQty > 0) {
+        echo '<div class="mb-3"><strong>Kumanda Adedi:</strong> ' . e((string) $remoteQty) . '</div>';
+    }
+
+    $ralCode = trim((string) ($row['ral_code'] ?? ''));
+    if ($ralCode !== '') {
+        echo '<div class="mb-3"><strong>RAL Kodu:</strong> ' . e($ralCode) . '</div>';
     }
 
     echo '<div class="product-grid">';
