@@ -608,9 +608,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             echo '<tbody><tr><td>' . e($widthVal) . '</td><td>' . e($heightVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
             echo '</table>';
         } else {
-            $measureVal = ($line['weight_per_meter'] > 0)
-                ? number_format($line['weight_per_meter'], 2, ',', '.')
-                : number_format($line['measure'], 0, ',', '.');
+            $measureVal = number_format($line['measure'], 0, ',', '.');
             echo '<table class="table table-bordered table-sm mb-0">';
             echo '<thead><tr><th>İsim</th><th>Kod</th><th>Ölçü</th><th>Adet</th></tr></thead>';
             echo '<tbody><tr><td>' . e($line['name']) . '</td><td>' . e($line['product_code'] ?? '') . '</td><td>' . e($measureVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
