@@ -501,6 +501,7 @@ if ($expired): ?>
 <div class="d-none d-md-inline-flex btn-group d-print-none" role="group" aria-label="Eylemler">
     <a href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-primary offer-action" data-bs-toggle="tooltip" title="Düzenle" aria-label="Düzenle"><i class="bi bi-pencil"></i></a>
     <a href="/pdf/preview.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-secondary offer-action" target="_blank" rel="noopener" data-bs-toggle="tooltip" title="PDF Önizleme" aria-label="PDF Önizleme"><i class="bi bi-file-earmark-pdf"></i></a>
+    <a href="optimazsyon.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-info offer-action" data-bs-toggle="tooltip" title="Optimizasyon" aria-label="Optimizasyon"><i class="bi bi-lightning"></i></a>
     <?php if ($role === 'admin'): ?>
         <button type="button" class="btn btn-danger offer-action" data-bs-toggle="modal" data-bs-target="#deleteModal" aria-label="Sil" title="Sil"><i class="bi bi-trash"></i></button>
     <?php endif; ?>
@@ -512,6 +513,7 @@ if ($expired): ?>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionMenu">
         <li><a class="dropdown-item offer-action" href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>"><i class="bi bi-pencil me-1"></i> Düzenle</a></li>
         <li><a class="dropdown-item offer-action" href="/pdf/preview.php?id=<?= e((string)$offer['id']) ?>" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf me-1"></i> PDF Önizleme</a></li>
+        <li><a class="dropdown-item offer-action" href="optimazsyon.php?id=<?= e((string)$offer['id']) ?>"><i class="bi bi-lightning me-1"></i> Optimizasyon</a></li>
         <?php if ($role === 'admin'): ?>
             <li><hr class="dropdown-divider"></li>
             <li><button class="dropdown-item text-danger offer-action" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="bi bi-trash me-1"></i> Sil</button></li>
