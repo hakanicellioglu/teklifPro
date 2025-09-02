@@ -677,6 +677,12 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $offerUpd = $pdo->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id');
     $offerUpd->execute([':t' => $gSum + $sSum, ':id' => $row['general_offer_id']]);
 
+    if (($_GET['format'] ?? '') === 'json') {
+        header('Content-Type: application/json');
+        echo json_encode(['sales_total' => $salesTotal]);
+        exit;
+    }
+
     //
     // Kategori Döngüsü
     // Her kategori için tablo oluşturarak satırları listeler.

@@ -929,8 +929,19 @@ page_header($title, $actions, true);
                 window.showToast && window.showToast('Hesaplama sırasında sorun oluştu, sayfa açılıyor…', 'warning');
             }
             window.location.href = url;
+        });
     });
-});
+
+    document.querySelectorAll('.edit-guillotine').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+            const gid = this.getAttribute('data-id');
+            try {
+                await fetch('test.php?quote_id=' + encodeURIComponent(gid) + '&format=json');
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    });
 </script>
 <?php if ($expired): ?>
 <div class="modal fade" id="reactivateModal" tabindex="-1" aria-hidden="true">
