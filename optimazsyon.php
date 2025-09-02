@@ -581,7 +581,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 .product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
 .product-card table { width:100%; font-size:0.8rem; text-align:center; }
 .product-card th { font-weight:600; }
-.product-img { width:100%; height:130px; object-fit:cover; border:1px solid #000; display:block; background-color:#fff; }
+.product-img { width:100%; height:130px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
 </style>';
 
     echo '<div class="text-center mb-4">';
@@ -598,7 +598,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             $img = 'assets/img/placeholder-product.png';
         }
         echo '<div class="product-card">';
-        echo '<img src="' . e($img) . '" alt="' . e($line['name']) . '" loading="lazy" class="product-img">';
         $qtyVal = number_format((int) ($line['pieces'] ?? 0), 0, ',', '.');
         if (strtolower($line['category']) === 'cam') {
             $widthVal  = number_format($line['width'], 0, ',', '.');
@@ -614,6 +613,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             echo '<tbody><tr><td>' . e($line['name']) . '</td><td>' . e($line['product_code'] ?? '') . '</td><td>' . e($measureVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
             echo '</table>';
         }
+        echo '<img src="' . e($img) . '" alt="' . e($line['name']) . '" loading="lazy" class="product-img">';
         echo '</div>';
     }
     echo '</div>';

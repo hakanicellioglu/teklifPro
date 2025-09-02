@@ -6,3 +6,5 @@ storage/
 *.log
 .vscode/settings.json
 *.png
+phpunit.phar
+.phpunit.result.cache
