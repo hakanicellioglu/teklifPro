@@ -552,6 +552,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $cStmt->execute([':uid' => $_SESSION['user_id']]);
     $company = $cStmt->fetch(PDO::FETCH_ASSOC) ?: ['name' => '', 'logo' => null];
 
+    $custStmt = $pdo->prepare('SELECT c.first_name, c.last_name, c.company_name, c.email, c.phone, c.address FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id WHERE g.id = :id LIMIT 1');
+    $custStmt->execute([':id' => $row['general_offer_id']]);
+    $customer = $custStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
     $lines = $result['lines'];
     $tot       = $result['totals'];
 
@@ -590,6 +594,27 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     }
     echo '<h2 class="h5 fw-bold mb-0">GİYOTİN SİSTEMİ</h2>';
     echo '</div>';
+
+    if ($customer) {
+        echo '<div class="mb-3">';
+        $fullName = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
+        if ($fullName !== '') {
+            echo '<div><strong>Müşteri:</strong> ' . e($fullName) . '</div>';
+        }
+        if (!empty($customer['company_name'])) {
+            echo '<div><strong>Firma:</strong> ' . e($customer['company_name']) . '</div>';
+        }
+        if (!empty($customer['phone'])) {
+            echo '<div><strong>Telefon:</strong> ' . e($customer['phone']) . '</div>';
+        }
+        if (!empty($customer['email'])) {
+            echo '<div><strong>E-posta:</strong> ' . e($customer['email']) . '</div>';
+        }
+        if (!empty($customer['address'])) {
+            echo '<div><strong>Adres:</strong> ' . nl2br(e($customer['address'])) . '</div>';
+        }
+        echo '</div>';
+    }
 
     echo '<div class="product-grid">';
     foreach ($lines as $line) {
