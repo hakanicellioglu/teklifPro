@@ -654,7 +654,7 @@ page_header($title, $actions, true);
                                                 </a>
                                             </li>
                                             <li>
-                                                <a href="optimazsyon.php?quote_id=<?= e((string)$g['id']) ?>" class="dropdown-item">
+                                                <a href="optimizasyon.php?quote_id=<?= e((string)$g['id']) ?>" class="dropdown-item">
                                                     <i class="bi bi-gear me-1"></i> Optimizasyon
                                                 </a>
                                             </li>
