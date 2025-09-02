@@ -4,6 +4,18 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/helpers.php';
 
+const SALES_TOTAL_FILE = __DIR__ . '/storage/sales_total.txt';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sales_total'])) {
+    file_put_contents(SALES_TOTAL_FILE, (string) (float) $_POST['sales_total']);
+    exit;
+}
+
+function getStoredSalesTotal(): float
+{
+    return is_file(SALES_TOTAL_FILE) ? (float) file_get_contents(SALES_TOTAL_FILE) : 0.0;
+}
+
 //
 // Cam Birim Fiyatı
 // Cam fiyatı artık veritabanındaki ürün bilgilerinden alınır.
@@ -658,8 +670,9 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         $demonteTotal     += $item['total'];
     }
     unset($item);
-    $salesTotal     = $tot['grand_total'] + $demonteTotal;
+    $salesTotal     = getStoredSalesTotal() ?: $tot['grand_total'] + $demonteTotal;
     $updatedProfit  = $tot['profit'] + $demonteProfitSum;
+    file_put_contents(SALES_TOTAL_FILE, (string) $salesTotal);
 
     //
     // Veritabanı Güncellemesi

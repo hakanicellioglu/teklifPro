@@ -499,7 +499,7 @@ if ($expired): ?>
     <button id="reactivateTrigger" class="btn btn-primary me-2 d-print-none" data-bs-toggle="modal" data-bs-target="#reactivateModal">Teklifi Yeniden Aktifleştir</button>
 <?php endif; ?>
 <div class="d-none d-md-inline-flex btn-group d-print-none" role="group" aria-label="Eylemler">
-    <a href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-primary offer-action" data-bs-toggle="tooltip" title="Düzenle" aria-label="Düzenle"><i class="bi bi-pencil"></i></a>
+    <a href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-primary offer-action edit-sync" data-total="<?= e((string)$totalAmount) ?>" data-bs-toggle="tooltip" title="Düzenle" aria-label="Düzenle"><i class="bi bi-pencil"></i></a>
     <a href="/pdf/preview.php?id=<?= e((string)$offer['id']) ?>" class="btn btn-secondary offer-action" target="_blank" rel="noopener" data-bs-toggle="tooltip" title="PDF Önizleme" aria-label="PDF Önizleme"><i class="bi bi-file-earmark-pdf"></i></a>
     <?php if ($role === 'admin'): ?>
         <button type="button" class="btn btn-danger offer-action" data-bs-toggle="modal" data-bs-target="#deleteModal" aria-label="Sil" title="Sil"><i class="bi bi-trash"></i></button>
@@ -510,7 +510,7 @@ if ($expired): ?>
         Eylemler
     </button>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionMenu">
-        <li><a class="dropdown-item offer-action" href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>"><i class="bi bi-pencil me-1"></i> Düzenle</a></li>
+        <li><a class="dropdown-item offer-action edit-sync" href="quotation_edit.php?id=<?= e((string)$offer['id']) ?>" data-total="<?= e((string)$totalAmount) ?>"><i class="bi bi-pencil me-1"></i> Düzenle</a></li>
         <li><a class="dropdown-item offer-action" href="/pdf/preview.php?id=<?= e((string)$offer['id']) ?>" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf me-1"></i> PDF Önizleme</a></li>
         <?php if ($role === 'admin'): ?>
             <li><hr class="dropdown-divider"></li>
@@ -878,6 +878,15 @@ page_header($title, $actions, true);
 </div>
 
 <script>
+    document.querySelectorAll('.edit-sync').forEach(function(link){
+        link.addEventListener('click', function(){
+            const total = link.dataset.total;
+            const params = new URLSearchParams();
+            params.append('sales_total', total || '0');
+            navigator.sendBeacon('test.php', params);
+        });
+    });
+
     document.getElementById('addGuillotineModal').addEventListener('show.bs.modal', function(event) {
         const button = event.relatedTarget;
         const form = this.querySelector('form');
