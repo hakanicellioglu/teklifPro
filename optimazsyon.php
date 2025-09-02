@@ -651,7 +651,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 .product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
 .product-card table { width:100%; font-size:0.8rem; text-align:center; }
 .product-card th { font-weight:600; }
-.product-img { width:100%; height:130px; object-fit:cover; border-top:1px solid #000; display:block; }
+.product-img { width:100%; height:130px; object-fit:contain; border-top:1px solid #000; display:block; background-color:#fff; }
 </style>';
 
     echo '<div class="text-center mb-4">';
