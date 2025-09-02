@@ -552,7 +552,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     $lines = $result['lines'];
     $tot       = $result['totals'];
-    $currencySymbol = currencySymbol($result['currency']);
 
     //
     // Veritabanı Güncellemesi
@@ -609,11 +608,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '</div>';
     }
     echo '</div>';
-
-    echo '<div class="mt-3">';
-    echo '<table class="table table-bordered table-sm"><tbody>';
-    echo '<tr class="table-success fw-bold"><td>Genel Toplam</td><td>' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
-    echo '</tbody></table></div>';
 
     require __DIR__ . '/footer.php';
     return;
