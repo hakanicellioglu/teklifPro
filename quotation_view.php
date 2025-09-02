@@ -203,7 +203,7 @@ if (
                 echo json_encode(['error' => 'Kur bilgileri alınamadı.']);
                 exit;
             }
-            $totals = calculateGuillotineTotals([
+            $result = calculateGuillotineTotals([
                 'width'         => $row['width'],
                 'height'        => $row['height'],
                 'quantity'      => $row['quantity'],
@@ -213,10 +213,61 @@ if (
                 'exchange_rates'=> $exchangeRates,
                 'provider'      => $productProvider,
             ]);
+
+            $tot = $result['totals'];
+            $profitRate = (float)($row['profit_rate'] ?? ($row['profit_margin'] ?? 0));
+            $demonteItems = [];
+
+            $systemQty = (int)($row['quantity'] ?? 0);
+            $motorName = (string)($row['motor_system'] ?? '');
+            if ($motorName !== '') {
+                $motorProduct = $productProvider->getProduct($motorName);
+                if ($motorProduct) {
+                    $motorCurrency = strtoupper((string)($motorProduct['price_unit'] ?? 'TRY'));
+                    $motorPrice    = (float)($motorProduct['unit_price'] ?? 0);
+                    if ($motorCurrency !== $result['currency']) {
+                        $rate = $exchangeRates[$motorCurrency] ?? null;
+                        if ($rate !== null) {
+                            $motorPrice *= $rate;
+                        }
+                    }
+                    $motorCost = $motorPrice * $systemQty;
+                    $demonteItems[] = ['cost' => $motorCost];
+                }
+            }
+
+            $remoteQty = (int)($row['remote_quantity'] ?? 0);
+            if ($remoteQty > 0) {
+                $remoteProduct = $productProvider->getProduct('Kumanda');
+                if ($remoteProduct) {
+                    $remoteCurrency = strtoupper((string)($remoteProduct['price_unit'] ?? 'TRY'));
+                    $remotePrice    = (float)($remoteProduct['unit_price'] ?? 0);
+                    if ($remoteCurrency !== $result['currency']) {
+                        $rate = $exchangeRates[$remoteCurrency] ?? null;
+                        if ($rate !== null) {
+                            $remotePrice *= $rate;
+                        }
+                    }
+                    $remoteCost = $remotePrice * $remoteQty;
+                    $demonteItems[] = ['cost' => $remoteCost];
+                }
+            }
+
+            $demonteProfitSum = 0.0;
+            $demonteTotal = 0.0;
+            foreach ($demonteItems as $item) {
+                $profit = $item['cost'] * $profitRate / 100;
+                $demonteProfitSum += $profit;
+                $demonteTotal += $item['cost'] + $profit;
+            }
+
+            $salesTotal    = $tot['grand_total'] + $demonteTotal;
+            $updatedProfit = $tot['profit'] + $demonteProfitSum;
+
             $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
             $gUpd->execute([
-                ':pamount' => $totals['totals']['profit'],
-                ':tamount' => $totals['totals']['grand_total'],
+                ':pamount' => $updatedProfit,
+                ':tamount' => $salesTotal,
                 ':id'      => $gId,
             ]);
 
@@ -386,7 +437,7 @@ if ($gPost) {
                     $gFetch = $pdo->prepare('SELECT * FROM guillotinesystems WHERE id = :gid AND general_offer_id = :goid');
                     $gFetch->execute([':gid' => $gId, ':goid' => $id]);
                     if ($row = $gFetch->fetch(PDO::FETCH_ASSOC)) {
-                        $totals = calculateGuillotineTotals([
+                        $result = calculateGuillotineTotals([
                             'width'         => $row['width'],
                             'height'        => $row['height'],
                             'quantity'      => $row['quantity'],
@@ -396,11 +447,62 @@ if ($gPost) {
                             'exchange_rates'=> $exchangeRates,
                             'provider'      => $productProvider,
                         ]);
+
+                        $tot = $result['totals'];
+                        $profitRate = (float)($row['profit_rate'] ?? ($row['profit_margin'] ?? 0));
+                        $demonteItems = [];
+
+                        $systemQty = (int)($row['quantity'] ?? 0);
+                        $motorName = (string)($row['motor_system'] ?? '');
+                        if ($motorName !== '') {
+                            $motorProduct = $productProvider->getProduct($motorName);
+                            if ($motorProduct) {
+                                $motorCurrency = strtoupper((string)($motorProduct['price_unit'] ?? 'TRY'));
+                                $motorPrice    = (float)($motorProduct['unit_price'] ?? 0);
+                                if ($motorCurrency !== $result['currency']) {
+                                    $rate = $exchangeRates[$motorCurrency] ?? null;
+                                    if ($rate !== null) {
+                                        $motorPrice *= $rate;
+                                    }
+                                }
+                                $motorCost = $motorPrice * $systemQty;
+                                $demonteItems[] = ['cost' => $motorCost];
+                            }
+                        }
+
+                        $remoteQty = (int)($row['remote_quantity'] ?? 0);
+                        if ($remoteQty > 0) {
+                            $remoteProduct = $productProvider->getProduct('Kumanda');
+                            if ($remoteProduct) {
+                                $remoteCurrency = strtoupper((string)($remoteProduct['price_unit'] ?? 'TRY'));
+                                $remotePrice    = (float)($remoteProduct['unit_price'] ?? 0);
+                                if ($remoteCurrency !== $result['currency']) {
+                                    $rate = $exchangeRates[$remoteCurrency] ?? null;
+                                    if ($rate !== null) {
+                                        $remotePrice *= $rate;
+                                    }
+                                }
+                                $remoteCost = $remotePrice * $remoteQty;
+                                $demonteItems[] = ['cost' => $remoteCost];
+                            }
+                        }
+
+                        $demonteProfitSum = 0.0;
+                        $demonteTotal = 0.0;
+                        foreach ($demonteItems as $item) {
+                            $profit = $item['cost'] * $profitRate / 100;
+                            $demonteProfitSum += $profit;
+                            $demonteTotal += $item['cost'] + $profit;
+                        }
+
+                        $salesTotal    = $tot['grand_total'] + $demonteTotal;
+                        $updatedProfit = $tot['profit'] + $demonteProfitSum;
+
                         $gUpd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount=:pamount, total_amount=:tamount WHERE id=:id');
                         $gUpd->execute([
-                            ':pamount' => $totals['totals']['profit'],
-                            ':tamount' => $totals['totals']['grand_total'],
-                            ':id' => $gId,
+                            ':pamount' => $updatedProfit,
+                            ':tamount' => $salesTotal,
+                            ':id'      => $gId,
                         ]);
                     }
 
