@@ -161,15 +161,17 @@ function calculateGuillotineTotals(array $input): array
 
     //
     // Cam Ürünü Kuralı
-    // Önceden hesaplanan cam ölçülerini kullanarak cam malzemesini listeye ekler.
+    // Önceden hesaplanan cam ölçülerini kullanarak cam malzemesini listeye ekler ve
+    // kart ızgarasında üst sırada yer alması için başa ekler.
     //
-    $rules[] = [
+    $glassRule = [
         'name'    => 'Cam',
         'measure' => fn($w, $h, $q) => $glassWidth,
         'width'   => fn($w, $h, $q) => $glassWidth,
         'height'  => fn($w, $h, $q) => $glassHeight,
         'qty'     => fn($w, $h, $q) => $glassQty,
     ];
+    array_unshift($rules, $glassRule);
 
     //
     // Sonuç Biriktiricileri
