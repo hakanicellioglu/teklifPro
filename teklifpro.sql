@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Anamakine: 127.0.0.1
--- Üretim Zamanı: 28 Ağu 2025, 10:27:40
+-- Üretim Zamanı: 02 Eyl 2025, 14:08:09
 -- Sunucu sürümü: 10.4.32-MariaDB
 -- PHP Sürümü: 8.2.12
 
@@ -59,6 +59,13 @@ CREATE TABLE `company` (
   `address` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
+--
+-- Tablo döküm verisi `company`
+--
+
+INSERT INTO `company` (`id`, `user_id`, `logo`, `name`, `email`, `phone`, `address`) VALUES
+(1, 4, 'logo_94ddb629d8b394ee.png', 'Yılmaz Alüminyum', 'hakan@yilmazcephe.com.tr', '', '');
+
 -- --------------------------------------------------------
 
 --
@@ -105,6 +112,7 @@ CREATE TABLE `generaloffers` (
   `delivery_time` varchar(100) DEFAULT NULL,
   `payment_method` varchar(100) DEFAULT NULL,
   `validity_days` int(11) DEFAULT NULL,
+  `valid_until` date DEFAULT NULL,
   `installment_term` varchar(100) DEFAULT NULL,
   `payment_type` enum('cash','installment') NOT NULL DEFAULT 'cash',
   `term_months` int(11) DEFAULT NULL,
@@ -127,18 +135,18 @@ CREATE TABLE `generaloffers` (
   `status` varchar(20) NOT NULL DEFAULT 'pending',
   `approval_token` varchar(64) DEFAULT NULL,
   `approved_at` datetime DEFAULT NULL,
-  `note` text DEFAULT NULL
+  `note` text DEFAULT NULL,
+  `shared_at` datetime DEFAULT NULL,
+  `shared_by` int(11) DEFAULT NULL,
+  `share_count` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
 --
 -- Tablo döküm verisi `generaloffers`
 --
 
-INSERT INTO `generaloffers` (`id`, `quote_no`, `customer_id`, `company_id`, `offer_date`, `assembly_type`, `delivery_time`, `payment_method`, `validity_days`, `installment_term`, `payment_type`, `term_months`, `interest_mode`, `interest_value`, `interest_amount`, `total_with_interest`, `monthly_installment`, `grace_days`, `payment_term`, `offer_validity`, `maturity_period`, `discount_rate`, `discount_amount`, `vat_rate`, `vat_amount`, `total_amount`, `profit_percent`, `profit_amount`, `status`, `approval_token`, `approved_at`, `note`) VALUES
-(11, NULL, 1, NULL, '2025-08-22', 'demonte', NULL, 'cash', 10, NULL, 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 6761.20, NULL, NULL, 'sent', '6a11fec84c4615436d2015e24e35e184', '2025-08-23 08:36:37', NULL),
-(13, NULL, 2, NULL, '2025-08-25', 'demonte', NULL, 'vadeli', 10, NULL, 'cash', 1, NULL, 5.00, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00, NULL, NULL, 'accepted', NULL, '2025-08-26 08:58:43', NULL),
-(14, NULL, 1, NULL, '2025-08-26', 'demonte', NULL, 'cash', 10, NULL, 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 13665.28, NULL, NULL, 'draft', NULL, '2025-08-26 15:31:44', NULL),
-(15, NULL, 2, NULL, '2025-08-26', 'demonte', NULL, 'cash', NULL, NULL, 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 95607.96, NULL, NULL, 'pending', '2ee79016512d3738b795028bb3593a6e', NULL, NULL);
+INSERT INTO `generaloffers` (`id`, `quote_no`, `customer_id`, `company_id`, `offer_date`, `assembly_type`, `delivery_time`, `payment_method`, `validity_days`, `valid_until`, `installment_term`, `payment_type`, `term_months`, `interest_mode`, `interest_value`, `interest_amount`, `total_with_interest`, `monthly_installment`, `grace_days`, `payment_term`, `offer_validity`, `maturity_period`, `discount_rate`, `discount_amount`, `vat_rate`, `vat_amount`, `total_amount`, `profit_percent`, `profit_amount`, `status`, `approval_token`, `approved_at`, `note`, `shared_at`, `shared_by`, `share_count`) VALUES
+(17, NULL, 2, NULL, '2025-09-01', 'demonte', NULL, 'cash', 10, '2025-09-11', NULL, 'cash', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 6841.36, NULL, NULL, 'pending', 'f66e85a9c46e6c28f4eb16f9837ace4c', NULL, NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -170,22 +178,7 @@ CREATE TABLE `guillotinesystems` (
 --
 
 INSERT INTO `guillotinesystems` (`id`, `general_offer_id`, `system_type`, `width`, `height`, `quantity`, `motor_system`, `remote_quantity`, `ral_code`, `paint_face`, `glass_type`, `glass_color`, `profit_margin`, `profit_rate`, `profit_amount`, `total_amount`) VALUES
-(5, 14, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '7016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6832.64),
-(6, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(7, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(8, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(9, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(10, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(11, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(12, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(13, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(14, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(15, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(16, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(17, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(18, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(19, 15, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6829.14),
-(20, 14, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '7016', NULL, 'Isıcam', 'Şeffaf', 0.00, NULL, 0.00, 6832.64);
+(1, 17, 'Guillotine', 1000.00, 1000.00, 1, 'Somfy', 1, '9016', NULL, 'Isıcam', 'Şeffaf', 30.00, NULL, 0.00, 6841.36);
 
 -- --------------------------------------------------------
 
@@ -333,7 +326,8 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `first_name`, `last_name`, `username`, `password`, `email`, `created_at`, `status`, `role_id`) VALUES
 (4, 'Hakan Berke', 'İÇELLİOĞLU', 'berkeicellioglu', '$2y$10$zVl/QQnU9tNHNYSg6vTFf.YOcoXaUzdsOMyi6xnCxs3h4gcMXijpa', 'hakanicellioglu@gmail.com', '2025-08-13 11:12:51', 'active', 1),
-(5, 'Ali', 'Veli', 'ali_veli_6221971', '$2y$10$g32KrakoE0rSaXK4h.l6C.b3hOmA.pc3JEGTAU.AKFG77M6ntq5gq', 'ali1510140276@example.com', '2025-08-28 10:37:36', 'active', NULL);
+(5, 'Ali', 'Veli', 'ali_veli_6221971', '$2y$10$g32KrakoE0rSaXK4h.l6C.b3hOmA.pc3JEGTAU.AKFG77M6ntq5gq', 'ali1510140276@example.com', '2025-08-28 10:37:36', 'active', NULL),
+(6, 'Hakan Berke', 'İÇELLİOĞLU', 'admin', '$2y$10$c.LxNZnD6KupZaEldzMRROMRWhDigGAGBVj9E6CtlL7LJJc40Ua0y', 'berkeicellioglu@gmail.com', '2025-09-01 08:45:01', 'active', NULL);
 
 --
 -- Dökümü yapılmış tablolar için indeksler
@@ -365,7 +359,8 @@ ALTER TABLE `generaloffers`
   ADD PRIMARY KEY (`id`),
   ADD KEY `customer_id` (`customer_id`),
   ADD KEY `company_id` (`company_id`),
-  ADD KEY `idx_generaloffers_status` (`status`);
+  ADD KEY `idx_generaloffers_status` (`status`),
+  ADD KEY `idx_generaloffers_shared_by` (`shared_by`);
 
 --
 -- Tablo için indeksler `guillotinesystems`
@@ -423,7 +418,7 @@ ALTER TABLE `categories`
 -- Tablo için AUTO_INCREMENT değeri `company`
 --
 ALTER TABLE `company`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `customers`
@@ -435,13 +430,13 @@ ALTER TABLE `customers`
 -- Tablo için AUTO_INCREMENT değeri `generaloffers`
 --
 ALTER TABLE `generaloffers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `guillotinesystems`
 --
 ALTER TABLE `guillotinesystems`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `products`
@@ -471,7 +466,7 @@ ALTER TABLE `themes`
 -- Tablo için AUTO_INCREMENT değeri `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Dökümü yapılmış tablolar için kısıtlamalar
@@ -481,6 +476,7 @@ ALTER TABLE `users`
 -- Tablo kısıtlamaları `generaloffers`
 --
 ALTER TABLE `generaloffers`
+  ADD CONSTRAINT `fk_generaloffers_shared_by` FOREIGN KEY (`shared_by`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `generaloffers_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`),
   ADD CONSTRAINT `generaloffers_ibfk_2` FOREIGN KEY (`company_id`) REFERENCES `company` (`id`);
 
