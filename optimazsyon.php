@@ -48,7 +48,7 @@ interface ProductProviderInterface
  * } $input
  *
  * @return array{
- *   lines: array<int, array{category:string,name:string,measure:float,unit:string,quantity:float,pieces:int,total:float,currency:string,original_currency:string}>,
+ *   lines: array<int, array{category:string,name:string,measure:float,width:float,height:float,unit:string,quantity:float,pieces:int,total:float,currency:string,original_currency:string}>,
  *   totals: array{
  *     alu_cost: float,
  *     glass_cost: float,
@@ -161,15 +161,17 @@ function calculateGuillotineTotals(array $input): array
 
     //
     // Cam Ürünü Kuralı
-    // Önceden hesaplanan cam ölçülerini kullanarak cam malzemesini listeye ekler.
+    // Önceden hesaplanan cam ölçülerini kullanarak cam malzemesini listeye ekler ve
+    // kart ızgarasında üst sırada yer alması için başa ekler.
     //
-    $rules[] = [
+    $glassRule = [
         'name'    => 'Cam',
         'measure' => fn($w, $h, $q) => $glassWidth,
         'width'   => fn($w, $h, $q) => $glassWidth,
         'height'  => fn($w, $h, $q) => $glassHeight,
         'qty'     => fn($w, $h, $q) => $glassQty,
     ];
+    array_unshift($rules, $glassRule);
 
     //
     // Sonuç Biriktiricileri
@@ -242,6 +244,8 @@ function calculateGuillotineTotals(array $input): array
         $unitPrice     = (float) ($product['unit_price'] ?? 0);
         $wpm           = (float) ($product['weight_per_meter'] ?? 0);
         $category      = (string) ($product['category'] ?? 'Diğer');
+        $productCode   = (string) ($product['product_code'] ?? '');
+        $imageUrl      = $product['image_url'] ?? null;
 
         //
         // Kur Dönüşümü
@@ -322,7 +326,12 @@ function calculateGuillotineTotals(array $input): array
         $lines[] = [
             'category'         => $category,
             'name'             => $rule['name'],
+            'product_code'     => $productCode,
+            'image_url'        => $imageUrl,
             'measure'          => $measure,
+            'width'            => $ruleWidth,
+            'height'           => $ruleHeight,
+            'weight_per_meter' => $wpm,
             'unit'             => $unit,
             'quantity'         => $qtyDisplay,
             'pieces'           => $rq,
@@ -477,7 +486,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         //
         public function getProduct(string $name): ?array
         {
-            $stmt = $this->pdo->prepare('SELECT p.unit, p.unit_price, p.weight_per_meter, p.price_unit, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
+            $stmt = $this->pdo->prepare('SELECT p.product_code, p.image_url, p.unit, p.unit_price, p.weight_per_meter, p.price_unit, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
             $stmt->execute([':name' => $name]);
 
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -528,7 +537,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             'height'        => $row['height'],
             'quantity'      => $row['quantity'],
             'glass_type'    => $row['glass_type'] ?? '',
-            'profit_rate'   => $row['profit_margin'] ?? 0,
             'currency'      => 'TRY',
             'exchange_rates' => $exchangeRates,
             'provider'      => $provider,
@@ -539,134 +547,20 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         exit;
     }
 
-    echo '<div class="container mt-4">';
+    // Firma bilgileri ve hesaplanan satırlar
+    $cStmt = $pdo->prepare('SELECT name, logo FROM company WHERE user_id = :uid LIMIT 1');
+    $cStmt->execute([':uid' => $_SESSION['user_id']]);
+    $company = $cStmt->fetch(PDO::FETCH_ASSOC) ?: ['name' => '', 'logo' => null];
 
-    if (!empty($exchangeRates)) {
-        echo '<div class="row">';
-
-        if (isset($exchangeRates['USD'])) {
-            echo '<div class="col-md-6">';
-            echo '<div class="alert alert-info text-center">';
-            echo '1 USD = ' . e(number_format($exchangeRates['USD'], 2, ',', '.')) . ' ' . e(currencySymbol('TRY'));
-            echo '</div>';
-            echo '</div>';
-        }
-
-        if (isset($exchangeRates['EUR'])) {
-            echo '<div class="col-md-6">';
-            echo '<div class="alert alert-success text-center">';
-            echo '1 EUR = ' . e(number_format($exchangeRates['EUR'], 2, ',', '.')) . ' ' . e(currencySymbol('TRY'));
-            echo '</div>';
-            echo '</div>';
-        }
-
-        echo '</div>'; // row
-    }
-
-    echo '</div>'; // container
-
-    echo '<h3>Kalemler</h3>';
-
-    //
-    // Kategori Listesi
-    // Hesaplanan satırları kategori bazında gruplamak için boş dizi oluşturur.
-    //
-    $categories = [];
-    foreach ($result['lines'] as $line) {
-        if (strtolower($line['category']) === 'cam') {
-            continue;
-        }
-        $key = strtolower($line['category']);
-        if (!isset($categories[$key])) {
-            $categories[$key] = ['title' => $line['category'], 'lines' => []];
-        }
-        $categories[$key]['lines'][] = $line;
-    }
-
-    //
-    // Toplam ve Cam Bilgisi
-    // Hesaplamanın genel sonuçlarını ve cam ölçülerini alır.
-    //
+    $lines = $result['lines'];
     $tot       = $result['totals'];
-    $glassInfo = $result['glass'] ?? null;
-    $currencySymbol = currencySymbol($result['currency']);
-
-    //
-    // Demonte Kalemleri
-    // Motor ve kumanda için maliyet hesaplamaları yapılır.
-    //
-    $profitRate   = (float) ($row['profit_margin'] ?? 0);
-    $demonteItems = [];
-
-    $systemQty = (int) ($row['quantity'] ?? 0);
-    $motorName = (string) ($row['motor_system'] ?? '');
-    if ($motorName !== '') {
-        $motorProduct = $provider->getProduct($motorName);
-        if ($motorProduct) {
-            $motorCurrency = strtoupper((string) ($motorProduct['price_unit'] ?? 'TRY'));
-            $motorPrice    = (float) ($motorProduct['unit_price'] ?? 0);
-            if ($motorCurrency !== $result['currency']) {
-                $rate = $exchangeRates[$motorCurrency] ?? null;
-                if ($rate !== null) {
-                    $motorPrice *= $rate;
-                }
-            }
-            $motorCost = $motorPrice * $systemQty;
-            $demonteItems[] = [
-                'name'       => $motorName,
-                'unit_price' => $motorPrice,
-                'qty'        => $systemQty,
-                'cost'       => $motorCost,
-            ];
-        }
-    }
-
-    $remoteQty = (int) ($row['remote_quantity'] ?? 0);
-    if ($remoteQty > 0) {
-        $remoteProduct = $provider->getProduct('Kumanda');
-        if ($remoteProduct) {
-            $remoteCurrency = strtoupper((string) ($remoteProduct['price_unit'] ?? 'TRY'));
-            $remotePrice    = (float) ($remoteProduct['unit_price'] ?? 0);
-            if ($remoteCurrency !== $result['currency']) {
-                $rate = $exchangeRates[$remoteCurrency] ?? null;
-                if ($rate !== null) {
-                    $remotePrice *= $rate;
-                }
-            }
-            $remoteCost = $remotePrice * $remoteQty;
-            $demonteItems[] = [
-                'name'       => 'Kumanda',
-                'unit_price' => $remotePrice,
-                'qty'        => $remoteQty,
-                'cost'       => $remoteCost,
-            ];
-        }
-    }
-
-    //
-    // Demonte Toplamları
-    // Motor ve kumanda kalemlerinin kâr ve toplam tutarlarını önceden hesaplar.
-    //
-    $demonteCostSum   = 0.0;
-    $demonteProfitSum = 0.0;
-    $demonteTotal     = 0.0;
-    foreach ($demonteItems as &$item) {
-        $item['profit'] = $item['cost'] * $profitRate / 100;
-        $item['total']  = $item['cost'] + $item['profit'];
-        $demonteCostSum   += $item['cost'];
-        $demonteProfitSum += $item['profit'];
-        $demonteTotal     += $item['total'];
-    }
-    unset($item);
-    $salesTotal     = $tot['grand_total'] + $demonteTotal;
-    $updatedProfit  = $tot['profit'] + $demonteProfitSum;
 
     //
     // Veritabanı Güncellemesi
-    // Hesaplanan kâr ve satış tutarı ilgili giyotin satırına ve teklife kaydedilir.
+    // Hesaplanan tutar ilgili giyotin satırına ve teklife kaydedilir.
     //
     $upd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount = :p, total_amount = :t WHERE id = :id');
-    $upd->execute([':p' => $updatedProfit, ':t' => $salesTotal, ':id' => $id]);
+    $upd->execute([':p' => $tot['profit'], ':t' => $tot['grand_total'], ':id' => $id]);
 
     $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :gid');
     $gSumStmt->execute([':gid' => $row['general_offer_id']]);
@@ -677,195 +571,53 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $offerUpd = $pdo->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id');
     $offerUpd->execute([':t' => $gSum + $sSum, ':id' => $row['general_offer_id']]);
 
-    //
-    // Kategori Döngüsü
-    // Her kategori için tablo oluşturarak satırları listeler.
-    //
-    $usdRate = $exchangeRates['USD'] ?? 0.0;
-    foreach ($categories as $cat) {
-        $isAlu = strcasecmp($cat['title'], 'Alüminyum') === 0;
-        echo '<h5>' . e($cat['title']) . '</h5>';
-        echo '<div class="table-responsive">';
-        echo '<table class="table table-sm table-striped mb-3">';
-        echo '<thead><tr><th>Ad</th><th>Ölçü (mm)</th>';
-        //
-        // Alüminyum Kolonu
-        // Kategori alüminyum ise adet sütunu başlığa eklenir.
-        //
-        if ($isAlu) {
-            echo '<th>Adet</th>';
-        }
-        echo '<th>Miktar</th><th>Birim</th><th class="text-end">Tutar</th><th class="text-end">Birim Fiyat ($)</th><th class="text-end">Toplam Tutar ($)</th></tr></thead><tbody>';
-        //
-        // Kategori Toplayıcıları
-        // Miktar, toplam tutar ve adet değerlerini sıfırlar.
-        //
-        $qtySum     = 0.0;
-        $totalSum   = 0.0;
-        $totalSumUsd = 0.0;
-        $unit       = '';
-        $pieceSum   = 0;
-        //
-        // Satır Döngüsü
-        // Her kategori içindeki satırları tabloda gösterir.
-        //
-        foreach ($cat['lines'] as $line) {
-            echo '<tr>';
-            echo '<td>' . e($line['name']) . '</td>';
-            echo '<td>' . e(number_format($line['measure'], 0, ',', '.')) . '</td>';
-            //
-            // Adet Bilgisi
-            // Sadece alüminyum kalemlerde adet sütunu gösterilir.
-            //
-            if ($isAlu) {
-                echo '<td>' . e(number_format((int) ($line['pieces'] ?? 0), 0, ',', '.')) . '</td>';
-            }
-            echo '<td>' . e(fmtUnit($line['quantity'], $line['unit'])) . '</td>';
-            echo '<td>' . e($line['unit']) . '</td>';
-            echo '<td class="text-end">' . e(number_format($line['total'], 2, ',', '.')) . ' ' . e(currencySymbol($line['currency'])) . '</td>';
-            $unitPriceUsd = ($usdRate > 0 && $line['quantity'] > 0)
-                ? ($line['total'] / $line['quantity']) / $usdRate
-                : 0;
-            $totalUsd = $usdRate > 0 ? $line['total'] / $usdRate : 0;
-            echo '<td class="text-end">' . e(number_format($unitPriceUsd, 2, ',', '.')) . ' $</td>';
-            echo '<td class="text-end">' . e(number_format($totalUsd, 2, ',', '.')) . ' $</td>';
-            echo '</tr>';
-            $qtySum     += $line['quantity'];
-            $totalSum   += $line['total'];
-            $totalSumUsd += $totalUsd;
-            if ($isAlu) {
-                $pieceSum += (int) ($line['pieces'] ?? 0);
-            }
-            //
-            // Birim Tutarlılığı
-            // Farklı satırlarda birim değişirse toplam satırda birim gösterilmez.
-            //
-            if ($unit === '') {
-                $unit = $line['unit'];
-            } elseif ($unit !== $line['unit']) {
-                $unit = '';
-            }
-        }
-        echo '<tr>';
-        echo '<td colspan="2" class="text-end"><strong>Toplam</strong></td>';
-        //
-        // Adet Toplamı
-        // Alüminyum kalemler için toplam adet değeri gösterilir.
-        //
-        if ($isAlu) {
-            echo '<td>' . e(number_format($pieceSum, 0, ',', '.')) . '</td>';
-        }
-        echo '<td>' . e(fmtUnit($qtySum, $unit)) . '</td>';
-        echo '<td>' . e($unit) . '</td>';
-        echo '<td class="text-end">' . e(number_format($totalSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '<td></td>';
-        echo '<td class="text-end">' . e(number_format($totalSumUsd, 2, ',', '.')) . ' $</td>';
-        echo '</tr>';
-        echo '</tbody></table></div>';
+    // Yeni kart ızgarası çıktısı
+    echo '<style>
+@page { size: A4; margin: 10mm; }
+.product-grid { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); }
+@media (min-width:768px){ .product-grid { grid-template-columns: repeat(2,1fr); } }
+@media (min-width:992px){ .product-grid { grid-template-columns: repeat(3,1fr); } }
+@media print { .product-grid { grid-template-columns: repeat(3,1fr); } }
+.product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
+.product-card table { width:100%; font-size:0.8rem; text-align:center; }
+.product-card th { font-weight:600; }
+.product-img { width:100%; height:130px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
+</style>';
+
+    echo '<div class="text-center mb-4">';
+    if (!empty($company['logo']) && file_exists(__DIR__ . '/assets/' . $company['logo'])) {
+        echo '<img src="assets/' . e($company['logo']) . '" alt="' . e($company['name']) . ' Logo" class="mb-2" style="max-height:60px;">';
     }
-
-    //
-    // Cam Bilgisi Kontrolü
-    // Cam satırı varsa alanı ve maliyeti gösterir.
-    //
-    if ($glassInfo && $glassInfo['quantity'] > 0) {
-        //
-        // Tek Cam Alanı
-        // Bir cam parçasının metrekare alanını hesaplar.
-        //
-        $singleArea = ($glassInfo['width'] * $glassInfo['height']) / 1000000;
-        //
-        // Toplam Cam Alanı
-        // Tüm cam parçalarının toplam metrekare alanını bulur.
-        //
-        $totalArea  = $singleArea * $glassInfo['quantity'];
-        echo '<h5>Cam</h5>';
-        echo '<div class="table-responsive">';
-        echo '<table class="table table-sm table-striped mb-3">';
-        echo '<thead><tr><th>Genişlik (mm)</th><th>Yükseklik (mm)</th><th>Adet</th><th>Birim m²</th><th>Toplam m²</th><th class="text-end">Tutar</th><th class="text-end">Birim Fiyat ($)</th><th class="text-end">Toplam Tutar ($)</th></tr></thead><tbody>';
-        $unitPriceGlassUsd = ($usdRate > 0 && $totalArea > 0) ? ($tot['glass_cost'] / $totalArea) / $usdRate : 0;
-        $totalGlassUsd = $usdRate > 0 ? $tot['glass_cost'] / $usdRate : 0;
-        echo '<tr>';
-        echo '<td>' . e(number_format($glassInfo['width'], 0, ',', '.')) . '</td>';
-        echo '<td>' . e(number_format($glassInfo['height'], 0, ',', '.')) . '</td>';
-        echo '<td>' . e(number_format($glassInfo['quantity'], 0, ',', '.')) . '</td>';
-        echo '<td>' . e(number_format($singleArea, 2, ',', '.')) . '</td>';
-        echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
-        echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '<td class="text-end">' . e(number_format($unitPriceGlassUsd, 2, ',', '.')) . ' $</td>';
-        echo '<td class="text-end">' . e(number_format($totalGlassUsd, 2, ',', '.')) . ' $</td>';
-        echo '</tr>';
-        echo '<tr>';
-        echo '<td colspan="3" class="text-end"><strong>Toplam</strong></td>';
-        echo '<td></td>';
-        echo '<td>' . e(number_format($totalArea, 2, ',', '.')) . '</td>';
-        echo '<td class="text-end">' . e(number_format($tot['glass_cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '<td></td>';
-        echo '<td class="text-end">' . e(number_format($totalGlassUsd, 2, ',', '.')) . ' $</td>';
-        echo '</tr>';
-        echo '</tbody></table></div>';
-    }
-    echo '<div class="mt-3">';
-    echo '<table class="table table-bordered table-sm">';
-    echo '<tbody>';
-
-    echo '<tr><th>Alüminyum Boyalı ' . e(number_format($result['alu_painted_kg'], 2, ',', '.')) . ' kg</th><td>'
-        . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
-    echo '<tr><th>Alüminyum Fire ' . e(number_format($result['alu_fire_kg'], 2, ',', '.')) . ' kg</th><td>'
-        . e(number_format($tot['extras']['waste'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
-    echo '<tr><th>Aksesuar</th><td>' . e(number_format($tot['aksesuar_cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
-    echo '<tr><th>Fitil</th><td>' . e(number_format($tot['fitil_cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
-    echo '<tr><th>İmalat İşçiliği</th><td>' . e(number_format($tot['extras']['labor'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
-
-    echo '<tr><th>Genel Gider</th><td>' . e(number_format($tot['general_expense'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
-
-    echo '<tr><th>Kâr</th><td>' . e(number_format($tot['profit'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
-
-    echo '<tr class="table-success fw-bold">';
-    echo '<td>Genel Toplam</td><td>' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-    echo '</tr>';
-    if (!empty($demonteItems)) {
-        echo '<tr><th>Demonte Toplamı</th><td>' . e(number_format($demonteTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
-        echo '<tr class="table-primary fw-bold">';
-        echo '<td>SATIŞ</td><td>' . e(number_format($salesTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '</tr>';
-    }
-
-    echo '</tbody>';
-    echo '</table>';
+    echo '<h2 class="h5 fw-bold mb-0">GİYOTİN SİSTEMİ</h2>';
     echo '</div>';
-    // Demonte Tablosu
-    if (!empty($demonteItems)) {
-        echo '<div class="mt-3">';
-        echo '<h5>Demonte</h5>';
-        echo '<div class="table-responsive">';
-        echo '<table class="table table-sm table-striped mb-3">';
-        echo '<thead><tr><th>Ürün</th><th class="text-end">Birim Fiyat</th><th>Adet</th><th class="text-end">Maliyet</th><th class="text-end">Kâr (%)</th><th class="text-end">Demonte Kârı</th><th class="text-end">Demonte Tutarı</th></tr></thead><tbody>';
-        foreach ($demonteItems as $item) {
-            echo '<tr>';
-            echo '<td>' . e($item['name']) . '</td>';
-            echo '<td class="text-end">' . e(number_format($item['unit_price'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-            echo '<td>' . e(number_format($item['qty'], 0, ',', '.')) . '</td>';
-            echo '<td class="text-end">' . e(number_format($item['cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-            echo '<td class="text-end">' . e(number_format($profitRate, 2, ',', '.')) . ' %</td>';
-            echo '<td class="text-end">' . e(number_format($item['profit'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-            echo '<td class="text-end">' . e(number_format($item['total'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-            echo '</tr>';
+
+    echo '<div class="product-grid">';
+    foreach ($lines as $line) {
+        $img = $line['image_url'] ?? '';
+        if (!$img || !is_file(__DIR__ . '/' . $img)) {
+            $img = 'assets/img/placeholder-product.png';
         }
-        echo '<tr class="table-success fw-bold">';
-        echo '<td>Demonte Toplamı</td><td></td><td></td>';
-        echo '<td class="text-end">' . e(number_format($demonteCostSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '<td></td>';
-        echo '<td class="text-end">' . e(number_format($demonteProfitSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '<td class="text-end">' . e(number_format($demonteTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '</tr>';
-        echo '</tbody></table></div></div>';
+        echo '<div class="product-card">';
+        $qtyVal = number_format((int) ($line['pieces'] ?? 0), 0, ',', '.');
+        if (strtolower($line['category']) === 'cam') {
+            $widthVal  = number_format($line['width'], 0, ',', '.');
+            $heightVal = number_format($line['height'], 0, ',', '.');
+            echo '<table class="table table-bordered table-sm mb-0">';
+            echo '<thead><tr><th>Genişlik</th><th>Yükseklik</th><th>Adet</th></tr></thead>';
+            echo '<tbody><tr><td>' . e($widthVal) . '</td><td>' . e($heightVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
+            echo '</table>';
+        } else {
+            $measureVal = number_format($line['measure'], 0, ',', '.');
+            echo '<table class="table table-bordered table-sm mb-0">';
+            echo '<thead><tr><th>İsim</th><th>Kod</th><th>Ölçü</th><th>Adet</th></tr></thead>';
+            echo '<tbody><tr><td>' . e($line['name']) . '</td><td>' . e($line['product_code'] ?? '') . '</td><td>' . e($measureVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
+            echo '</table>';
+        }
+        echo '<img src="' . e($img) . '" alt="' . e($line['name']) . '" loading="lazy" class="product-img">';
+        echo '</div>';
     }
     echo '</div>';
 
-    //
-    // Sayfa Sonu
-    // Alt bilgi şablonunu dahil eder ve sayfayı sonlandırır.
-    //
     require __DIR__ . '/footer.php';
+    return;
 }
