@@ -1,5 +1,4 @@
 vendor/
-uploads/
 storage/
 .env
 /node_modules/
