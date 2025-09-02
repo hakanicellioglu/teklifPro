@@ -510,7 +510,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     // Giyotin Verileri
     // Veritabanından ilgili ölçü ve ayarları çeker.
     //
-    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, motor_system, remote_quantity, profit_margin, general_offer_id FROM guillotinesystems WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, glass_color, motor_system, remote_quantity, ral_code, profit_margin, general_offer_id FROM guillotinesystems WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
@@ -590,6 +590,22 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     }
     echo '<h2 class="h5 fw-bold mb-0">GİYOTİN SİSTEMİ</h2>';
     echo '</div>';
+
+    $infoRows = [
+        'Sistem Genişliği'  => number_format((float)($row['width'] ?? 0), 0, ',', '.'),
+        'Sistem Yüksekliği' => number_format((float)($row['height'] ?? 0), 0, ',', '.'),
+        'Adet'              => number_format((int)($row['quantity'] ?? 0), 0, ',', '.'),
+        'Kumanda Adedi'     => number_format((int)($row['remote_quantity'] ?? 0), 0, ',', '.'),
+        'Motor Markası'     => (string)($row['motor_system'] ?? ''),
+        'Ral Kodu'          => (string)($row['ral_code'] ?? ''),
+        'Cam Kombinasyonu'  => (string)($row['glass_type'] ?? ''),
+        'Cam Rengi'         => (string)($row['glass_color'] ?? ''),
+    ];
+    echo '<div class="table-responsive mb-3"><table class="table table-bordered table-sm w-auto mx-auto"><tbody>';
+    foreach ($infoRows as $label => $value) {
+        echo '<tr><th>' . e($label) . '</th><td>' . e($value) . '</td></tr>';
+    }
+    echo '</tbody></table></div>';
 
     echo '<div class="product-grid">';
     foreach ($lines as $line) {
