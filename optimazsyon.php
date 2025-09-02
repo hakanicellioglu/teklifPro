@@ -48,7 +48,7 @@ interface ProductProviderInterface
  * } $input
  *
  * @return array{
- *   lines: array<int, array{category:string,name:string,measure:float,unit:string,quantity:float,pieces:int,total:float,currency:string,original_currency:string}>,
+ *   lines: array<int, array{category:string,name:string,measure:float,width:float,height:float,unit:string,quantity:float,pieces:int,total:float,currency:string,original_currency:string}>,
  *   totals: array{
  *     alu_cost: float,
  *     glass_cost: float,
@@ -329,6 +329,8 @@ function calculateGuillotineTotals(array $input): array
             'product_code'     => $productCode,
             'image_url'        => $imageUrl,
             'measure'          => $measure,
+            'width'            => $ruleWidth,
+            'height'           => $ruleHeight,
             'weight_per_meter' => $wpm,
             'unit'             => $unit,
             'quantity'         => $qtyDisplay,
@@ -579,7 +581,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 .product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
 .product-card table { width:100%; font-size:0.8rem; text-align:center; }
 .product-card th { font-weight:600; }
-.product-img { width:100%; height:130px; object-fit:contain; border-top:1px solid #000; display:block; background-color:#fff; }
+.product-img { width:100%; height:130px; object-fit:cover; border:1px solid #000; display:block; background-color:#fff; }
 </style>';
 
     echo '<div class="text-center mb-4">';
@@ -595,16 +597,25 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         if (!$img || !is_file(__DIR__ . '/' . $img)) {
             $img = 'assets/img/placeholder-product.png';
         }
-        $measureVal = ($line['weight_per_meter'] > 0)
-            ? number_format($line['weight_per_meter'], 2, ',', '.')
-            : number_format($line['measure'], 0, ',', '.');
-        $qtyVal = number_format((int) ($line['pieces'] ?? 0), 0, ',', '.');
         echo '<div class="product-card">';
-        echo '<table class="table table-bordered table-sm mb-0">';
-        echo '<thead><tr><th>İsim</th><th>Kod</th><th>Ölçü</th><th>Adet</th></tr></thead>';
-        echo '<tbody><tr><td>' . e($line['name']) . '</td><td>' . e($line['product_code'] ?? '') . '</td><td>' . e($measureVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
-        echo '</table>';
         echo '<img src="' . e($img) . '" alt="' . e($line['name']) . '" loading="lazy" class="product-img">';
+        $qtyVal = number_format((int) ($line['pieces'] ?? 0), 0, ',', '.');
+        if (strtolower($line['category']) === 'cam') {
+            $widthVal  = number_format($line['width'], 0, ',', '.');
+            $heightVal = number_format($line['height'], 0, ',', '.');
+            echo '<table class="table table-bordered table-sm mb-0">';
+            echo '<thead><tr><th>Genişlik</th><th>Yükseklik</th><th>Adet</th></tr></thead>';
+            echo '<tbody><tr><td>' . e($widthVal) . '</td><td>' . e($heightVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
+            echo '</table>';
+        } else {
+            $measureVal = ($line['weight_per_meter'] > 0)
+                ? number_format($line['weight_per_meter'], 2, ',', '.')
+                : number_format($line['measure'], 0, ',', '.');
+            echo '<table class="table table-bordered table-sm mb-0">';
+            echo '<thead><tr><th>İsim</th><th>Kod</th><th>Ölçü</th><th>Adet</th></tr></thead>';
+            echo '<tbody><tr><td>' . e($line['name']) . '</td><td>' . e($line['product_code'] ?? '') . '</td><td>' . e($measureVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
+            echo '</table>';
+        }
         echo '</div>';
     }
     echo '</div>';
