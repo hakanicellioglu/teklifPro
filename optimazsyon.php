@@ -649,9 +649,9 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 @media (min-width:992px){ .product-grid { grid-template-columns: repeat(3,1fr); } }
 @media print { .product-grid { grid-template-columns: repeat(3,1fr); } }
 .product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
-.product-img { width:100%; height:130px; object-fit:cover; border-bottom:1px solid #000; }
-.product-card table { width:100%; font-size:0.8rem; }
-.product-card th { font-weight:600; width:40%; }
+.product-card table { width:100%; font-size:0.8rem; text-align:center; }
+.product-card th { font-weight:600; }
+.product-img { width:100%; height:130px; object-fit:cover; border-top:1px solid #000; display:block; }
 </style>';
 
     echo '<div class="text-center mb-4">';
@@ -672,13 +672,11 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             : number_format($line['measure'], 0, ',', '.');
         $qtyVal = number_format((int) ($line['pieces'] ?? 0), 0, ',', '.');
         echo '<div class="product-card">';
-        echo '<img src="' . e($img) . '" alt="' . e($line['name']) . '" loading="lazy" class="product-img">';
         echo '<table class="table table-bordered table-sm mb-0">';
-        echo '<tr><th>İsim</th><td>' . e($line['name']) . '</td></tr>';
-        echo '<tr><th>Kod</th><td>' . e($line['product_code'] ?? '') . '</td></tr>';
-        echo '<tr><th>Ölçü</th><td>' . e($measureVal) . '</td></tr>';
-        echo '<tr><th>Adet</th><td>' . e($qtyVal) . '</td></tr>';
+        echo '<thead><tr><th>İsim</th><th>Kod</th><th>Ölçü</th><th>Adet</th></tr></thead>';
+        echo '<tbody><tr><td>' . e($line['name']) . '</td><td>' . e($line['product_code'] ?? '') . '</td><td>' . e($measureVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
         echo '</table>';
+        echo '<img src="' . e($img) . '" alt="' . e($line['name']) . '" loading="lazy" class="product-img">';
         echo '</div>';
     }
     echo '</div>';
