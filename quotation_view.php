@@ -654,6 +654,11 @@ page_header($title, $actions, true);
                                                 </a>
                                             </li>
                                             <li>
+                                                <a href="optimazsyon.php?quote_id=<?= e((string)$g['id']) ?>" class="dropdown-item" target="_blank" rel="noopener">
+                                                    <i class="bi bi-gear me-1"></i> Optimizasyon
+                                                </a>
+                                            </li>
+                                            <li>
                                                 <button type="button" class="dropdown-item edit-guillotine" data-bs-toggle="modal" data-bs-target="#addGuillotineModal" data-id="<?= e((string)$g['id']) ?>" data-width="<?= e((string)$g['width']) ?>" data-height="<?= e((string)$g['height']) ?>" data-quantity="<?= e((string)$g['quantity']) ?>" data-motor="<?= e((string)$g['motor_system']) ?>" data-glass-type="<?= e((string)$g['glass_type']) ?>" data-glass-color="<?= e((string)$g['glass_color']) ?>" data-remote="<?= e((string)$g['remote_quantity']) ?>" data-ral="<?= e((string)$g['ral_code']) ?>" data-profit="<?= e((string)$g['profit_margin']) ?>">
                                                     <i class="bi bi-pencil me-1"></i> Düzenle
                                                 </button>
