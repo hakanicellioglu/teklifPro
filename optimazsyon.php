@@ -637,16 +637,16 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
 
     //
-    // PDO Ürün Sağlayıcı Sınıfı
-    // Ürün bilgilerini veritabanından okumak için PDO kullanır.
+    // Sürücüyü Bağımsız Ürün Sağlayıcı Sınıfı
+    // Ürün bilgilerini veritabanından okumak için sürücüden bağımsız çalışır.
     //
-    class PdoProductProvider implements ProductProviderInterface
+    class DbProductProvider implements ProductProviderInterface
     {
-        private $pdo;
+        private $db;
 
-        public function __construct(PDO $pdo)
+        public function __construct($db)
         {
-            $this->pdo = $pdo;
+            $this->db = $db;
         }
 
         //
@@ -655,10 +655,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         //
         public function getProduct(string $name): ?array
         {
-            $stmt = $this->pdo->prepare('SELECT p.product_code, p.image_url, p.unit, p.unit_price, p.weight_per_meter, p.price_unit, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
+            $stmt = $this->db->prepare('SELECT p.product_code, p.image_url, p.unit, p.unit_price, p.weight_per_meter, p.price_unit, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE LOWER(p.name) = LOWER(:name)');
             $stmt->execute([':name' => $name]);
 
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $row = $stmt->fetch();
 
             return $row ?: null;
         }
@@ -679,24 +679,31 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     // Giyotin Verileri
     // Veritabanından ilgili ölçü ve ayarları çeker.
     //
-    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, motor_system, remote_quantity, ral_code, profit_margin, general_offer_id FROM guillotinesystems WHERE id = :id');
-    $stmt->execute([':id' => $id]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$row) {
-        echo '<div class="container mt-4"><div class="alert alert-danger">Giyotin satırı bulunamadı.</div></div>';
+    try {
+        $stmt = $db->prepare('SELECT width, height, quantity, glass_type, motor_system, remote_quantity, ral_code, profit_margin, general_offer_id FROM guillotinesystems WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            echo '<div class="container mt-4"><div class="alert alert-danger">Giyotin satırı bulunamadı.</div></div>';
+            require __DIR__ . '/footer.php';
+            exit;
+        }
+
+        $custStmt = $db->prepare('SELECT c.first_name, c.last_name, c.company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id WHERE g.id = :id');
+        $custStmt->execute([':id' => $row['general_offer_id']]);
+        $customer = $custStmt->fetch();
+    } catch (Throwable $e) {
+        error_log($e->getMessage());
+        echo '<div class="container mt-4"><div class="alert alert-danger">Veritabanı hatası.</div></div>';
         require __DIR__ . '/footer.php';
         exit;
     }
-
-    $custStmt = $pdo->prepare('SELECT c.first_name, c.last_name, c.company_name FROM generaloffers g LEFT JOIN customers c ON g.customer_id = c.id WHERE g.id = :id');
-    $custStmt->execute([':id' => $row['general_offer_id']]);
-    $customer = $custStmt->fetch(PDO::FETCH_ASSOC);
 
     //
     // Sağlayıcı ve Kur Oranları
     // Ürün sağlayıcı nesnesini oluşturur ve güncel kur bilgilerini alır.
     //
-    $provider = new PdoProductProvider($pdo);
+    $provider = new DbProductProvider($db);
 
     $exchangeRates = fetchExchangeRates('TRY', ['USD', 'EUR']);
 
@@ -716,7 +723,8 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             'provider'      => $provider,
         ]);
     } catch (Throwable $e) {
-        echo '<div class="container mt-4"><div class="alert alert-danger">Hesaplama hatası: ' . e($e->getMessage()) . '</div></div>';
+        error_log($e->getMessage());
+        echo '<div class="container mt-4"><div class="alert alert-danger">Hesaplama hatası.</div></div>';
         require __DIR__ . '/footer.php';
         exit;
     }
@@ -876,17 +884,21 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     // Veritabanı Güncellemesi
     // Hesaplanan kâr ve satış tutarı ilgili giyotin satırına ve teklife kaydedilir.
     //
-    $upd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount = :p, total_amount = :t WHERE id = :id');
-    $upd->execute([':p' => $updatedProfit, ':t' => $salesTotal, ':id' => $id]);
+    try {
+        $upd = $db->prepare('UPDATE guillotinesystems SET profit_amount = :p, total_amount = :t WHERE id = :id');
+        $upd->execute([':p' => $updatedProfit, ':t' => $salesTotal, ':id' => $id]);
 
-    $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :gid');
-    $gSumStmt->execute([':gid' => $row['general_offer_id']]);
-    $gSum = (float) $gSumStmt->fetchColumn();
-    $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :gid');
-    $sSumStmt->execute([':gid' => $row['general_offer_id']]);
-    $sSum = (float) $sSumStmt->fetchColumn();
-    $offerUpd = $pdo->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id');
-    $offerUpd->execute([':t' => $gSum + $sSum, ':id' => $row['general_offer_id']]);
+        $gSumStmt = $db->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :gid');
+        $gSumStmt->execute([':gid' => $row['general_offer_id']]);
+        $gSum = (float) $gSumStmt->fetchColumn();
+        $sSumStmt = $db->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :gid');
+        $sSumStmt->execute([':gid' => $row['general_offer_id']]);
+        $sSum = (float) $sSumStmt->fetchColumn();
+        $offerUpd = $db->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id');
+        $offerUpd->execute([':t' => $gSum + $sSum, ':id' => $row['general_offer_id']]);
+    } catch (Throwable $e) {
+        error_log($e->getMessage());
+    }
 
     //
     // Kategori Döngüsü

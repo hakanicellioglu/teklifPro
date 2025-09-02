@@ -8,32 +8,30 @@ const DB_USER = 'root';
 const DB_PASS = '';
 const DEFAULT_REACTIVATION_DAYS = 14;
 
+require __DIR__ . '/db.php';
+
 try {
-    $pdo = new PDO(
-        'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
-        DB_USER,
-        DB_PASS,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-        ]
-    );
-    $pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_turkish_ci');
-} catch (PDOException $e) {
-    throw $e;
+    $db = DbAdapter::create(DB_HOST, DB_NAME, DB_USER, DB_PASS);
+    $pdo = $db;
+} catch (Exception $e) {
+    error_log($e->getMessage());
+    die('Database connection error');
 }
 
 // Schema adjustments for offer expiration
 try {
-    $pdo->exec("ALTER TABLE generaloffers ADD COLUMN IF NOT EXISTS valid_until DATE NULL AFTER validity_days");
+    $stmt = $db->prepare('SHOW COLUMNS FROM generaloffers LIKE ?');
+    $stmt->execute(['valid_until']);
+    if (!$stmt->fetch()) {
+        $db->exec('ALTER TABLE generaloffers ADD COLUMN valid_until DATE NULL AFTER validity_days');
+    }
 } catch (Exception $e) {
-    // Ignore if the table is missing
+    error_log($e->getMessage());
 }
 
 // Populate missing valid_until values
 try {
-    $pdo->exec(
+    $db->exec(
         "UPDATE generaloffers
          SET valid_until = DATE_ADD(offer_date, INTERVAL validity_days DAY)
          WHERE valid_until IS NULL
@@ -41,11 +39,12 @@ try {
            AND offer_date IS NOT NULL"
     );
 } catch (Exception $e) {
+    error_log($e->getMessage());
 }
 
 // Automatically mark expired offers
 try {
-    $pdo->exec(
+    $db->exec(
         "UPDATE generaloffers
          SET status = 'expired'
          WHERE valid_until IS NOT NULL
@@ -53,5 +52,5 @@ try {
            AND status NOT IN ('accepted', 'rejected', 'cancelled', 'expired')"
     );
 } catch (Exception $e) {
-    // Ignore errors (e.g., table does not exist)
+    error_log($e->getMessage());
 }
