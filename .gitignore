@@ -1,8 +1,0 @@
-vendor/
-storage/
-.env
-/node_modules/
-*.log
-.vscode/settings.json
-phpunit.phar
-.phpunit.result.cache
