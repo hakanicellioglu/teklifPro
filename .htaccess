@@ -7,7 +7,7 @@ RewriteEngine On
 RewriteBase /
 
 # Redirect legacy optimization page to new endpoint
-RewriteRule ^optimizasyon(\.php)?$ guillotine_optimize_view [R=301,L]
+#RewriteRule ^optimizasyon(\.php)?$ guillotine_optimize_view [R=301,L]
 
 # 1) Hata sayfalarına ve fiziksel varlıklara dokunma (loop'u kes)
 RewriteCond %{REQUEST_URI} ^/errors/ [OR]
