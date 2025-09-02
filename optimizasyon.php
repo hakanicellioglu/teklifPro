@@ -632,6 +632,11 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '</table>';
     echo '</div>';
 
+    $motorName = trim((string) ($row['motor_system'] ?? ''));
+    if ($motorName !== '') {
+        echo '<div class="mb-3"><strong>Motor Sistemi:</strong> ' . e($motorName) . '</div>';
+    }
+
     echo '<div class="product-grid">';
     foreach ($lines as $line) {
         $img = $line['image_url'] ?? '';
