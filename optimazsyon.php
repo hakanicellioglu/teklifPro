@@ -123,13 +123,69 @@ function calculateGuillotineTotals(array $input): array
     // Giyotin sisteminde kullanılacak ana parçaların ölçü ve adet hesaplamalarını içerir.
     //
     $rules = [
-        ['name' => 'Motor Kutusu',       'measure' => fn($w, $h, $q) => $w - 14,                        'qty' => fn($w, $h, $q) => $q],
-        ['name' => 'Motor Kapak',        'measure' => fn($w, $h, $q) => $w - 15,                        'qty' => fn($w, $h, $q) => $q],
-        ['name' => 'Alt Kasa',           'measure' => fn($w, $h, $q) => $w,                              'qty' => fn($w, $h, $q) => $q],
-        ['name' => 'Tutamak',            'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Kenetli Baza',       'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Küpeşte Bazası',     'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Küpeşte',           'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => $q],
+        [
+            'name'    => 'Motor Kutusu',
+            'measure' => function ($w, $h, $q) {
+                return $w - 14;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return $q;
+            },
+        ],
+        [
+            'name'    => 'Motor Kapak',
+            'measure' => function ($w, $h, $q) {
+                return $w - 15;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return $q;
+            },
+        ],
+        [
+            'name'    => 'Alt Kasa',
+            'measure' => function ($w, $h, $q) {
+                return $w;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return $q;
+            },
+        ],
+        [
+            'name'    => 'Tutamak',
+            'measure' => function ($w, $h, $q) {
+                return $w - 183;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 2 * $q;
+            },
+        ],
+        [
+            'name'    => 'Kenetli Baza',
+            'measure' => function ($w, $h, $q) {
+                return $w - 183;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 2 * $q;
+            },
+        ],
+        [
+            'name'    => 'Küpeşte Bazası',
+            'measure' => function ($w, $h, $q) {
+                return $w - 183;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 2 * $q;
+            },
+        ],
+        [
+            'name'    => 'Küpeşte',
+            'measure' => function ($w, $h, $q) {
+                return $w - 183;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return $q;
+            },
+        ],
     ];
 
     //
@@ -137,8 +193,24 @@ function calculateGuillotineTotals(array $input): array
     // Tek cam kullanıldığında yatay ve dikey çıtalar listeye eklenir.
     //
     if ($includeGlassStrips) {
-        $rules[] = ['name' => 'Yatay Tek Cam Çıtası', 'measure' => fn($w, $h, $q) => ($w - 185) - 52,      'qty' => fn($w, $h, $q) => 11 * $q];
-        $rules[] = ['name' => 'Dikey Tek Cam Çıtası', 'measure' => fn($w, $h, $q) => (($h - 290) / 3) - 6, 'qty' => fn($w, $h, $q) => 11 * $q];
+        $rules[] = [
+            'name'    => 'Yatay Tek Cam Çıtası',
+            'measure' => function ($w, $h, $q) {
+                return ($w - 185) - 52;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 11 * $q;
+            },
+        ];
+        $rules[] = [
+            'name'    => 'Dikey Tek Cam Çıtası',
+            'measure' => function ($w, $h, $q) {
+                return (($h - 290) / 3) - 6;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 11 * $q;
+            },
+        ];
     }
 
     //
@@ -146,17 +218,105 @@ function calculateGuillotineTotals(array $input): array
     // Diğer tüm profil ve aksesuarların ölçü hesapları bu listeye eklenir.
     //
     $rules = array_merge($rules, [
-        ['name' => 'Dikme',              'measure' => fn($w, $h, $q) => $h - 166,                        'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Orta Dikme',         'measure' => fn($w, $h, $q) => $h - 166,                        'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Son Kapatma',        'measure' => fn($w, $h, $q) => $h - (($h - 291) / 3) - 214.5,      'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Kanat',              'measure' => fn($w, $h, $q) => ($h - 291) / 3,                   'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Dikey Baza',         'measure' => fn($w, $h, $q) => ($h - 291) / 3,                   'qty' => fn($w, $h, $q) => 4 * $q],
-        ['name' => 'Flatbelt Kayış',     'measure' => fn($w, $h, $q) => $h - (($h - 290) / 3) - 221 + 600, 'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Motor Borusu',       'measure' => fn($w, $h, $q) => $w - 75,                          'qty' => fn($w, $h, $q) => $q],
-        ['name' => 'Motor Kutu Contası', 'measure' => fn($w, $h, $q) => ($w - 14) * $q + $w * $q,         'qty' => fn($w, $h, $q) => 1],
-        ['name' => 'Kanat Contası',      'measure' => fn($w, $h, $q) => ((($h - 291) / 3) * 2) * 2 * $q,  'qty' => fn($w, $h, $q) => 1],
-        ['name' => 'Plastik Set',        'measure' => fn($w, $h, $q) => 1,                                'qty' => fn($w, $h, $q) => $q],
-        ['name' => 'Zincir',       'measure'    => fn($w, $h, $q) => 1,                             'qty'        => fn($w, $h, $q) => $q],
+        [
+            'name'    => 'Dikme',
+            'measure' => function ($w, $h, $q) {
+                return $h - 166;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 2 * $q;
+            },
+        ],
+        [
+            'name'    => 'Orta Dikme',
+            'measure' => function ($w, $h, $q) {
+                return $h - 166;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 2 * $q;
+            },
+        ],
+        [
+            'name'    => 'Son Kapatma',
+            'measure' => function ($w, $h, $q) {
+                return $h - (($h - 291) / 3) - 214.5;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 2 * $q;
+            },
+        ],
+        [
+            'name'    => 'Kanat',
+            'measure' => function ($w, $h, $q) {
+                return ($h - 291) / 3;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 2 * $q;
+            },
+        ],
+        [
+            'name'    => 'Dikey Baza',
+            'measure' => function ($w, $h, $q) {
+                return ($h - 291) / 3;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 4 * $q;
+            },
+        ],
+        [
+            'name'    => 'Flatbelt Kayış',
+            'measure' => function ($w, $h, $q) {
+                return $h - (($h - 290) / 3) - 221 + 600;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 2 * $q;
+            },
+        ],
+        [
+            'name'    => 'Motor Borusu',
+            'measure' => function ($w, $h, $q) {
+                return $w - 75;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return $q;
+            },
+        ],
+        [
+            'name'    => 'Motor Kutu Contası',
+            'measure' => function ($w, $h, $q) {
+                return ($w - 14) * $q + $w * $q;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 1;
+            },
+        ],
+        [
+            'name'    => 'Kanat Contası',
+            'measure' => function ($w, $h, $q) {
+                return ((($h - 291) / 3) * 2) * 2 * $q;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return 1;
+            },
+        ],
+        [
+            'name'    => 'Plastik Set',
+            'measure' => function ($w, $h, $q) {
+                return 1;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return $q;
+            },
+        ],
+        [
+            'name'    => 'Zincir',
+            'measure' => function ($w, $h, $q) {
+                return 1;
+            },
+            'qty'     => function ($w, $h, $q) {
+                return $q;
+            },
+        ],
     ]);
 
     //
@@ -165,10 +325,18 @@ function calculateGuillotineTotals(array $input): array
     //
     $rules[] = [
         'name'    => 'Cam',
-        'measure' => fn($w, $h, $q) => $glassWidth,
-        'width'   => fn($w, $h, $q) => $glassWidth,
-        'height'  => fn($w, $h, $q) => $glassHeight,
-        'qty'     => fn($w, $h, $q) => $glassQty,
+        'measure' => function ($w, $h, $q) use ($glassWidth) {
+            return $glassWidth;
+        },
+        'width'   => function ($w, $h, $q) use ($glassWidth) {
+            return $glassWidth;
+        },
+        'height'  => function ($w, $h, $q) use ($glassHeight) {
+            return $glassHeight;
+        },
+        'qty'     => function ($w, $h, $q) use ($glassQty) {
+            return $glassQty;
+        },
     ];
 
     //
@@ -454,12 +622,17 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     //
     function currencySymbol(string $currency): string
     {
-        return match (strtoupper($currency)) {
-            'USD' => '$',
-            'EUR' => '€',
-            'TRY', 'TL' => '₺',
-            default => $currency,
-        };
+        switch (strtoupper($currency)) {
+            case 'USD':
+                return '$';
+            case 'EUR':
+                return '€';
+            case 'TRY':
+            case 'TL':
+                return '₺';
+            default:
+                return $currency;
+        }
     }
 
 
@@ -469,7 +642,12 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     //
     class PdoProductProvider implements ProductProviderInterface
     {
-        public function __construct(private PDO $pdo) {}
+        private $pdo;
+
+        public function __construct(PDO $pdo)
+        {
+            $this->pdo = $pdo;
+        }
 
         //
         // Ürün Sorgusu
