@@ -507,7 +507,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     //
     $id = filter_input(INPUT_GET, 'quote_id', FILTER_VALIDATE_INT);
     if (!$id) {
-        echo '<div class="container mt-4"><div class="alert alert-danger">Geçersiz giyotin.</div></div>';
+        echo '<div class="container"><div class="alert alert-danger">Geçersiz giyotin.</div></div>';
         require __DIR__ . '/footer.php';
         exit;
     }
@@ -520,7 +520,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
-        echo '<div class="container mt-4"><div class="alert alert-danger">Giyotin satırı bulunamadı.</div></div>';
+        echo '<div class="container"><div class="alert alert-danger">Giyotin satırı bulunamadı.</div></div>';
         require __DIR__ . '/footer.php';
         exit;
     }
@@ -548,7 +548,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             'provider'      => $provider,
         ]);
     } catch (Throwable $e) {
-        echo '<div class="container mt-4"><div class="alert alert-danger">Hesaplama hatası: ' . e($e->getMessage()) . '</div></div>';
+        echo '<div class="container"><div class="alert alert-danger">Hesaplama hatası: ' . e($e->getMessage()) . '</div></div>';
         require __DIR__ . '/footer.php';
         exit;
     }
@@ -566,26 +566,31 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $tot       = $result['totals'];
     // Yeni kart ızgarası çıktısı
     echo '<style>
-@page { size: A4; margin: 10mm; }
-.product-grid { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); }
+@page { size: A4; }
+.product-grid { display: grid; gap: 0.125rem; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); }
 @media (min-width:768px){ .product-grid { grid-template-columns: repeat(2,1fr); } }
 @media (min-width:992px){ .product-grid { grid-template-columns: repeat(3,1fr); } }
-@media print { .product-grid { grid-template-columns: repeat(3,1fr); } }
+@media print {
+  .product-grid { grid-template-columns: repeat(3,1fr); }
+}
 .product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
-.product-card table { width:100%; font-size:0.8rem; text-align:center; }
-.product-card th { font-weight:600; }
-.product-img { width:100%; height:130px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
+.product-card table { width:100%; font-size:0.5rem; text-align:center; border-collapse:collapse; }
+.product-card th, .product-card td { padding:0.1rem; }
+  .product-card th { font-weight:600; }
+  .product-img { width:100%; height:60px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
+  .info-table { font-size:0.6rem; }
+.info-table th, .info-table td { padding:0.1rem; }
 </style>';
 
-    echo '<div class="container mt-4 d-print-none text-end">';
-    echo '    <button type="button" onclick="window.print()" class="btn btn-secondary">🖨️ Yazdır</button>';
+    echo '<div class="container d-print-none text-end">';
+    echo '    <button type="button" onclick="window.print()" class="btn btn-secondary btn-sm">🖨️ Yazdır</button>';
     echo '</div>';
 
-    echo '<div class="text-center mb-4">';
+    echo '<div class="text-center">';
     if (!empty($company['logo']) && file_exists(__DIR__ . '/assets/' . $company['logo'])) {
-        echo '<img src="assets/' . e($company['logo']) . '" alt="' . e($company['name']) . ' Logo" class="mb-2" style="max-height:60px;">';
+        echo '<img src="assets/' . e($company['logo']) . '" alt="' . e($company['name']) . ' Logo" style="max-height:60px;">';
     }
-    echo '<h2 class="h5 fw-bold mb-0">GİYOTİN SİSTEMİ</h2>';
+    echo '<h2 class="h5 fw-bold">GİYOTİN SİSTEMİ</h2>';
     echo '</div>';
     echo '<div class="row">';
 
@@ -597,8 +602,8 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $motorName = trim((string) ($row['motor_system'] ?? ''));
     $ralCode   = trim((string) ($row['ral_code'] ?? ''));
 
-    echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;"><tbody>';
+    echo '<div class="col">';
+    echo '<table class="table table-bordered table-sm w-auto info-table" style="background-color:#fff;"><tbody>';
     echo '<tr><th>Sistem Genişliği</th><td>' . e($sysWidth) . '</td></tr>';
     echo '<tr><th>Sistem Yüksekliği</th><td>' . e($sysHeight) . '</td></tr>';
     echo '<tr><th>Sistem Adedi</th><td>' . e($sysQtyVal) . '</td></tr>';
@@ -621,8 +626,8 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $glassType   = trim((string) ($row['glass_type'] ?? ''));
     $glassColor  = trim((string) ($row['glass_color'] ?? ''));
 
-    echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;">';
+    echo '<div class="col">';
+    echo '<table class="table table-bordered table-sm w-auto info-table" style="background-color:#fff;">';
     echo '<thead><tr>';
     echo '<th>Cam Genişliği</th>';
     echo '<th>Cam Yüksekliği</th>';
@@ -649,10 +654,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     }
     $glassArea = ($result['glass']['width'] * $result['glass']['height'] * $result['glass']['quantity']) / 1000000;
 
-    echo '<div class="col mb-3">';
+    echo '<div class="col">';
     echo '<div class="d-flex gap-3 align-items-start">';
 
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;">';
+    echo '<table class="table table-bordered table-sm w-auto info-table" style="background-color:#fff;">';
     echo '<thead><tr>';
     echo '<th>Müşteri Bilgileri</th>';
     echo '<th></th>';
@@ -682,17 +687,17 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '</td><td valign="top">';
 
     // --- Sağ Sütun: Sistem / Alüminyum / Cam ---
-    echo '<div class="mb-2">';
+    echo '<div>';
     echo '  <div><strong>Sistem</strong></div>';
     echo '  <div>' . e(number_format($systemArea, 2, ',', '.')) . '</div>';
     echo '</div>';
 
-    echo '<div class="mb-2">';
+    echo '<div>';
     echo '  <div><strong>Alüminyum</strong></div>';
     echo '  <div>' . e(number_format($aluminumTotal, 2, ',', '.')) . '</div>';
     echo '</div>';
 
-    echo '<div class="mb-2">';
+    echo '<div>';
     echo '  <div><strong>Cam</strong></div>';
     echo '  <div>' . e(number_format($glassArea, 2, ',', '.')) . '</div>';
     echo '</div>';
@@ -719,7 +724,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '<div class="product-card">';
         $qtyVal = number_format((int) ($line['pieces'] ?? 0), 0, ',', '.');
         $measureVal = number_format($line['measure'], 0, ',', '.');
-        echo '<table class="table table-bordered table-sm mb-0">';
+        echo '<table class="table table-bordered table-sm">';
         echo '<thead><tr><th>İsim</th><th>Kod</th><th>Ölçü</th><th>Adet</th></tr></thead>';
         echo '<tbody><tr><td>' . e($line['name']) . '</td><td>' . e($line['product_code'] ?? '') . '</td><td>' . e($measureVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
         echo '</table>';
