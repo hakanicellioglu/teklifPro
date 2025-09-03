@@ -632,17 +632,17 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $ralCode   = trim((string) ($row['ral_code'] ?? ''));
     echo '<div class="mb-3">';
     echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
-    echo '<tr><th>Sistem Genişliği</th></tr><tr><td>' . e($sysWidth) . '</td></tr>';
-    echo '<tr><th>Sistem Yüksekliği</th></tr><tr><td>' . e($sysHeight) . '</td></tr>';
-    echo '<tr><th>Sistem Adedi</th></tr><tr><td>' . e($sysQtyVal) . '</td></tr>';
+    echo '<tr><th>Sistem Genişliği</th><td>' . e($sysWidth) . '</td></tr>';
+    echo '<tr><th>Sistem Yüksekliği</th><td>' . e($sysHeight) . '</td></tr>';
+    echo '<tr><th>Sistem Adedi</th><td>' . e($sysQtyVal) . '</td></tr>';
     if ($remoteQty > 0) {
-        echo '<tr><th>Kumanda Adedi</th></tr><tr><td>' . e((string) $remoteQty) . '</td></tr>';
+        echo '<tr><th>Kumanda Adedi</th><td>' . e((string) $remoteQty) . '</td></tr>';
     }
     if ($motorName !== '') {
-        echo '<tr><th>Motor Sistemi</th></tr><tr><td>' . e($motorName) . '</td></tr>';
+        echo '<tr><th>Motor Sistemi</th><td>' . e($motorName) . '</td></tr>';
     }
     if ($ralCode !== '') {
-        echo '<tr><th>RAL Kodu</th></tr><tr><td>' . e($ralCode) . '</td></tr>';
+        echo '<tr><th>RAL Kodu</th><td>' . e($ralCode) . '</td></tr>';
     }
     echo '</tbody></table>';
     echo '</div>';
