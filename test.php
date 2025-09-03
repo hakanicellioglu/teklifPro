@@ -686,7 +686,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         $isAlu = strcasecmp($cat['title'], 'Alüminyum') === 0;
         echo '<h5>' . e($cat['title']) . '</h5>';
         echo '<div class="table-responsive">';
-        echo '<table class="table table-sm table-striped mb-3">';
+        echo '<table class="table table-sm table-hover mb-3">';
         echo '<thead><tr><th>Ad</th><th>Ölçü (mm)</th>';
         //
         // Alüminyum Kolonu
@@ -781,7 +781,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         $totalArea  = $singleArea * $glassInfo['quantity'];
         echo '<h5>Cam</h5>';
         echo '<div class="table-responsive">';
-        echo '<table class="table table-sm table-striped mb-3">';
+        echo '<table class="table table-sm table-hover mb-3">';
         echo '<thead><tr><th>Genişlik (mm)</th><th>Yükseklik (mm)</th><th>Adet</th><th>Birim m²</th><th>Toplam m²</th><th class="text-end">Tutar</th><th class="text-end">Birim Fiyat ($)</th><th class="text-end">Toplam Tutar ($)</th></tr></thead><tbody>';
         $unitPriceGlassUsd = ($usdRate > 0 && $totalArea > 0) ? ($tot['glass_cost'] / $totalArea) / $usdRate : 0;
         $totalGlassUsd = $usdRate > 0 ? $tot['glass_cost'] / $usdRate : 0;
@@ -806,7 +806,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '</tbody></table></div>';
     }
     echo '<div class="mt-3">';
-    echo '<table class="table table-bordered table-sm">';
+    echo '<table class="table table-bordered table-sm table-hover">';
     echo '<tbody>';
 
     echo '<tr><th>Alüminyum Boyalı ' . e(number_format($result['alu_painted_kg'], 2, ',', '.')) . ' kg</th><td>'
@@ -839,7 +839,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '<div class="mt-3">';
         echo '<h5>Demonte</h5>';
         echo '<div class="table-responsive">';
-        echo '<table class="table table-sm table-striped mb-3">';
+        echo '<table class="table table-sm table-hover mb-3">';
         echo '<thead><tr><th>Ürün</th><th class="text-end">Birim Fiyat</th><th>Adet</th><th class="text-end">Maliyet</th><th class="text-end">Kâr (%)</th><th class="text-end">Demonte Kârı</th><th class="text-end">Demonte Tutarı</th></tr></thead><tbody>';
         foreach ($demonteItems as $item) {
             echo '<tr>';
