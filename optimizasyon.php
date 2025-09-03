@@ -563,83 +563,23 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $customer = $custStmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
     $lines = $result['lines'];
-    $tot       = $result['totals'];
-    // Yeni kart ızgarası çıktısı
-    echo '<style>
-@page { size: A4; margin: 10mm; }
-.product-grid { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); }
-@media (min-width:768px){ .product-grid { grid-template-columns: repeat(2,1fr); } }
-@media (min-width:992px){ .product-grid { grid-template-columns: repeat(3,1fr); } }
-@media print { .product-grid { grid-template-columns: repeat(3,1fr); } }
-.product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
-.product-card table { width:100%; font-size:0.8rem; text-align:center; }
-.product-card th { font-weight:600; }
-.product-img { width:100%; height:130px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
-</style>';
+    $tot   = $result['totals'];
 
-    echo '<div class="container mt-4 d-print-none text-end">';
-    echo '    <button type="button" onclick="window.print()" class="btn btn-secondary">🖨️ Yazdır</button>';
+    echo '<div class="toolbar d-print-none">';
+    echo '  <button type="button" class="btn" onclick="printSheet()"><i class="bi bi-printer"></i> Yazdır</button>';
+    echo '  <button type="button" class="btn" onclick="location.reload()"><i class="bi bi-arrow-repeat"></i> Yenile</button>';
+    echo '  <button type="button" class="btn" onclick="toggleGrid()"><i class="bi bi-arrows-fullscreen"></i> Kartları Genişlet</button>';
     echo '</div>';
 
-    echo '<div class="text-center mb-4">';
+    echo '<div class="print-header">';
     if (!empty($company['logo']) && file_exists(__DIR__ . '/assets/' . $company['logo'])) {
-        echo '<img src="assets/' . e($company['logo']) . '" alt="' . e($company['name']) . ' Logo" class="mb-2" style="max-height:60px;">';
+        echo '<img src="assets/' . e($company['logo']) . '" alt="' . e($company['name']) . ' Logo" style="max-height:60px;">';
     }
-    echo '<h2 class="h5 fw-bold mb-0">GİYOTİN SİSTEMİ</h2>';
-    echo '</div>';
-    echo '<div class="row">';
-
-    // --- [1] SİSTEM BİLGİSİ ---
-    $sysWidth  = number_format($result['system']['width'], 0, ',', '.');
-    $sysHeight = number_format($result['system']['height'], 0, ',', '.');
-    $sysQtyVal = number_format((int) ($result['system']['quantity'] ?? 0), 0, ',', '.');
-    $remoteQty = (int) ($row['remote_quantity'] ?? 0);
-    $motorName = trim((string) ($row['motor_system'] ?? ''));
-    $ralCode   = trim((string) ($row['ral_code'] ?? ''));
-
-    echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;"><tbody>';
-    echo '<tr><th>Sistem Genişliği</th><td>' . e($sysWidth) . '</td></tr>';
-    echo '<tr><th>Sistem Yüksekliği</th><td>' . e($sysHeight) . '</td></tr>';
-    echo '<tr><th>Sistem Adedi</th><td>' . e($sysQtyVal) . '</td></tr>';
-    if ($remoteQty > 0) {
-        echo '<tr><th>Kumanda Adedi</th><td>' . e((string) $remoteQty) . '</td></tr>';
-    }
-    if ($motorName !== '') {
-        echo '<tr><th>Motor Sistemi</th><td>' . e($motorName) . '</td></tr>';
-    }
-    if ($ralCode !== '') {
-        echo '<tr><th>RAL Kodu</th><td>' . e($ralCode) . '</td></tr>';
-    }
-    echo '</tbody></table>';
+    echo '<h1 class="h5 fw-bold mb-0">Giyotin Sistemi Teknik Döküm</h1>';
+    echo '<div class="small">' . date('d.m.Y') . '</div>';
     echo '</div>';
 
-    // --- [2] CAM BİLGİSİ ---
-    $glassWidth  = number_format($result['glass']['width'], 0, ',', '.');
-    $glassHeight = number_format($result['glass']['height'], 0, ',', '.');
-    $glassQtyVal = number_format((int) ($result['glass']['quantity'] ?? 0), 0, ',', '.');
-    $glassType   = trim((string) ($row['glass_type'] ?? ''));
-    $glassColor  = trim((string) ($row['glass_color'] ?? ''));
-
-    echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;">';
-    echo '<thead><tr>';
-    echo '<th>Cam Genişliği</th>';
-    echo '<th>Cam Yüksekliği</th>';
-    echo '<th>Cam Adedi</th>';
-    echo '<th>Cam Kombinasyonu</th>';
-    echo '<th>Cam Rengi</th>';
-    echo '</tr></thead>';
-    echo '<tbody><tr>';
-    echo '<td>' . e($glassWidth) . '</td>';
-    echo '<td>' . e($glassHeight) . '</td>';
-    echo '<td>' . e($glassQtyVal) . '</td>';
-    echo '<td>' . e($glassType) . '</td>';
-    echo '<td>' . e($glassColor) . '</td>';
-    echo '</tr></tbody></table>';
-    echo '</div>';
-
-    // --- [3] BİRLEŞİK: MÜŞTERİ + (SİSTEM, ALÜMİNYUM, CAM) ALANLARI ---
+    // KPI calculations
     $systemArea = ($result['system']['width'] * $result['system']['height'] * $result['system']['quantity']) / 1000000;
     $aluminumTotal = 0.0;
     foreach ($lines as $line) {
@@ -649,64 +589,83 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     }
     $glassArea = ($result['glass']['width'] * $result['glass']['height'] * $result['glass']['quantity']) / 1000000;
 
-    echo '<div class="col mb-3">';
-    echo '<div class="d-flex gap-3 align-items-start">';
+    echo '<div class="sheet">';
 
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;">';
-    echo '<thead><tr>';
-    echo '<th>Müşteri Bilgileri</th>';
-    echo '<th></th>';
-    echo '</tr></thead>';
-    echo '<tbody><tr><td valign="top">';
+    // KPI cards
+    echo '<div class="kpi-cards">';
+    echo '<div class="kpi-card"><div class="kpi-title">Sistem Alanı</div><div class="kpi-value">' . e(number_format($systemArea, 2, ',', '.')) . ' m²</div></div>';
+    echo '<div class="kpi-card"><div class="kpi-title">Alüminyum</div><div class="kpi-value">' . e(number_format($aluminumTotal, 2, ',', '.')) . ' m</div></div>';
+    echo '<div class="kpi-card"><div class="kpi-title">Cam</div><div class="kpi-value">' . e(number_format($glassArea, 2, ',', '.')) . ' m²</div></div>';
+    echo '</div>';
 
-    // --- Sol Sütun: Müşteri Bilgileri ---
+    // System and glass info panels
+    $sysWidth  = number_format($result['system']['width'], 0, ',', '.');
+    $sysHeight = number_format($result['system']['height'], 0, ',', '.');
+    $sysQtyVal = number_format((int) ($result['system']['quantity'] ?? 0), 0, ',', '.');
+    $remoteQty = (int) ($row['remote_quantity'] ?? 0);
+    $motorName = trim((string) ($row['motor_system'] ?? ''));
+    $ralCode   = trim((string) ($row['ral_code'] ?? ''));
+
+    $glassWidth  = number_format($result['glass']['width'], 0, ',', '.');
+    $glassHeight = number_format($result['glass']['height'], 0, ',', '.');
+    $glassQtyVal = number_format((int) ($result['glass']['quantity'] ?? 0), 0, ',', '.');
+    $glassType   = trim((string) ($row['glass_type'] ?? ''));
+    $glassColor  = trim((string) ($row['glass_color'] ?? ''));
+
+    echo '<div class="row g-3 mb-4">';
+    echo '  <div class="col-md-6">';
+    echo '    <table class="table table-sm table-bordered mb-0">';
+    echo '      <tbody>';
+    echo '        <tr><th>Sistem Genişliği</th><td>' . e($sysWidth) . '</td></tr>';
+    echo '        <tr><th>Sistem Yüksekliği</th><td>' . e($sysHeight) . '</td></tr>';
+    echo '        <tr><th>Sistem Adedi</th><td>' . e($sysQtyVal) . '</td></tr>';
+    if ($remoteQty > 0) {
+        echo '        <tr><th>Kumanda Adedi</th><td>' . e((string) $remoteQty) . '</td></tr>';
+    }
+    if ($motorName !== '') {
+        echo '        <tr><th>Motor Sistemi</th><td>' . e($motorName) . '</td></tr>';
+    }
+    if ($ralCode !== '') {
+        echo '        <tr><th>RAL Kodu</th><td>' . e($ralCode) . '</td></tr>';
+    }
+    echo '      </tbody>';
+    echo '    </table>';
+    echo '  </div>';
+
+    echo '  <div class="col-md-6">';
+    echo '    <table class="table table-sm table-bordered mb-0">';
+    echo '      <thead><tr><th>Cam Genişliği</th><th>Cam Yüksekliği</th><th>Cam Adedi</th><th>Cam Kombinasyonu</th><th>Cam Rengi</th></tr></thead>';
+    echo '      <tbody><tr><td>' . e($glassWidth) . '</td><td>' . e($glassHeight) . '</td><td>' . e($glassQtyVal) . '</td><td>' . e($glassType) . '</td><td>' . e($glassColor) . '</td></tr></tbody>';
+    echo '    </table>';
+    echo '  </div>';
+    echo '</div>';
+
+    // Customer info panel
+    echo '<div class="mb-4">';
+    echo '  <table class="table table-sm table-bordered mb-0">';
+    echo '    <thead><tr><th colspan="2">Müşteri Bilgileri</th></tr></thead><tbody>';
     if ($customer) {
         $fullName = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
         if ($fullName !== '') {
-            echo '<div><strong>Müşteri:</strong> ' . e($fullName) . '</div>';
+            echo '    <tr><th>Müşteri</th><td>' . e($fullName) . '</td></tr>';
         }
         if (!empty($customer['company_name'])) {
-            echo '<div><strong>Firma:</strong> ' . e($customer['company_name']) . '</div>';
+            echo '    <tr><th>Firma</th><td>' . e($customer['company_name']) . '</td></tr>';
         }
         if (!empty($customer['phone'])) {
-            echo '<div><strong>Telefon:</strong> ' . e($customer['phone']) . '</div>';
+            echo '    <tr><th>Telefon</th><td>' . e($customer['phone']) . '</td></tr>';
         }
         if (!empty($customer['email'])) {
-            echo '<div><strong>E-posta:</strong> ' . e($customer['email']) . '</div>';
+            echo '    <tr><th>E-posta</th><td>' . e($customer['email']) . '</td></tr>';
         }
         if (!empty($customer['address'])) {
-            echo '<div><strong>Adres:</strong><br>' . nl2br(e($customer['address'])) . '</div>';
+            echo '    <tr><th>Adres</th><td>' . nl2br(e($customer['address'])) . '</td></tr>';
         }
     }
-
-    echo '</td><td valign="top">';
-
-    // --- Sağ Sütun: Sistem / Alüminyum / Cam ---
-    echo '<div class="mb-2">';
-    echo '  <div><strong>Sistem</strong></div>';
-    echo '  <div>' . e(number_format($systemArea, 2, ',', '.')) . '</div>';
+    echo '    </tbody></table>';
     echo '</div>';
 
-    echo '<div class="mb-2">';
-    echo '  <div><strong>Alüminyum</strong></div>';
-    echo '  <div>' . e(number_format($aluminumTotal, 2, ',', '.')) . '</div>';
-    echo '</div>';
-
-    echo '<div class="mb-2">';
-    echo '  <div><strong>Cam</strong></div>';
-    echo '  <div>' . e(number_format($glassArea, 2, ',', '.')) . '</div>';
-    echo '</div>';
-
-
-    echo '</td></tr></tbody></table>';
-
-
-    echo '</div>'; // d-flex
-    echo '</div>'; // col
-
-    echo '</div>'; // row
-
-
+    // Product grid
     echo '<div class="product-grid">';
     foreach ($lines as $line) {
         if (strtolower($line['category']) === 'cam') {
@@ -716,17 +675,38 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         if (!$img || !is_file(__DIR__ . '/' . $img)) {
             $img = 'assets/img/placeholder-product.png';
         }
-        echo '<div class="product-card">';
         $qtyVal = number_format((int) ($line['pieces'] ?? 0), 0, ',', '.');
         $measureVal = number_format($line['measure'], 0, ',', '.');
-        echo '<table class="table table-bordered table-sm mb-0">';
-        echo '<thead><tr><th>İsim</th><th>Kod</th><th>Ölçü</th><th>Adet</th></tr></thead>';
-        echo '<tbody><tr><td>' . e($line['name']) . '</td><td>' . e($line['product_code'] ?? '') . '</td><td>' . e($measureVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
-        echo '</table>';
-        echo '<img src="' . e($img) . '" alt="' . e($line['name']) . '" loading="lazy" class="product-img">';
+        $unit = $line['unit'] ?? '';
+        $cat = strtolower($line['category'] ?? '');
+        $catClass = '';
+        if ($cat === 'alüminyum') {
+            $catClass = 'cat-alu';
+        } elseif ($cat === 'cam') {
+            $catClass = 'cat-glass';
+        } elseif ($cat === 'aksesuar') {
+            $catClass = 'cat-acc';
+        } elseif ($cat === 'fitil') {
+            $catClass = 'cat-fitil';
+        }
+        echo '<div class="product-card ' . $catClass . '">';
+        echo '  <div class="card-header">' . e($line['name']) . '</div>';
+        echo '  <div class="card-body">';
+        echo '    <div class="small">Kod: ' . e($line['product_code'] ?? '-') . '</div>';
+        echo '    <div class="small">Ölçü: ' . e($measureVal) . ' ' . e($unit) . '</div>';
+        echo '    <div class="small">Adet: ' . e($qtyVal) . '</div>';
+        echo '  </div>';
+        echo '  <img src="' . e($img) . '" alt="' . e($line['name']) . '" loading="lazy" class="product-img">';
         echo '</div>';
     }
     echo '</div>';
+
+    echo '</div>'; // sheet
+
+    echo '<script>
+function printSheet(){ window.print(); }
+function toggleGrid(){ document.querySelector(\'.product-grid\')?.classList.toggle(\'expanded\'); }
+</script>';
 
     require __DIR__ . '/footer.php';
     return;

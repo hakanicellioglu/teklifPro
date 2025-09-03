@@ -66,3 +66,137 @@ input[type=number],
 .share-btn {
   margin-left: .5rem;
 }
+
+/* Optimization page styles */
+.toolbar {
+  display: flex;
+  gap: .5rem;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+.toolbar .btn {
+  background: #f1f3f5;
+  border: none;
+  border-radius: .5rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+.toolbar .btn:hover {
+  box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+.sheet {
+  background: #fff;
+  border-radius: .75rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+.kpi-cards {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.kpi-card {
+  flex: 1;
+  background: #f8f9fa;
+  border-radius: .5rem;
+  padding: 1rem;
+  text-align: center;
+}
+.kpi-title {
+  font-size: .8rem;
+  color: #6c757d;
+}
+.kpi-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.product-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
+}
+.product-grid.expanded {
+  grid-template-columns: repeat(auto-fill,minmax(320px,1fr));
+}
+.product-card {
+  border: 1px solid #e0e0e0;
+  border-radius: .5rem;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+  display: flex;
+  flex-direction: column;
+}
+.product-card .card-header {
+  padding: .5rem;
+  font-weight: 600;
+  background: #343a40;
+  color: #fff;
+}
+.product-card.cat-alu .card-header {
+  background: #0d6efd;
+}
+.product-card.cat-glass .card-header {
+  background: #198754;
+}
+.product-card.cat-acc .card-header,
+.product-card.cat-fitil .card-header {
+  background: #6c757d;
+}
+.product-card .card-body {
+  padding: .75rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+.product-card img {
+  width: 100%;
+  height: 150px;
+  object-fit: contain;
+  border-top: 1px solid #e0e0e0;
+  background: #fff;
+}
+
+.print-header {
+  display: none;
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .navbar,
+  .footer,
+  .toolbar,
+  .d-print-none {
+    display: none !important;
+  }
+  .print-header {
+    display: block;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  .sheet {
+    box-shadow: none;
+    padding: 0;
+  }
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .product-card {
+    border-color: #000;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .product-card img {
+    border-color: #000;
+  }
+  table, th, td {
+    border-color: #000 !important;
+    color: #000 !important;
+  }
+}
