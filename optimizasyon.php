@@ -566,7 +566,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $tot       = $result['totals'];
     // Yeni kart ızgarası çıktısı
     echo '<style>
-@page { size: A4; margin: 10mm; }
+@page { size: A4; margin: 20mm; }
 .product-grid { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); }
 @media (min-width:768px){ .product-grid { grid-template-columns: repeat(2,1fr); } }
 @media (min-width:992px){ .product-grid { grid-template-columns: repeat(3,1fr); } }
@@ -575,10 +575,23 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 .product-card table { width:100%; font-size:0.8rem; text-align:center; }
 .product-card th { font-weight:600; }
 .product-img { width:100%; height:130px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
+.info-table { background-color:#f8f9fa; }
+.info-table th { background-color:#e9ecef; }
 </style>';
 
+    echo '<script>
+function customPrint(){
+  var printWindow = window.open("", "_blank");
+  printWindow.document.write("<html><head><title>Yazdır</title>\n<style>@page { size: A4; margin: 20mm; }</style></head><body>" + document.body.innerHTML + "</body></html>");
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+  printWindow.close();
+}
+</script>';
+
     echo '<div class="container mt-4 d-print-none text-end">';
-    echo '    <button type="button" onclick="window.print()" class="btn btn-secondary">🖨️ Yazdır</button>';
+    echo '    <button type="button" onclick="customPrint()" class="btn btn-secondary">🖨️ Yazdır</button>';
     echo '</div>';
 
     echo '<div class="text-center mb-4">';
@@ -598,7 +611,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $ralCode   = trim((string) ($row['ral_code'] ?? ''));
 
     echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;"><tbody>';
+    echo '<table class="table table-striped table-bordered table-sm w-auto mb-0 info-table"><tbody>';
     echo '<tr><th>Sistem Genişliği</th><td>' . e($sysWidth) . '</td></tr>';
     echo '<tr><th>Sistem Yüksekliği</th><td>' . e($sysHeight) . '</td></tr>';
     echo '<tr><th>Sistem Adedi</th><td>' . e($sysQtyVal) . '</td></tr>';
@@ -622,7 +635,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $glassColor  = trim((string) ($row['glass_color'] ?? ''));
 
     echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;">';
+    echo '<table class="table table-striped table-bordered table-sm w-auto mb-0 info-table">';
     echo '<thead><tr>';
     echo '<th>Cam Genişliği</th>';
     echo '<th>Cam Yüksekliği</th>';
@@ -652,7 +665,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<div class="col mb-3">';
     echo '<div class="d-flex gap-3 align-items-start">';
 
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;">';
+    echo '<table class="table table-striped table-bordered table-sm w-auto mb-0 info-table">';
     echo '<thead><tr>';
     echo '<th>Müşteri Bilgileri</th>';
     echo '<th></th>';
