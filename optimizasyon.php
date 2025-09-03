@@ -577,11 +577,11 @@ body { margin:0; }
 }
 .product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
 .product-card table { width:100%; font-size:0.7rem; text-align:center; border-collapse:collapse; }
-.product-card th, .product-card td { padding:2px; }
+.product-card th, .product-card td { padding:0; }
   .product-card th { font-weight:600; }
   .product-img { width:100%; height:100px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
   .info-table { font-size:0.75rem; }
-  .info-table th, .info-table td { padding:2px; }
+.info-table th, .info-table td { padding:0; }
 </style>';
 
     echo '<div class="container mt-4 d-print-none text-end">';
