@@ -583,7 +583,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     }
     echo '<h2 class="h5 fw-bold mb-0">GİYOTİN SİSTEMİ</h2>';
     echo '</div>';
-
+    echo '<div class="row">';
     if ($customer) {
         echo '<div class="mb-3">';
         echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
@@ -661,6 +661,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         }
     }
     $glassArea = ($result['glass']['width'] * $result['glass']['height'] * $result['glass']['quantity']) / 1000000;
+    echo '</div>';
     echo '<div class="mb-3">';
     echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
     echo '<tr><th>Sistem</th></tr><tr><td>' . e(number_format($systemArea, 2, ',', '.')) . '</td></tr>';
