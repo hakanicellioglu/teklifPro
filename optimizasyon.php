@@ -583,9 +583,9 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     }
     echo '<h2 class="h5 fw-bold mb-0">GİYOTİN SİSTEMİ</h2>';
     echo '</div>';
-
+    echo '<div class="row">';
     if ($customer) {
-        echo '<div class="mb-3">';
+        echo '<div class="col mb-3">';
         echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
         $fullName = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
         if ($fullName !== '') {
@@ -612,7 +612,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $glassQtyVal = number_format((int) ($result['glass']['quantity'] ?? 0), 0, ',', '.');
     $glassType   = trim((string) ($row['glass_type'] ?? ''));
     $glassColor  = trim((string) ($row['glass_color'] ?? ''));
-    echo '<div class="mb-3">';
+    echo '<div class="col mb-3">';
     echo '<table class="table table-bordered table-sm w-auto mb-0">';
     echo '<thead><tr>';
     echo '<th>Cam Genişliği</th>';
@@ -636,7 +636,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $remoteQty = (int) ($row['remote_quantity'] ?? 0);
     $motorName = trim((string) ($row['motor_system'] ?? ''));
     $ralCode   = trim((string) ($row['ral_code'] ?? ''));
-    echo '<div class="mb-3">';
+    echo '<div class="col mb-3">';
     echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
     echo '<tr><th>Sistem Genişliği</th><td>' . e($sysWidth) . '</td></tr>';
     echo '<tr><th>Sistem Yüksekliği</th><td>' . e($sysHeight) . '</td></tr>';
@@ -661,12 +661,13 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         }
     }
     $glassArea = ($result['glass']['width'] * $result['glass']['height'] * $result['glass']['quantity']) / 1000000;
-    echo '<div class="mb-3">';
+    echo '<div class="col mb-3">';
     echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
     echo '<tr><th>Sistem</th></tr><tr><td>' . e(number_format($systemArea, 2, ',', '.')) . '</td></tr>';
     echo '<tr><th>Alüminyum</th></tr><tr><td>' . e(number_format($aluminumTotal, 2, ',', '.')) . '</td></tr>';
     echo '<tr><th>Cam</th></tr><tr><td>' . e(number_format($glassArea, 2, ',', '.')) . '</td></tr>';
     echo '</tbody></table>';
+    echo '</div>';
     echo '</div>';
 
     echo '<div class="product-grid">';
