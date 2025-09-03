@@ -724,6 +724,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     }
     echo '</div>';
 
+    echo '<div class="container mt-4 d-print-none">';
+    echo '    <a href="optimizasyon_preview.php?id=' . e((string)($row['general_offer_id'] ?? '')) . '" class="btn btn-secondary">🖨️ Yazdır</a>';
+    echo '</div>';
+
     require __DIR__ . '/footer.php';
     return;
 }
