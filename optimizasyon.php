@@ -584,28 +584,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<h2 class="h5 fw-bold mb-0">GİYOTİN SİSTEMİ</h2>';
     echo '</div>';
     echo '<div class="row">';
-    if ($customer) {
-        echo '<div class="col mb-3">';
-        echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
-        $fullName = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
-        if ($fullName !== '') {
-            echo '<tr><th>Müşteri</th></tr><tr><td>' . e($fullName) . '</td></tr>';
-        }
-        if (!empty($customer['company_name'])) {
-            echo '<tr><th>Firma</th></tr><tr><td>' . e($customer['company_name']) . '</td></tr>';
-        }
-        if (!empty($customer['phone'])) {
-            echo '<tr><th>Telefon</th></tr><tr><td>' . e($customer['phone']) . '</td></tr>';
-        }
-        if (!empty($customer['email'])) {
-            echo '<tr><th>E-posta</th></tr><tr><td>' . e($customer['email']) . '</td></tr>';
-        }
-        if (!empty($customer['address'])) {
-            echo '<tr><th>Adres</th></tr><tr><td>' . nl2br(e($customer['address'])) . '</td></tr>';
-        }
-        echo '</tbody></table>';
-        echo '</div>';
-    }
+
 
     $glassWidth  = number_format($result['glass']['width'], 0, ',', '.');
     $glassHeight = number_format($result['glass']['height'], 0, ',', '.');
@@ -660,6 +639,9 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             $aluminumTotal += ($line['measure'] * ($line['pieces'] ?? 0)) / 1000;
         }
     }
+
+
+
     $glassArea = ($result['glass']['width'] * $result['glass']['height'] * $result['glass']['quantity']) / 1000000;
     echo '<div class="col mb-3">';
     echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
@@ -668,6 +650,30 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<tr><th>Cam</th></tr><tr><td>' . e(number_format($glassArea, 2, ',', '.')) . '</td></tr>';
     echo '</tbody></table>';
     echo '</div>';
+    
+    if ($customer) {
+        echo '<div class="col mb-3">';
+        echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
+        $fullName = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
+        if ($fullName !== '') {
+            echo '<tr><th>Müşteri</th></tr><tr><td>' . e($fullName) . '</td></tr>';
+        }
+        if (!empty($customer['company_name'])) {
+            echo '<tr><th>Firma</th></tr><tr><td>' . e($customer['company_name']) . '</td></tr>';
+        }
+        if (!empty($customer['phone'])) {
+            echo '<tr><th>Telefon</th></tr><tr><td>' . e($customer['phone']) . '</td></tr>';
+        }
+        if (!empty($customer['email'])) {
+            echo '<tr><th>E-posta</th></tr><tr><td>' . e($customer['email']) . '</td></tr>';
+        }
+        if (!empty($customer['address'])) {
+            echo '<tr><th>Adres</th></tr><tr><td>' . nl2br(e($customer['address'])) . '</td></tr>';
+        }
+        echo '</tbody></table>';
+        echo '</div>';
+    }
+
     echo '</div>';
 
     echo '<div class="product-grid">';
