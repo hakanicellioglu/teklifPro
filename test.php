@@ -805,6 +805,33 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '</tr>';
         echo '</tbody></table></div>';
     }
+    // Demonte Tablosu
+    if (!empty($demonteItems)) {
+        echo '<div class="mt-3">';
+        echo '<h5>Demonte</h5>';
+        echo '<div class="table-responsive">';
+        echo '<table class="table table-sm table-hover mb-3">';
+        echo '<thead><tr><th>Ürün</th><th class="text-end">Birim Fiyat</th><th>Adet</th><th class="text-end">Maliyet</th><th class="text-end">Kâr (%)</th><th class="text-end">Demonte Kârı</th><th class="text-end">Demonte Tutarı</th></tr></thead><tbody>';
+        foreach ($demonteItems as $item) {
+            echo '<tr>';
+            echo '<td>' . e($item['name']) . '</td>';
+            echo '<td class="text-end">' . e(number_format($item['unit_price'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+            echo '<td>' . e(number_format($item['qty'], 0, ',', '.')) . '</td>';
+            echo '<td class="text-end">' . e(number_format($item['cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+            echo '<td class="text-end">' . e(number_format($profitRate, 2, ',', '.')) . ' %</td>';
+            echo '<td class="text-end">' . e(number_format($item['profit'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+            echo '<td class="text-end">' . e(number_format($item['total'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+            echo '</tr>';
+        }
+        echo '<tr class="table-success fw-bold">';
+        echo '<td>Demonte Toplamı</td><td></td><td></td>';
+        echo '<td class="text-end">' . e(number_format($demonteCostSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+        echo '<td></td>';
+        echo '<td class="text-end">' . e(number_format($demonteProfitSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+        echo '<td class="text-end">' . e(number_format($demonteTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
+        echo '</tr>';
+        echo '</tbody></table></div></div>';
+    }
     echo '<div class="mt-3">';
     echo '<table class="table table-bordered table-sm table-hover">';
     echo '<tbody>';
@@ -834,33 +861,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '</tbody>';
     echo '</table>';
     echo '</div>';
-    // Demonte Tablosu
-    if (!empty($demonteItems)) {
-        echo '<div class="mt-3">';
-        echo '<h5>Demonte</h5>';
-        echo '<div class="table-responsive">';
-        echo '<table class="table table-sm table-hover mb-3">';
-        echo '<thead><tr><th>Ürün</th><th class="text-end">Birim Fiyat</th><th>Adet</th><th class="text-end">Maliyet</th><th class="text-end">Kâr (%)</th><th class="text-end">Demonte Kârı</th><th class="text-end">Demonte Tutarı</th></tr></thead><tbody>';
-        foreach ($demonteItems as $item) {
-            echo '<tr>';
-            echo '<td>' . e($item['name']) . '</td>';
-            echo '<td class="text-end">' . e(number_format($item['unit_price'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-            echo '<td>' . e(number_format($item['qty'], 0, ',', '.')) . '</td>';
-            echo '<td class="text-end">' . e(number_format($item['cost'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-            echo '<td class="text-end">' . e(number_format($profitRate, 2, ',', '.')) . ' %</td>';
-            echo '<td class="text-end">' . e(number_format($item['profit'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-            echo '<td class="text-end">' . e(number_format($item['total'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-            echo '</tr>';
-        }
-        echo '<tr class="table-success fw-bold">';
-        echo '<td>Demonte Toplamı</td><td></td><td></td>';
-        echo '<td class="text-end">' . e(number_format($demonteCostSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '<td></td>';
-        echo '<td class="text-end">' . e(number_format($demonteProfitSum, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '<td class="text-end">' . e(number_format($demonteTotal, 2, ',', '.')) . ' ' . e($currencySymbol) . '</td>';
-        echo '</tr>';
-        echo '</tbody></table></div></div>';
-    }
     echo '</div>';
 
     //
