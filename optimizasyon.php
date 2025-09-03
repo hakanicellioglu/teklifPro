@@ -566,13 +566,13 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $tot       = $result['totals'];
     // Yeni kart ızgarası çıktısı
     echo '<style>
-@page { size: A4; margin: 10mm; }
+@page { size: A4; margin: 0; }
 body { margin:0; }
 .product-grid { display: grid; gap: 0.25rem; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); }
 @media (min-width:768px){ .product-grid { grid-template-columns: repeat(2,1fr); } }
 @media (min-width:992px){ .product-grid { grid-template-columns: repeat(3,1fr); } }
 @media print {
-  body { margin:10mm; }
+  body { margin:0; }
   .product-grid { grid-template-columns: repeat(3,1fr); }
 }
 .product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
