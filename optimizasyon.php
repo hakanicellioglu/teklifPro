@@ -563,19 +563,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $customer = $custStmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
     $lines = $result['lines'];
-    $tot       = $result['totals'];
-    // Yeni kart ızgarası çıktısı
-    echo '<style>
-@page { size: A4; margin: 10mm; }
-.product-grid { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); }
-@media (min-width:768px){ .product-grid { grid-template-columns: repeat(2,1fr); } }
-@media (min-width:992px){ .product-grid { grid-template-columns: repeat(3,1fr); } }
-@media print { .product-grid { grid-template-columns: repeat(3,1fr); } }
-.product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
-.product-card table { width:100%; font-size:0.8rem; text-align:center; }
-.product-card th { font-weight:600; }
-.product-img { width:100%; height:130px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
-</style>';
+    $tot   = $result['totals'];
+    $currencySymbol = currencySymbol($result['currency']);
+
+    echo '<style>@page { size: A4; margin: 10mm; } tbody tr { page-break-inside: avoid; }</style>';
 
     echo '<div class="text-center mb-4">';
     if (!empty($company['logo']) && file_exists(__DIR__ . '/assets/' . $company['logo'])) {
@@ -583,59 +574,8 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     }
     echo '<h2 class="h5 fw-bold mb-0">GİYOTİN SİSTEMİ</h2>';
     echo '</div>';
-    echo '<div class="row">';
 
-    // --- [1] SİSTEM BİLGİSİ ---
-    $sysWidth  = number_format($result['system']['width'], 0, ',', '.');
-    $sysHeight = number_format($result['system']['height'], 0, ',', '.');
-    $sysQtyVal = number_format((int) ($result['system']['quantity'] ?? 0), 0, ',', '.');
-    $remoteQty = (int) ($row['remote_quantity'] ?? 0);
-    $motorName = trim((string) ($row['motor_system'] ?? ''));
-    $ralCode   = trim((string) ($row['ral_code'] ?? ''));
-
-    echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;"><tbody>';
-    echo '<tr><th>Sistem Genişliği</th><td>' . e($sysWidth) . '</td></tr>';
-    echo '<tr><th>Sistem Yüksekliği</th><td>' . e($sysHeight) . '</td></tr>';
-    echo '<tr><th>Sistem Adedi</th><td>' . e($sysQtyVal) . '</td></tr>';
-    if ($remoteQty > 0) {
-        echo '<tr><th>Kumanda Adedi</th><td>' . e((string) $remoteQty) . '</td></tr>';
-    }
-    if ($motorName !== '') {
-        echo '<tr><th>Motor Sistemi</th><td>' . e($motorName) . '</td></tr>';
-    }
-    if ($ralCode !== '') {
-        echo '<tr><th>RAL Kodu</th><td>' . e($ralCode) . '</td></tr>';
-    }
-    echo '</tbody></table>';
-    echo '</div>';
-
-    // --- [2] CAM BİLGİSİ ---
-    $glassWidth  = number_format($result['glass']['width'], 0, ',', '.');
-    $glassHeight = number_format($result['glass']['height'], 0, ',', '.');
-    $glassQtyVal = number_format((int) ($result['glass']['quantity'] ?? 0), 0, ',', '.');
-    $glassType   = trim((string) ($row['glass_type'] ?? ''));
-    $glassColor  = trim((string) ($row['glass_color'] ?? ''));
-
-    echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;">';
-    echo '<thead><tr>';
-    echo '<th>Cam Genişliği</th>';
-    echo '<th>Cam Yüksekliği</th>';
-    echo '<th>Cam Adedi</th>';
-    echo '<th>Cam Kombinasyonu</th>';
-    echo '<th>Cam Rengi</th>';
-    echo '</tr></thead>';
-    echo '<tbody><tr>';
-    echo '<td>' . e($glassWidth) . '</td>';
-    echo '<td>' . e($glassHeight) . '</td>';
-    echo '<td>' . e($glassQtyVal) . '</td>';
-    echo '<td>' . e($glassType) . '</td>';
-    echo '<td>' . e($glassColor) . '</td>';
-    echo '</tr></tbody></table>';
-    echo '</div>';
-
-    // --- [3] BİRLEŞİK: MÜŞTERİ + (SİSTEM, ALÜMİNYUM, CAM) ALANLARI ---
+    // Alan hesapları
     $systemArea = ($result['system']['width'] * $result['system']['height'] * $result['system']['quantity']) / 1000000;
     $aluminumTotal = 0.0;
     foreach ($lines as $line) {
@@ -645,84 +585,83 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     }
     $glassArea = ($result['glass']['width'] * $result['glass']['height'] * $result['glass']['quantity']) / 1000000;
 
-    echo '<div class="col mb-3">';
-    echo '<div class="d-flex gap-3 align-items-start">';
+    echo '<div class="table-responsive">';
+    echo '<table class="table table-bordered table-sm w-100">';
+    echo '<thead><tr><th>Kategori</th><th>İsim</th><th>Kod</th><th>Ölçü (mm)</th><th>Adet</th><th>Birim</th><th>Miktar (m / m² / kg)</th><th>Toplam (' . e($currencySymbol) . ')</th></tr></thead>';
+    echo '<tbody>';
 
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;">';
-    echo '<thead><tr>';
-    echo '<th>Müşteri Bilgileri</th>';
-    echo '<th></th>';
-    echo '</tr></thead>';
-    echo '<tbody><tr><td valign="top">';
+    // Sistem bilgisi
+    echo '<tr><th colspan="8" class="text-center">SİSTEM BİLGİSİ</th></tr>';
+    echo '<tr><td colspan="2">Sistem Genişliği</td><td colspan="6">' . e(number_format($result['system']['width'], 0, ',', '.')) . '</td></tr>';
+    echo '<tr><td colspan="2">Sistem Yüksekliği</td><td colspan="6">' . e(number_format($result['system']['height'], 0, ',', '.')) . '</td></tr>';
+    echo '<tr><td colspan="2">Sistem Adedi</td><td colspan="6">' . e(number_format((int)($result['system']['quantity'] ?? 0), 0, ',', '.')) . '</td></tr>';
 
-    // --- Sol Sütun: Müşteri Bilgileri ---
-    if ($customer) {
-        $fullName = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
-        if ($fullName !== '') {
-            echo '<div><strong>Müşteri:</strong> ' . e($fullName) . '</div>';
-        }
-        if (!empty($customer['company_name'])) {
-            echo '<div><strong>Firma:</strong> ' . e($customer['company_name']) . '</div>';
-        }
-        if (!empty($customer['phone'])) {
-            echo '<div><strong>Telefon:</strong> ' . e($customer['phone']) . '</div>';
-        }
-        if (!empty($customer['email'])) {
-            echo '<div><strong>E-posta:</strong> ' . e($customer['email']) . '</div>';
-        }
-        if (!empty($customer['address'])) {
-            echo '<div><strong>Adres:</strong><br>' . nl2br(e($customer['address'])) . '</div>';
-        }
+    // Cam bilgisi
+    echo '<tr><th colspan="8" class="text-center">CAM BİLGİSİ</th></tr>';
+    echo '<tr><td colspan="2">Cam Genişliği</td><td colspan="6">' . e(number_format($result['glass']['width'], 0, ',', '.')) . '</td></tr>';
+    echo '<tr><td colspan="2">Cam Yüksekliği</td><td colspan="6">' . e(number_format($result['glass']['height'], 0, ',', '.')) . '</td></tr>';
+    echo '<tr><td colspan="2">Cam Adedi</td><td colspan="6">' . e(number_format((int)($result['glass']['quantity'] ?? 0), 0, ',', '.')) . '</td></tr>';
+    echo '<tr><td colspan="2">Cam Kombinasyonu</td><td colspan="6">' . e(trim((string)($row['glass_type'] ?? ''))) . '</td></tr>';
+    echo '<tr><td colspan="2">Cam Rengi</td><td colspan="6">' . e(trim((string)($row['glass_color'] ?? ''))) . '</td></tr>';
+
+    // Müşteri bilgileri
+    echo '<tr><th colspan="8" class="text-center">MÜŞTERİ BİLGİLERİ</th></tr>';
+    $fullName = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
+    if ($fullName !== '') {
+        echo '<tr><td colspan="2">Müşteri</td><td colspan="6">' . e($fullName) . '</td></tr>';
+    }
+    if (!empty($customer['company_name'])) {
+        echo '<tr><td colspan="2">Firma</td><td colspan="6">' . e($customer['company_name']) . '</td></tr>';
+    }
+    if (!empty($customer['phone'])) {
+        echo '<tr><td colspan="2">Telefon</td><td colspan="6">' . e($customer['phone']) . '</td></tr>';
+    }
+    if (!empty($customer['email'])) {
+        echo '<tr><td colspan="2">E-posta</td><td colspan="6">' . e($customer['email']) . '</td></tr>';
+    }
+    if (!empty($customer['address'])) {
+        echo '<tr><td colspan="2">Adres</td><td colspan="6">' . nl2br(e($customer['address'])) . '</td></tr>';
     }
 
-    echo '</td><td valign="top">';
+    // Özet
+    echo '<tr><th colspan="8" class="text-center">ÖZET</th></tr>';
+    echo '<tr><td colspan="2">Sistem Alanı (m²)</td><td colspan="6">' . e(number_format($systemArea, 2, ',', '.')) . '</td></tr>';
+    echo '<tr><td colspan="2">Alüminyum Toplam (m)</td><td colspan="6">' . e(number_format($aluminumTotal, 2, ',', '.')) . '</td></tr>';
+    echo '<tr><td colspan="2">Cam Alanı (m²)</td><td colspan="6">' . e(number_format($glassArea, 2, ',', '.')) . '</td></tr>';
 
-    // --- Sağ Sütun: Sistem / Alüminyum / Cam ---
-    echo '<div class="mb-2">';
-    echo '  <div><strong>Sistem</strong></div>';
-    echo '  <div>' . e(number_format($systemArea, 2, ',', '.')) . '</div>';
-    echo '</div>';
-
-    echo '<div class="mb-2">';
-    echo '  <div><strong>Alüminyum</strong></div>';
-    echo '  <div>' . e(number_format($aluminumTotal, 2, ',', '.')) . '</div>';
-    echo '</div>';
-
-    echo '<div class="mb-2">';
-    echo '  <div><strong>Cam</strong></div>';
-    echo '  <div>' . e(number_format($glassArea, 2, ',', '.')) . '</div>';
-    echo '</div>';
-
-
-    echo '</td></tr></tbody></table>';
-
-
-    echo '</div>'; // d-flex
-    echo '</div>'; // col
-
-    echo '</div>'; // row
-
-
-    echo '<div class="product-grid">';
+    // Ürün kalemleri
+    echo '<tr><th colspan="8" class="text-center">ÜRÜN KALEMLERİ</th></tr>';
+    $camLines = [];
+    $otherLines = [];
     foreach ($lines as $line) {
         if (strtolower($line['category']) === 'cam') {
-            continue;
+            $camLines[] = $line;
+        } else {
+            $otherLines[] = $line;
         }
-        $img = $line['image_url'] ?? '';
-        if (!$img || !is_file(__DIR__ . '/' . $img)) {
-            $img = 'assets/img/placeholder-product.png';
-        }
-        echo '<div class="product-card">';
-        $qtyVal = number_format((int) ($line['pieces'] ?? 0), 0, ',', '.');
-        $measureVal = number_format($line['measure'], 0, ',', '.');
-        echo '<table class="table table-bordered table-sm mb-0">';
-        echo '<thead><tr><th>İsim</th><th>Kod</th><th>Ölçü</th><th>Adet</th></tr></thead>';
-        echo '<tbody><tr><td>' . e($line['name']) . '</td><td>' . e($line['product_code'] ?? '') . '</td><td>' . e($measureVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
-        echo '</table>';
-        echo '<img src="' . e($img) . '" alt="' . e($line['name']) . '" loading="lazy" class="product-img">';
-        echo '</div>';
     }
-    echo '</div>';
+    $orderedLines = array_merge($camLines, $otherLines);
+    foreach ($orderedLines as $line) {
+        $measureVal = number_format($line['measure'], 0, ',', '.');
+        $piecesVal  = number_format((int)($line['pieces'] ?? 0), 0, ',', '.');
+        $qtyVal     = fmtUnit($line['quantity'], $line['unit']);
+        $codeCell   = e($line['product_code'] ?? '');
+        if (!empty($line['image_url']) && is_file(__DIR__ . '/' . $line['image_url'])) {
+            $codeCell .= ' <a href="' . e($line['image_url']) . '" target="_blank" title="' . e($line['name']) . '">🔗</a>';
+        }
+        echo '<tr><td>' . e($line['category']) . '</td><td>' . e($line['name']) . '</td><td>' . $codeCell . '</td><td>' . e($measureVal) . '</td><td>' . e($piecesVal) . '</td><td>' . e($line['unit']) . '</td><td>' . e($qtyVal) . '</td><td>' . e(number_format($line['total'], 2, ',', '.')) . '</td></tr>';
+    }
+
+    // Toplam özet
+    echo '<tr><th colspan="8" class="text-center">TOPLAM ÖZET</th></tr>';
+    echo '<tr><td colspan="2">Boya</td><td colspan="6">' . e(number_format($tot['extras']['paint'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
+    echo '<tr><td colspan="2">Fire</td><td colspan="6">' . e(number_format($tot['extras']['waste'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
+    echo '<tr><td colspan="2">İmalat İşçiliği</td><td colspan="6">' . e(number_format($tot['extras']['labor'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
+    echo '<tr><td colspan="2">Genel Gider</td><td colspan="6">' . e(number_format($tot['general_expense'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
+    echo '<tr><td colspan="2">Kâr</td><td colspan="6">' . e(number_format($tot['profit'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
+    echo '<tr><td colspan="2">Genel Toplam</td><td colspan="6">' . e(number_format($tot['grand_total'], 2, ',', '.')) . ' ' . e($currencySymbol) . '</td></tr>';
+
+    echo '</tbody></table></div>';
 
     require __DIR__ . '/footer.php';
     return;
