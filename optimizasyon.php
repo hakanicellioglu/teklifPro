@@ -577,7 +577,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 .product-img { width:100%; height:130px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
 </style>';
 
-    echo '<div class="container mt-4 d-print-none">';
+    echo '<div class="container mt-4 d-print-none text-end">';
     echo '    <button type="button" onclick="window.print()" class="btn btn-secondary">🖨️ Yazdır</button>';
     echo '</div>';
 
