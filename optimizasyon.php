@@ -127,10 +127,10 @@ function calculateGuillotineTotals(array $input): array
         ['name' => 'Motor Kutusu',       'measure' => fn($w, $h, $q) => $w - 14,                        'qty' => fn($w, $h, $q) => $q],
         ['name' => 'Motor Kapak',        'measure' => fn($w, $h, $q) => $w - 15,                        'qty' => fn($w, $h, $q) => $q],
         ['name' => 'Alt Kasa',           'measure' => fn($w, $h, $q) => $w,                              'qty' => fn($w, $h, $q) => $q],
-        ['name' => 'Tutamak',            'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Kenetli Baza',       'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Küpeşte Bazası',     'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Küpeşte',           'measure' => fn($w, $h, $q) => $w - 183,                        'qty' => fn($w, $h, $q) => $q],
+        ['name' => 'Tutamak',            'measure' => fn($w, $h, $q) => $w - 185,                        'qty' => fn($w, $h, $q) => 2 * $q],
+        ['name' => 'Kenetli Baza',       'measure' => fn($w, $h, $q) => $w - 185,                        'qty' => fn($w, $h, $q) => 2 * $q],
+        ['name' => 'Küpeşte Bazası',     'measure' => fn($w, $h, $q) => $w - 185,                        'qty' => fn($w, $h, $q) => 2 * $q],
+        ['name' => 'Küpeşte',           'measure' => fn($w, $h, $q) => $w - 185,                        'qty' => fn($w, $h, $q) => $q],
     ];
 
     //
@@ -138,8 +138,8 @@ function calculateGuillotineTotals(array $input): array
     // Tek cam kullanıldığında yatay ve dikey çıtalar listeye eklenir.
     //
     if ($includeGlassStrips) {
-        $rules[] = ['name' => 'Yatay Tek Cam Çıtası', 'measure' => fn($w, $h, $q) => ($w - 185) - 52,      'qty' => fn($w, $h, $q) => 11 * $q];
-        $rules[] = ['name' => 'Dikey Tek Cam Çıtası', 'measure' => fn($w, $h, $q) => (($h - 290) / 3) - 6, 'qty' => fn($w, $h, $q) => 11 * $q];
+        $rules[] = ['name' => 'Yatay Tek Cam Çıtası', 'measure' => fn($w, $h, $q) => ($w - 185) - 52,      'qty' => fn($w, $h, $q) => 6 * $q];
+        $rules[] = ['name' => 'Dikey Tek Cam Çıtası', 'measure' => fn($w, $h, $q) => (($h - 290) / 3) - 6, 'qty' => fn($w, $h, $q) => 6 * $q];
     }
 
     //
@@ -149,15 +149,16 @@ function calculateGuillotineTotals(array $input): array
     $rules = array_merge($rules, [
         ['name' => 'Dikme',              'measure' => fn($w, $h, $q) => $h - 166,                        'qty' => fn($w, $h, $q) => 2 * $q],
         ['name' => 'Orta Dikme',         'measure' => fn($w, $h, $q) => $h - 166,                        'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Son Kapatma',        'measure' => fn($w, $h, $q) => $h - (($h - 291) / 3) - 214.5,      'qty' => fn($w, $h, $q) => 2 * $q],
+        ['name' => 'Son Kapatma',        'measure' => fn($w, $h, $q) => $h - (($h - 291) / 3) - 221,      'qty' => fn($w, $h, $q) => 2 * $q],
         ['name' => 'Kanat',              'measure' => fn($w, $h, $q) => ($h - 291) / 3,                   'qty' => fn($w, $h, $q) => 2 * $q],
         ['name' => 'Dikey Baza',         'measure' => fn($w, $h, $q) => ($h - 291) / 3,                   'qty' => fn($w, $h, $q) => 4 * $q],
         ['name' => 'Flatbelt Kayış',     'measure' => fn($w, $h, $q) => $h - (($h - 290) / 3) - 221 + 600, 'qty' => fn($w, $h, $q) => 2 * $q],
-        ['name' => 'Motor Borusu',       'measure' => fn($w, $h, $q) => $w - 75,                          'qty' => fn($w, $h, $q) => $q],
+        ['name' => 'Motor Borusu',       'measure' => fn($w, $h, $q) => $w - 59,                          'qty' => fn($w, $h, $q) => $q],
         ['name' => 'Motor Kutu Contası', 'measure' => fn($w, $h, $q) => ($w - 14) * $q + $w * $q,         'qty' => fn($w, $h, $q) => 1],
         ['name' => 'Kanat Contası',      'measure' => fn($w, $h, $q) => ((($h - 291) / 3) * 2) * 2 * $q,  'qty' => fn($w, $h, $q) => 1],
         ['name' => 'Plastik Set',        'measure' => fn($w, $h, $q) => 1,                                'qty' => fn($w, $h, $q) => $q],
         ['name' => 'Zincir',       'measure'    => fn($w, $h, $q) => 1,                             'qty'        => fn($w, $h, $q) => $q],
+        ['name' => 'Kıl Fitil', 'measure' => fn($w, $h, $q) => ((($w - 185) * 4) + (($h - 166) * 8) + ((($h - 291) / 3) * 2)/1000), 'qty' => fn($w, $h, $q) => 1],
     ]);
 
     //
