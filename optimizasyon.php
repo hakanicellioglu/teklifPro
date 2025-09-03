@@ -578,8 +578,10 @@ body { margin:0; }
 .product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
 .product-card table { width:100%; font-size:0.7rem; text-align:center; border-collapse:collapse; }
 .product-card th, .product-card td { padding:2px; }
-.product-card th { font-weight:600; }
-.product-img { width:100%; height:100px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
+  .product-card th { font-weight:600; }
+  .product-img { width:100%; height:100px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
+  .info-table { font-size:0.75rem; }
+  .info-table th, .info-table td { padding:2px; }
 </style>';
 
     echo '<div class="container mt-4 d-print-none text-end">';
@@ -603,7 +605,7 @@ body { margin:0; }
     $ralCode   = trim((string) ($row['ral_code'] ?? ''));
 
     echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;"><tbody>';
+    echo '<table class="table table-bordered table-sm w-auto mb-0 info-table" style="background-color:#fff;"><tbody>';
     echo '<tr><th>Sistem Genişliği</th><td>' . e($sysWidth) . '</td></tr>';
     echo '<tr><th>Sistem Yüksekliği</th><td>' . e($sysHeight) . '</td></tr>';
     echo '<tr><th>Sistem Adedi</th><td>' . e($sysQtyVal) . '</td></tr>';
@@ -627,7 +629,7 @@ body { margin:0; }
     $glassColor  = trim((string) ($row['glass_color'] ?? ''));
 
     echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;">';
+    echo '<table class="table table-bordered table-sm w-auto mb-0 info-table" style="background-color:#fff;">';
     echo '<thead><tr>';
     echo '<th>Cam Genişliği</th>';
     echo '<th>Cam Yüksekliği</th>';
@@ -657,7 +659,7 @@ body { margin:0; }
     echo '<div class="col mb-3">';
     echo '<div class="d-flex gap-3 align-items-start">';
 
-    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;">';
+    echo '<table class="table table-bordered table-sm w-auto mb-0 info-table" style="background-color:#fff;">';
     echo '<thead><tr>';
     echo '<th>Müşteri Bilgileri</th>';
     echo '<th></th>';
