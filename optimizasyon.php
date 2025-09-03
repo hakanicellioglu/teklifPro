@@ -564,23 +564,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     $lines = $result['lines'];
     $tot       = $result['totals'];
-
-    //
-    // Veritabanı Güncellemesi
-    // Hesaplanan tutar ilgili giyotin satırına ve teklife kaydedilir.
-    //
-    $upd = $pdo->prepare('UPDATE guillotinesystems SET profit_amount = :p, total_amount = :t WHERE id = :id');
-    $upd->execute([':p' => $tot['profit'], ':t' => $tot['grand_total'], ':id' => $id]);
-
-    $gSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM guillotinesystems WHERE general_offer_id = :gid');
-    $gSumStmt->execute([':gid' => $row['general_offer_id']]);
-    $gSum = (float) $gSumStmt->fetchColumn();
-    $sSumStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM slidingsystems WHERE general_offer_id = :gid');
-    $sSumStmt->execute([':gid' => $row['general_offer_id']]);
-    $sSum = (float) $sSumStmt->fetchColumn();
-    $offerUpd = $pdo->prepare('UPDATE generaloffers SET total_amount = :t WHERE id = :id');
-    $offerUpd->execute([':t' => $gSum + $sSum, ':id' => $row['general_offer_id']]);
-
     // Yeni kart ızgarası çıktısı
     echo '<style>
 @page { size: A4; margin: 10mm; }
