@@ -577,6 +577,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 .product-img { width:100%; height:130px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
 </style>';
 
+    echo '<div class="container mt-4 d-print-none">';
+    echo '    <button type="button" onclick="window.print()" class="btn btn-secondary">🖨️ Yazdır</button>';
+    echo '</div>';
+
     echo '<div class="text-center mb-4">';
     if (!empty($company['logo']) && file_exists(__DIR__ . '/assets/' . $company['logo'])) {
         echo '<img src="assets/' . e($company['logo']) . '" alt="' . e($company['name']) . ' Logo" class="mb-2" style="max-height:60px;">';
@@ -722,10 +726,6 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '<img src="' . e($img) . '" alt="' . e($line['name']) . '" loading="lazy" class="product-img">';
         echo '</div>';
     }
-    echo '</div>';
-
-    echo '<div class="container mt-4 d-print-none">';
-    echo '    <button type="button" onclick="window.print()" class="btn btn-secondary">🖨️ Yazdır</button>';
     echo '</div>';
 
     require __DIR__ . '/footer.php';
