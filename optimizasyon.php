@@ -585,12 +585,38 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '</div>';
     echo '<div class="row">';
 
+    // --- [1] SİSTEM BİLGİSİ ---
+    $sysWidth  = number_format($result['system']['width'], 0, ',', '.');
+    $sysHeight = number_format($result['system']['height'], 0, ',', '.');
+    $sysQtyVal = number_format((int) ($result['system']['quantity'] ?? 0), 0, ',', '.');
+    $remoteQty = (int) ($row['remote_quantity'] ?? 0);
+    $motorName = trim((string) ($row['motor_system'] ?? ''));
+    $ralCode   = trim((string) ($row['ral_code'] ?? ''));
 
+    echo '<div class="col mb-3">';
+    echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
+    echo '<tr><th>Sistem Genişliği</th><td>' . e($sysWidth) . '</td></tr>';
+    echo '<tr><th>Sistem Yüksekliği</th><td>' . e($sysHeight) . '</td></tr>';
+    echo '<tr><th>Sistem Adedi</th><td>' . e($sysQtyVal) . '</td></tr>';
+    if ($remoteQty > 0) {
+        echo '<tr><th>Kumanda Adedi</th><td>' . e((string) $remoteQty) . '</td></tr>';
+    }
+    if ($motorName !== '') {
+        echo '<tr><th>Motor Sistemi</th><td>' . e($motorName) . '</td></tr>';
+    }
+    if ($ralCode !== '') {
+        echo '<tr><th>RAL Kodu</th><td>' . e($ralCode) . '</td></tr>';
+    }
+    echo '</tbody></table>';
+    echo '</div>';
+
+    // --- [2] CAM BİLGİSİ ---
     $glassWidth  = number_format($result['glass']['width'], 0, ',', '.');
     $glassHeight = number_format($result['glass']['height'], 0, ',', '.');
     $glassQtyVal = number_format((int) ($result['glass']['quantity'] ?? 0), 0, ',', '.');
     $glassType   = trim((string) ($row['glass_type'] ?? ''));
     $glassColor  = trim((string) ($row['glass_color'] ?? ''));
+
     echo '<div class="col mb-3">';
     echo '<table class="table table-bordered table-sm w-auto mb-0">';
     echo '<thead><tr>';
@@ -609,29 +635,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '</tr></tbody></table>';
     echo '</div>';
 
-    $sysWidth  = number_format($result['system']['width'], 0, ',', '.');
-    $sysHeight = number_format($result['system']['height'], 0, ',', '.');
-    $sysQtyVal = number_format((int) ($result['system']['quantity'] ?? 0), 0, ',', '.');
-    $remoteQty = (int) ($row['remote_quantity'] ?? 0);
-    $motorName = trim((string) ($row['motor_system'] ?? ''));
-    $ralCode   = trim((string) ($row['ral_code'] ?? ''));
-    echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
-    echo '<tr><th>Sistem Genişliği</th><td>' . e($sysWidth) . '</td></tr>';
-    echo '<tr><th>Sistem Yüksekliği</th><td>' . e($sysHeight) . '</td></tr>';
-    echo '<tr><th>Sistem Adedi</th><td>' . e($sysQtyVal) . '</td></tr>';
-    if ($remoteQty > 0) {
-        echo '<tr><th>Kumanda Adedi</th><td>' . e((string) $remoteQty) . '</td></tr>';
-    }
-    if ($motorName !== '') {
-        echo '<tr><th>Motor Sistemi</th><td>' . e($motorName) . '</td></tr>';
-    }
-    if ($ralCode !== '') {
-        echo '<tr><th>RAL Kodu</th><td>' . e($ralCode) . '</td></tr>';
-    }
-    echo '</tbody></table>';
-    echo '</div>';
-
+    // --- [3] BİRLEŞİK: MÜŞTERİ + (SİSTEM, ALÜMİNYUM, CAM) ALANLARI ---
     $systemArea = ($result['system']['width'] * $result['system']['height'] * $result['system']['quantity']) / 1000000;
     $aluminumTotal = 0.0;
     foreach ($lines as $line) {
@@ -639,42 +643,65 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             $aluminumTotal += ($line['measure'] * ($line['pieces'] ?? 0)) / 1000;
         }
     }
-
-
-
     $glassArea = ($result['glass']['width'] * $result['glass']['height'] * $result['glass']['quantity']) / 1000000;
+
     echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
-    echo '<tr><th>Sistem</th></tr><tr><td>' . e(number_format($systemArea, 2, ',', '.')) . '</td></tr>';
-    echo '<tr><th>Alüminyum</th></tr><tr><td>' . e(number_format($aluminumTotal, 2, ',', '.')) . '</td></tr>';
-    echo '<tr><th>Cam</th></tr><tr><td>' . e(number_format($glassArea, 2, ',', '.')) . '</td></tr>';
-    echo '</tbody></table>';
-    echo '</div>';
-    
+    echo '<div class="d-flex gap-3 align-items-start">';
+
+    echo '<table class="table table-bordered table-sm w-auto mb-0">';
+    echo '<thead><tr>';
+    echo '<th>Müşteri Bilgileri</th>';
+    echo '<th></th>';
+    echo '</tr></thead>';
+    echo '<tbody><tr><td valign="top">';
+
+    // --- Sol Sütun: Müşteri Bilgileri ---
     if ($customer) {
-        echo '<div class="col mb-3">';
-        echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
         $fullName = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
         if ($fullName !== '') {
-            echo '<tr><th>Müşteri</th></tr><tr><td>' . e($fullName) . '</td></tr>';
+            echo '<div><strong>Müşteri:</strong> ' . e($fullName) . '</div>';
         }
         if (!empty($customer['company_name'])) {
-            echo '<tr><th>Firma</th></tr><tr><td>' . e($customer['company_name']) . '</td></tr>';
+            echo '<div><strong>Firma:</strong> ' . e($customer['company_name']) . '</div>';
         }
         if (!empty($customer['phone'])) {
-            echo '<tr><th>Telefon</th></tr><tr><td>' . e($customer['phone']) . '</td></tr>';
+            echo '<div><strong>Telefon:</strong> ' . e($customer['phone']) . '</div>';
         }
         if (!empty($customer['email'])) {
-            echo '<tr><th>E-posta</th></tr><tr><td>' . e($customer['email']) . '</td></tr>';
+            echo '<div><strong>E-posta:</strong> ' . e($customer['email']) . '</div>';
         }
         if (!empty($customer['address'])) {
-            echo '<tr><th>Adres</th></tr><tr><td>' . nl2br(e($customer['address'])) . '</td></tr>';
+            echo '<div><strong>Adres:</strong><br>' . nl2br(e($customer['address'])) . '</div>';
         }
-        echo '</tbody></table>';
-        echo '</div>';
     }
 
+    echo '</td><td valign="top">';
+
+    // --- Sağ Sütun: Sistem / Alüminyum / Cam ---
+    echo '<div class="mb-2">';
+    echo '  <div><strong>Sistem</strong></div>';
+    echo '  <div>' . e(number_format($systemArea, 2, ',', '.')) . '</div>';
     echo '</div>';
+
+    echo '<div class="mb-2">';
+    echo '  <div><strong>Alüminyum</strong></div>';
+    echo '  <div>' . e(number_format($aluminumTotal, 2, ',', '.')) . '</div>';
+    echo '</div>';
+
+    echo '<div class="mb-2">';
+    echo '  <div><strong>Cam</strong></div>';
+    echo '  <div>' . e(number_format($glassArea, 2, ',', '.')) . '</div>';
+    echo '</div>';
+
+
+    echo '</td></tr></tbody></table>';
+
+
+    echo '</div>'; // d-flex
+    echo '</div>'; // col
+
+    echo '</div>'; // row
+
 
     echo '<div class="product-grid">';
     foreach ($lines as $line) {
