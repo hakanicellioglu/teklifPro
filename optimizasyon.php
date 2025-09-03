@@ -574,12 +574,12 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
   .product-grid { grid-template-columns: repeat(3,1fr); }
 }
 .product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
-.product-card table { width:100%; font-size:0.6rem; text-align:center; border-collapse:collapse; }
-.product-card th, .product-card td { padding:0.15rem; }
+.product-card table { width:100%; font-size:0.5rem; text-align:center; border-collapse:collapse; }
+.product-card th, .product-card td { padding:0.1rem; }
   .product-card th { font-weight:600; }
-  .product-img { width:100%; height:80px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
-  .info-table { font-size:0.7rem; }
-.info-table th, .info-table td { padding:0.15rem; }
+  .product-img { width:100%; height:60px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
+  .info-table { font-size:0.6rem; }
+.info-table th, .info-table td { padding:0.1rem; }
 </style>';
 
     echo '<div class="container d-print-none text-end">';
