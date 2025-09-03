@@ -603,33 +603,48 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
 
     if ($customer) {
         echo '<div class="mb-3">';
+        echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
         $fullName = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
         if ($fullName !== '') {
-            echo '<div><strong>Müşteri:</strong> ' . e($fullName) . '</div>';
+            echo '<tr><th>Müşteri</th></tr><tr><td>' . e($fullName) . '</td></tr>';
         }
         if (!empty($customer['company_name'])) {
-            echo '<div><strong>Firma:</strong> ' . e($customer['company_name']) . '</div>';
+            echo '<tr><th>Firma</th></tr><tr><td>' . e($customer['company_name']) . '</td></tr>';
         }
         if (!empty($customer['phone'])) {
-            echo '<div><strong>Telefon:</strong> ' . e($customer['phone']) . '</div>';
+            echo '<tr><th>Telefon</th></tr><tr><td>' . e($customer['phone']) . '</td></tr>';
         }
         if (!empty($customer['email'])) {
-            echo '<div><strong>E-posta:</strong> ' . e($customer['email']) . '</div>';
+            echo '<tr><th>E-posta</th></tr><tr><td>' . e($customer['email']) . '</td></tr>';
         }
         if (!empty($customer['address'])) {
-            echo '<div><strong>Adres:</strong> ' . nl2br(e($customer['address'])) . '</div>';
+            echo '<tr><th>Adres</th></tr><tr><td>' . nl2br(e($customer['address'])) . '</td></tr>';
         }
+        echo '</tbody></table>';
         echo '</div>';
     }
 
     $sysWidth  = number_format($result['system']['width'], 0, ',', '.');
     $sysHeight = number_format($result['system']['height'], 0, ',', '.');
     $sysQtyVal = number_format((int) ($result['system']['quantity'] ?? 0), 0, ',', '.');
+    $remoteQty = (int) ($row['remote_quantity'] ?? 0);
+    $motorName = trim((string) ($row['motor_system'] ?? ''));
+    $ralCode   = trim((string) ($row['ral_code'] ?? ''));
     echo '<div class="mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0">';
-    echo '<thead><tr><th>Sistem Genişliği</th><th>Sistem Yüksekliği</th><th>Sistem Adedi</th></tr></thead>';
-    echo '<tbody><tr><td>' . e($sysWidth) . '</td><td>' . e($sysHeight) . '</td><td>' . e($sysQtyVal) . '</td></tr></tbody>';
-    echo '</table>';
+    echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
+    echo '<tr><th>Sistem Genişliği</th></tr><tr><td>' . e($sysWidth) . '</td></tr>';
+    echo '<tr><th>Sistem Yüksekliği</th></tr><tr><td>' . e($sysHeight) . '</td></tr>';
+    echo '<tr><th>Sistem Adedi</th></tr><tr><td>' . e($sysQtyVal) . '</td></tr>';
+    if ($remoteQty > 0) {
+        echo '<tr><th>Kumanda Adedi</th></tr><tr><td>' . e((string) $remoteQty) . '</td></tr>';
+    }
+    if ($motorName !== '') {
+        echo '<tr><th>Motor Sistemi</th></tr><tr><td>' . e($motorName) . '</td></tr>';
+    }
+    if ($ralCode !== '') {
+        echo '<tr><th>RAL Kodu</th></tr><tr><td>' . e($ralCode) . '</td></tr>';
+    }
+    echo '</tbody></table>';
     echo '</div>';
 
     $systemArea = ($result['system']['width'] * $result['system']['height'] * $result['system']['quantity']) / 1000000;
@@ -639,52 +654,31 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
             $aluminumTotal += ($line['measure'] * ($line['pieces'] ?? 0)) / 1000;
         }
     }
+    $glassArea = ($result['glass']['width'] * $result['glass']['height'] * $result['glass']['quantity']) / 1000000;
     echo '<div class="mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0">';
-    echo '<tbody>';
-    echo '<tr><th>Sistem</th><td>' . e(number_format($systemArea, 2, ',', '.')) . '</td></tr>';
-    echo '<tr><th>Alüminyum</th><td>' . e(number_format($aluminumTotal, 2, ',', '.')) . '</td></tr>';
-    echo '</tbody>';
-    echo '</table>';
+    echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
+    echo '<tr><th>Sistem</th></tr><tr><td>' . e(number_format($systemArea, 2, ',', '.')) . '</td></tr>';
+    echo '<tr><th>Alüminyum</th></tr><tr><td>' . e(number_format($aluminumTotal, 2, ',', '.')) . '</td></tr>';
+    echo '<tr><th>Cam</th></tr><tr><td>' . e(number_format($glassArea, 2, ',', '.')) . '</td></tr>';
+    echo '</tbody></table>';
     echo '</div>';
-
-    $motorName = trim((string) ($row['motor_system'] ?? ''));
-    if ($motorName !== '') {
-        echo '<div class="mb-3"><strong>Motor Sistemi:</strong> ' . e($motorName) . '</div>';
-    }
-
-    $remoteQty = (int) ($row['remote_quantity'] ?? 0);
-    if ($remoteQty > 0) {
-        echo '<div class="mb-3"><strong>Kumanda Adedi:</strong> ' . e((string) $remoteQty) . '</div>';
-    }
-
-    $ralCode = trim((string) ($row['ral_code'] ?? ''));
-    if ($ralCode !== '') {
-        echo '<div class="mb-3"><strong>RAL Kodu:</strong> ' . e($ralCode) . '</div>';
-    }
 
     echo '<div class="product-grid">';
     foreach ($lines as $line) {
+        if (strtolower($line['category']) === 'cam') {
+            continue;
+        }
         $img = $line['image_url'] ?? '';
         if (!$img || !is_file(__DIR__ . '/' . $img)) {
             $img = 'assets/img/placeholder-product.png';
         }
         echo '<div class="product-card">';
         $qtyVal = number_format((int) ($line['pieces'] ?? 0), 0, ',', '.');
-        if (strtolower($line['category']) === 'cam') {
-            $widthVal  = number_format($line['width'], 0, ',', '.');
-            $heightVal = number_format($line['height'], 0, ',', '.');
-            echo '<table class="table table-bordered table-sm mb-0">';
-            echo '<thead><tr><th>Genişlik</th><th>Yükseklik</th><th>Adet</th></tr></thead>';
-            echo '<tbody><tr><td>' . e($widthVal) . '</td><td>' . e($heightVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
-            echo '</table>';
-        } else {
-            $measureVal = number_format($line['measure'], 0, ',', '.');
-            echo '<table class="table table-bordered table-sm mb-0">';
-            echo '<thead><tr><th>İsim</th><th>Kod</th><th>Ölçü</th><th>Adet</th></tr></thead>';
-            echo '<tbody><tr><td>' . e($line['name']) . '</td><td>' . e($line['product_code'] ?? '') . '</td><td>' . e($measureVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
-            echo '</table>';
-        }
+        $measureVal = number_format($line['measure'], 0, ',', '.');
+        echo '<table class="table table-bordered table-sm mb-0">';
+        echo '<thead><tr><th>İsim</th><th>Kod</th><th>Ölçü</th><th>Adet</th></tr></thead>';
+        echo '<tbody><tr><td>' . e($line['name']) . '</td><td>' . e($line['product_code'] ?? '') . '</td><td>' . e($measureVal) . '</td><td>' . e($qtyVal) . '</td></tr></tbody>';
+        echo '</table>';
         echo '<img src="' . e($img) . '" alt="' . e($line['name']) . '" loading="lazy" class="product-img">';
         echo '</div>';
     }
