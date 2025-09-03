@@ -594,7 +594,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $ralCode   = trim((string) ($row['ral_code'] ?? ''));
 
     echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
+    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;"><tbody>';
     echo '<tr><th>Sistem Genişliği</th><td>' . e($sysWidth) . '</td></tr>';
     echo '<tr><th>Sistem Yüksekliği</th><td>' . e($sysHeight) . '</td></tr>';
     echo '<tr><th>Sistem Adedi</th><td>' . e($sysQtyVal) . '</td></tr>';
@@ -618,7 +618,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $glassColor  = trim((string) ($row['glass_color'] ?? ''));
 
     echo '<div class="col mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0">';
+    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;">';
     echo '<thead><tr>';
     echo '<th>Cam Genişliği</th>';
     echo '<th>Cam Yüksekliği</th>';
@@ -648,7 +648,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     echo '<div class="col mb-3">';
     echo '<div class="d-flex gap-3 align-items-start">';
 
-    echo '<table class="table table-bordered table-sm w-auto mb-0">';
+    echo '<table class="table table-bordered table-sm w-auto mb-0" style="background-color:#fff;">';
     echo '<thead><tr>';
     echo '<th>Müşteri Bilgileri</th>';
     echo '<th></th>';
