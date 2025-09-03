@@ -567,19 +567,19 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     // Yeni kart ızgarası çıktısı
     echo '<style>
 @page { size: A4; }
-.product-grid { display: grid; gap: 0.25rem; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); }
+.product-grid { display: grid; gap: 0.125rem; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); }
 @media (min-width:768px){ .product-grid { grid-template-columns: repeat(2,1fr); } }
 @media (min-width:992px){ .product-grid { grid-template-columns: repeat(3,1fr); } }
 @media print {
   .product-grid { grid-template-columns: repeat(3,1fr); }
 }
 .product-card { border:1px solid #000; page-break-inside: avoid; break-inside: avoid; }
-.product-card table { width:100%; font-size:0.7rem; text-align:center; border-collapse:collapse; }
-.product-card th, .product-card td { padding:0.25rem; }
+.product-card table { width:100%; font-size:0.6rem; text-align:center; border-collapse:collapse; }
+.product-card th, .product-card td { padding:0.15rem; }
   .product-card th { font-weight:600; }
-  .product-img { width:100%; height:100px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
-  .info-table { font-size:0.75rem; }
-.info-table th, .info-table td { padding:0.25rem; }
+  .product-img { width:100%; height:80px; object-fit:contain; border:1px solid #000; display:block; background-color:#fff; }
+  .info-table { font-size:0.7rem; }
+.info-table th, .info-table td { padding:0.15rem; }
 </style>';
 
     echo '<div class="container d-print-none text-end">';
