@@ -516,7 +516,7 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     // Giyotin Verileri
     // Veritabanından ilgili ölçü ve ayarları çeker.
     //
-    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, motor_system, remote_quantity, ral_code, profit_margin, general_offer_id FROM guillotinesystems WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT width, height, quantity, glass_type, glass_color, motor_system, remote_quantity, ral_code, profit_margin, general_offer_id FROM guillotinesystems WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
@@ -606,6 +606,29 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
         echo '</tbody></table>';
         echo '</div>';
     }
+
+    $glassWidth  = number_format($result['glass']['width'], 0, ',', '.');
+    $glassHeight = number_format($result['glass']['height'], 0, ',', '.');
+    $glassQtyVal = number_format((int) ($result['glass']['quantity'] ?? 0), 0, ',', '.');
+    $glassType   = trim((string) ($row['glass_type'] ?? ''));
+    $glassColor  = trim((string) ($row['glass_color'] ?? ''));
+    echo '<div class="mb-3">';
+    echo '<table class="table table-bordered table-sm w-auto mb-0">';
+    echo '<thead><tr>';
+    echo '<th>Cam Genişliği</th>';
+    echo '<th>Cam Yüksekliği</th>';
+    echo '<th>Cam Adedi</th>';
+    echo '<th>Cam Kombinasyonu</th>';
+    echo '<th>Cam Rengi</th>';
+    echo '</tr></thead>';
+    echo '<tbody><tr>';
+    echo '<td>' . e($glassWidth) . '</td>';
+    echo '<td>' . e($glassHeight) . '</td>';
+    echo '<td>' . e($glassQtyVal) . '</td>';
+    echo '<td>' . e($glassType) . '</td>';
+    echo '<td>' . e($glassColor) . '</td>';
+    echo '</tr></tbody></table>';
+    echo '</div>';
 
     $sysWidth  = number_format($result['system']['width'], 0, ',', '.');
     $sysHeight = number_format($result['system']['height'], 0, ',', '.');
