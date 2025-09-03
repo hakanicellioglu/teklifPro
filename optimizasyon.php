@@ -613,13 +613,21 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     $glassType   = trim((string) ($row['glass_type'] ?? ''));
     $glassColor  = trim((string) ($row['glass_color'] ?? ''));
     echo '<div class="mb-3">';
-    echo '<table class="table table-bordered table-sm w-auto mb-0"><tbody>';
-    echo '<tr><th>Cam Genişliği</th><td>' . e($glassWidth) . '</td></tr>';
-    echo '<tr><th>Cam Yüksekliği</th><td>' . e($glassHeight) . '</td></tr>';
-    echo '<tr><th>Cam Adedi</th><td>' . e($glassQtyVal) . '</td></tr>';
-    echo '<tr><th>Cam Kombinasyonu</th><td>' . e($glassType) . '</td></tr>';
-    echo '<tr><th>Cam Rengi</th><td>' . e($glassColor) . '</td></tr>';
-    echo '</tbody></table>';
+    echo '<table class="table table-bordered table-sm w-auto mb-0">';
+    echo '<thead><tr>';
+    echo '<th>Cam Genişliği</th>';
+    echo '<th>Cam Yüksekliği</th>';
+    echo '<th>Cam Adedi</th>';
+    echo '<th>Cam Kombinasyonu</th>';
+    echo '<th>Cam Rengi</th>';
+    echo '</tr></thead>';
+    echo '<tbody><tr>';
+    echo '<td>' . e($glassWidth) . '</td>';
+    echo '<td>' . e($glassHeight) . '</td>';
+    echo '<td>' . e($glassQtyVal) . '</td>';
+    echo '<td>' . e($glassType) . '</td>';
+    echo '<td>' . e($glassColor) . '</td>';
+    echo '</tr></tbody></table>';
     echo '</div>';
 
     $sysWidth  = number_format($result['system']['width'], 0, ',', '.');
